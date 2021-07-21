@@ -1,0 +1,20 @@
+# permissions for end users to view authrhelms.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: authrhelm-viewer-role
+rules:
+- apiGroups:
+  - identitatem.io.my.domain
+  resources:
+  - authrhelms
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - identitatem.io.my.domain
+  resources:
+  - authrhelms/status
+  verbs:
+  - get

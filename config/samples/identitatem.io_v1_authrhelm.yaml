@@ -1,0 +1,7 @@
+apiVersion: identitatem.io.my.domain/v1
+kind: AuthRHELM
+metadata:
+  name: authrhelm-sample
+spec:
+  # Add fields here
+  foo: bar
