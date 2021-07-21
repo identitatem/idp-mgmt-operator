@@ -66,12 +66,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.AuthRHELMReconciler{
+	if err = (&controllers.AuthRealmReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("AuthRHELM"),
+		Log:    ctrl.Log.WithName("controllers").WithName("AuthRealm"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AuthRHELM")
+		setupLog.Error(err, "unable to create controller", "controller", "AuthRealm")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

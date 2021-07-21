@@ -4,4 +4,7 @@ resources:
 - group: identitatem.io
   kind: AuthRHELM
   version: v1
+- group: identitatem.io
+  kind: AuthRealm
+  version: v1
 version: "2"
