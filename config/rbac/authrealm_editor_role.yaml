@@ -1,0 +1,24 @@
+# permissions for end users to edit authrealms.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: authrealm-editor-role
+rules:
+- apiGroups:
+  - identitatem.io
+  resources:
+  - authrealms
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - identitatem.io
+  resources:
+  - authrealms/status
+  verbs:
+  - get

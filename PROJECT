@@ -1,0 +1,7 @@
+domain: identitatem.io
+repo: github.com/identitatem/idp-mgmt-operator
+resources:
+- group: identitatem.io
+  kind: AuthRealm
+  version: v1
+version: "2"
