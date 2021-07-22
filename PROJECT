@@ -1,9 +1,6 @@
-domain: my.domain
+domain: identitatem.io
 repo: github.com/identitatem/idp-mgmt-operator
 resources:
-- group: identitatem.io
-  kind: AuthRHELM
-  version: v1
 - group: identitatem.io
   kind: AuthRealm
   version: v1

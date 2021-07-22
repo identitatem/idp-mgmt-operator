@@ -4,7 +4,7 @@ Copyright Contributors to the Open Cluster Management project
 
 // Package v1 contains API Schema definitions for the identitatem.io v1 API group
 // +kubebuilder:object:generate=true
-// +groupName=identitatem.io.my.domain
+// +groupName=identitatem.io
 package v1
 
 import (
@@ -14,7 +14,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "identitatem.io.my.domain", Version: "v1"}
+	GroupVersion = schema.GroupVersion{Group: "identitatem.io", Version: "v1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

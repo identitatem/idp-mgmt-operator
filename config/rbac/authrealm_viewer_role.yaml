@@ -5,7 +5,7 @@ metadata:
   name: authrealm-viewer-role
 rules:
 - apiGroups:
-  - identitatem.io.my.domain
+  - identitatem.io
   resources:
   - authrealms
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - identitatem.io.my.domain
+  - identitatem.io
   resources:
   - authrealms/status
   verbs:

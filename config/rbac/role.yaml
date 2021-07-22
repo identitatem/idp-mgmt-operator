@@ -7,9 +7,9 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - identitatem.io.my.domain
+  - identitatem.io
   resources:
-  - authrhelms
+  - authrealms
   verbs:
   - create
   - delete
@@ -19,9 +19,9 @@ rules:
   - update
   - watch
 - apiGroups:
-  - identitatem.io.my.domain
+  - identitatem.io
   resources:
-  - authrhelms/status
+  - authrealms/status
   verbs:
   - get
   - patch

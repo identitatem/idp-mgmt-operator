@@ -1,4 +1,4 @@
-apiVersion: identitatem.io.my.domain/v1
+apiVersion: identitatem.io/v1
 kind: AuthRealm
 metadata:
   name: authrealm-sample

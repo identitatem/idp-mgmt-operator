@@ -6,18 +6,18 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: authrhelms.identitatem.io.my.domain
+  name: authrealms.identitatem.io
 spec:
-  group: identitatem.io.my.domain
+  group: identitatem.io
   names:
-    kind: AuthRHELM
-    listKind: AuthRHELMList
-    plural: authrhelms
-    singular: authrhelm
+    kind: AuthRealm
+    listKind: AuthRealmList
+    plural: authrealms
+    singular: authrealm
   scope: Namespaced
   validation:
     openAPIV3Schema:
-      description: AuthRHELM is the Schema for the authrhelms API
+      description: AuthRealm is the Schema for the authrealms API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -32,15 +32,15 @@ spec:
         metadata:
           type: object
         spec:
-          description: AuthRHELMSpec defines the desired state of AuthRHELM
+          description: AuthRealmSpec defines the desired state of AuthRealm
           properties:
             foo:
-              description: Foo is an example field of AuthRHELM. Edit AuthRHELM_types.go
+              description: Foo is an example field of AuthRealm. Edit AuthRealm_types.go
                 to remove/update
               type: string
           type: object
         status:
-          description: AuthRHELMStatus defines the observed state of AuthRHELM
+          description: AuthRealmStatus defines the observed state of AuthRealm
           type: object
       type: object
   version: v1
