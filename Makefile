@@ -1,6 +1,9 @@
 
+export PROJECT_NAME = idp-mgmt-operator
+
 # Image URL to use all building/pushing image targets
-IMG ?= idp-mgmt-operator:latest
+IMG ?= ${PROJECT_NAME}:latest
+IMG_COVERAGE ?= ${PROJECT_NAME}-coverage:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -11,7 +14,7 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-all: manager
+all: manag
 
 # Run tests
 test: generate fmt vet manifests
@@ -38,6 +41,14 @@ deploy: manifests
 	cd config/manager && kustomize edit set image controller=${IMG}
 	kustomize build config/default | kubectl apply -f -
 
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy-coverage: manifests
+	cd config/manager && kustomize edit set image controller=${IMG_COVERAGE}
+	kustomize build config/default | kubectl apply -f -
+
+undeploy:
+	kubectl delete --wait=true -k config/default
+
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
@@ -59,10 +70,11 @@ docker-build: test
 	docker build . -t ${IMG}
 
 # Build the docker image
-docker-build-coverage: test
+docker-build-coverage: test docker-build
 	docker build . \
 	--build-arg DOCKER_BASE_IMAGE=${IMG} \
-	-f Dockerfile-coverage
+	-f Dockerfile-coverage \
+	-t ${IMG_COVERAGE}
 
 
 # Push the docker image
@@ -85,3 +97,13 @@ CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
+
+functional-test-full: docker-build-coverage
+	@build/run-functional-tests.sh $(IMG_COVERAGE)
+
+functional-test-full-clean: 
+	@build/run-functional-tests-clean.sh
+
+functional-test:
+	@echo running functional tests
+	ginkgo -tags functional -v --slowSpecThreshold=30 test/functional -- -v=5

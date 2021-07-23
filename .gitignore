@@ -24,3 +24,6 @@
 *~
 
 .DS_Store
+
+/test/functional/coverage
+/test/functional/tmp
