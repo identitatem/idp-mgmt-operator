@@ -13,9 +13,20 @@ endif
 
 all: manager
 
+.PHONY: check
+## Runs a set of required checks
+#check: check-copyright go-bindata-check lint
+
+.PHONY: check-copyright
+check-copyright:
+#	@build/check-copyright.sh
+
 # Run tests
+.PHONY: test
 test: generate fmt vet manifests
 	go test ./... -coverprofile cover.out
+#	@build/run-unit-tests.sh
+
 
 # Build manager binary
 manager: generate fmt vet
