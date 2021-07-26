@@ -1,6 +1,4 @@
-/*
-Copyright Contributors to the Open Cluster Management project
-*/
+// Copyright Contributors to the Open Cluster Management project
 
 // Package v1 contains API Schema definitions for the identitatem.io v1 API group
 // +kubebuilder:object:generate=true

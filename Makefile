@@ -1,8 +1,14 @@
 
+# Copyright Contributors to the Open Cluster Management project
+
+export PROJECT_DIR            = $(shell 'pwd')
+export PROJECT_NAME			  = $(shell basename ${PROJECT_DIR})
+
 # Image URL to use all building/pushing image targets
-IMG ?= idp-mgmt-operator:latest
+IMG ?= ${PROJECT_NAME}:latest
+IMG_COVERAGE ?= ${PROJECT_NAME}-coverage:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true"
+CRD_OPTIONS ?= "crd:crdVersions=v1"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -11,22 +17,19 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+# enable Go modules
+export GO111MODULE=on
+export COMMON_FLAGS=--output-base ${PROJECT_DIR}
+
 all: manager
 
-.PHONY: check
-## Runs a set of required checks
-#check: check-copyright go-bindata-check lint
+check: check-copyright
 
-.PHONY: check-copyright
 check-copyright:
-#	@build/check-copyright.sh
+	@build/check-copyright.sh
 
-# Run tests
-.PHONY: test
 test: generate fmt vet manifests
 	go test ./... -coverprofile cover.out
-#	@build/run-unit-tests.sh
-
 
 # Build manager binary
 manager: generate fmt vet
@@ -49,6 +52,14 @@ deploy: manifests
 	cd config/manager && kustomize edit set image controller=${IMG}
 	kustomize build config/default | kubectl apply -f -
 
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy-coverage: manifests
+	cd config/manager && kustomize edit set image controller=${IMG_COVERAGE}
+	kustomize build config/default | kubectl apply -f -
+
+undeploy:
+	kubectl delete --wait=true -k config/default
+
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
@@ -70,10 +81,11 @@ docker-build: test
 	docker build . -t ${IMG}
 
 # Build the docker image
-docker-build-coverage: test
+docker-build-coverage: test docker-build
 	docker build . \
 	--build-arg DOCKER_BASE_IMAGE=${IMG} \
-	-f Dockerfile-coverage
+	-f Dockerfile-coverage \
+	-t ${IMG_COVERAGE}
 
 
 # Push the docker image
@@ -96,3 +108,13 @@ CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
+
+functional-test-full: docker-build-coverage
+	@build/run-functional-tests.sh $(IMG_COVERAGE)
+
+functional-test-full-clean: 
+	@build/run-functional-tests-clean.sh
+
+functional-test:
+	@echo running functional tests
+	ginkgo -tags functional -v --slowSpecThreshold=30 test/functional -- -v=5
