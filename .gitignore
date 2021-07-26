@@ -30,3 +30,5 @@
 /test/functional/tmp
 /vendor
 /_output
+kind_kubeconfig.yaml
+kind_kubeconfig_internal.yaml
