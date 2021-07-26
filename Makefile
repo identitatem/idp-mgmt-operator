@@ -28,7 +28,6 @@ check: check-copyright
 check-copyright:
 	@build/check-copyright.sh
 
-# Run tests
 test: generate fmt vet manifests
 	go test ./... -coverprofile cover.out
 
