@@ -1,6 +1,4 @@
-/*
-Copyright Contributors to the Open Cluster Management project
-*/
+// Copyright Contributors to the Open Cluster Management project
 
 package controllers
 
@@ -15,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	identitatemiov1 "github.com/identitatem/idp-mgmt-operator/api/v1"
+	authrealmv1 "github.com/identitatem/idp-mgmt-operator/api/authrealm/v1"
 )
 
 // AuthRealmReconciler reconciles a AuthRealm object
@@ -34,7 +32,7 @@ func (r *AuthRealmReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	// your logic here
 	// Fetch the ManagedCluster instance
-	instance := &identitatemiov1.AuthRealm{}
+	instance := &authrealmv1.AuthRealm{}
 
 	if err := r.Client.Get(
 		context.TODO(),
@@ -61,6 +59,6 @@ func (r *AuthRealmReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&identitatemiov1.AuthRealm{}).
+		For(&authrealmv1.AuthRealm{}).
 		Complete(r)
 }

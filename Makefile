@@ -1,11 +1,14 @@
 
-export PROJECT_NAME = idp-mgmt-operator
+# Copyright Contributors to the Open Cluster Management project
+
+export PROJECT_DIR            = $(shell 'pwd')
+export PROJECT_NAME			  = $(shell basename ${PROJECT_DIR})
 
 # Image URL to use all building/pushing image targets
 IMG ?= ${PROJECT_NAME}:latest
 IMG_COVERAGE ?= ${PROJECT_NAME}-coverage:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true"
+CRD_OPTIONS ?= "crd:crdVersions=v1"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -14,7 +17,16 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-all: manag
+# enable Go modules
+export GO111MODULE=on
+export COMMON_FLAGS=--output-base ${PROJECT_DIR}
+
+all: manager
+
+check: check-copyright
+
+check-copyright:
+	@build/check-copyright.sh
 
 # Run tests
 test: generate fmt vet manifests

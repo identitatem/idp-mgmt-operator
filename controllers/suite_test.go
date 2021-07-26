@@ -1,6 +1,4 @@
-/*
-Copyright Contributors to the Open Cluster Management project
-*/
+// Copyright Contributors to the Open Cluster Management project
 
 package controllers
 
@@ -23,7 +21,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	identitatemiov1 "github.com/identitatem/idp-mgmt-operator/api/v1"
+	authrealmv1 "github.com/identitatem/idp-mgmt-operator/api/authrealm/v1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -55,7 +53,7 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	err = identitatemiov1.AddToScheme(scheme.Scheme)
+	err = authrealmv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme
@@ -76,7 +74,7 @@ var _ = AfterSuite(func() {
 var _ = Describe("Process AuthRealm: ", func() {
 	It("process a AuthRealm CR", func() {
 		By("creating a AuthRealm CR", func() {
-			authRealm := identitatemiov1.AuthRealm{
+			authRealm := authrealmv1.AuthRealm{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "myauthrealm",
 					Namespace: "default",
@@ -98,7 +96,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			if err != nil {
 				return err
 			}
-			authRealm := &identitatemiov1.AuthRealm{}
+			authRealm := &authrealmv1.AuthRealm{}
 			if err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: "myauthrealm", Namespace: "default"}, authRealm); err != nil {
 				logf.Log.Logger.Info("Error while reading authrealm", "Error", err)
 				return err
