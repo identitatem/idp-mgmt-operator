@@ -6,7 +6,7 @@
 # NOTE: When running against a node repo, delete the node_modules directories first!  Then npm ci once all the
 #       copyright changes are incorporated.
 
-set -x
+# set -x
 TMP_FILE="tmp_file"
 
 ALL_FILES=$(git ls-files | \

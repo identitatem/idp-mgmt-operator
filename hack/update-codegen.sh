@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+# Copyright Contributors to the Open Cluster Management project
 # Copyright 2020 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
