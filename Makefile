@@ -19,7 +19,6 @@ endif
 
 # enable Go modules
 export GO111MODULE=on
-export COMMON_FLAGS=--output-base ${PROJECT_DIR}
 
 all: manager
 
@@ -38,6 +37,9 @@ manager: generate fmt vet
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
 	go run ./main.go
+
+run-coverage: generate fmt vet manifests
+	go test -covermode=atomic -coverpkg=github.com/identitatem/idp-mgmt-operator/controllers/... -tags testrunmain -run "^TestRunMain$$" -coverprofile=cover.out . 
 
 # Install CRDs into a cluster
 install: manifests
@@ -75,6 +77,9 @@ vet:
 # Generate code
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
+generate-clients:
+	./hack/update-codegen.sh
 
 # Build the docker image
 docker-build: test

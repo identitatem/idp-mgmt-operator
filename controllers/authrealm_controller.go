@@ -26,7 +26,7 @@ type AuthRealmReconciler struct {
 // +kubebuilder:rbac:groups=identitatem.io,resources=authrealms,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=identitatem.io,resources=authrealms/status,verbs=get;update;patch
 
-func (r *AuthRealmReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("authrealm", req.NamespacedName)
 
