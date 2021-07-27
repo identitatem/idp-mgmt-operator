@@ -22,13 +22,18 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
+      securityContext:
+        fsGroup: 2000
       containers:
-      - command:
-        - /manager
-        args:
+      - args:
+        - --
         - --enable-leader-election
         image: controller:latest
         name: manager
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - mountPath: /tmp/coverage
+            name: coverage-dir  
         resources:
           limits:
             cpu: 100m
@@ -37,3 +42,10 @@ spec:
             cpu: 100m
             memory: 20Mi
       terminationGracePeriodSeconds: 10
+      volumes:
+        - name: coverage-dir
+          hostPath:
+            # directory location on host
+            path: /tmp/coverage
+            # this field is optional
+            type: Directory

@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	authrealmv1 "github.com/identitatem/idp-mgmt-operator/api/authrealm/v1"
+	authclientset "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -29,6 +30,7 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var cfg *rest.Config
+var authClientSet *authclientset.Clientset
 var k8sClient client.Client
 var testEnv *envtest.Environment
 
@@ -41,8 +43,7 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func(done Done) {
-	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
-
+	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter)))
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
@@ -57,6 +58,10 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme
+
+	authClientSet, err = authclientset.NewForConfig(cfg)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(authClientSet).ToNot(BeNil())
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
@@ -80,7 +85,8 @@ var _ = Describe("Process AuthRealm: ", func() {
 					Namespace: "default",
 				},
 			}
-			Expect(k8sClient.Create(context.TODO(), &authRealm)).To(BeNil())
+			_, err := authClientSet.IdentitatemV1().AuthRealms("default").Create(context.TODO(), &authRealm, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
 		})
 		Eventually(func() error {
 			r := AuthRealmReconciler{
@@ -92,17 +98,17 @@ var _ = Describe("Process AuthRealm: ", func() {
 			req := ctrl.Request{}
 			req.Name = "myauthrealm"
 			req.Namespace = "default"
-			_, err := r.Reconcile(req)
+			_, err := r.Reconcile(context.TODO(), req)
 			if err != nil {
 				return err
 			}
-			authRealm := &authrealmv1.AuthRealm{}
-			if err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: "myauthrealm", Namespace: "default"}, authRealm); err != nil {
-				logf.Log.Logger.Info("Error while reading authrealm", "Error", err)
+			authRealm, err := authClientSet.IdentitatemV1().AuthRealms("default").Get(context.TODO(), "myauthrealm", metav1.GetOptions{})
+			if err != nil {
+				logf.Log.Info("Error while reading authrealm", "Error", err)
 				return err
 			}
 			if len(authRealm.Spec.Foo) == 0 {
-				logf.Log.Logger.Info("AuthRealm Foo is still empty")
+				logf.Log.Info("AuthRealm Foo is still empty")
 				return fmt.Errorf("AuthRealm %s/%s not processed", authRealm.Namespace, authRealm.Name)
 			}
 			return nil

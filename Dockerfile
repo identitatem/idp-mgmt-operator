@@ -15,13 +15,16 @@ COPY go.sum go.sum
 RUN go mod download
 
 RUN GOFLAGS="" go build -a -o manager main.go
-RUN GOFLAGS="" go test -covermode=atomic -coverpkg=github.com/identitatem/pkg/... -c -tags testrunmain . -o manager-coverage
+RUN GOFLAGS="" go test -covermode=atomic \
+    -coverpkg=github.com/identitatem/idp-mgmt-operator/pkg/...,\
+github.com/identitatem/idp-mgmt-operator/controllers/... \
+     -c -tags testrunmain . -o manager-coverage
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 RUN microdnf update
 ENV REMOTE_SOURCE_DIR='/remote-source'
 
-ENV OPERATOR=/usr/local/bin/idp-mgmt-operator \
+ENV OPERATOR=/usr/local/bin/manager \
     USER_UID=1001 \
     USER_NAME=idp-mgmt-operator
     

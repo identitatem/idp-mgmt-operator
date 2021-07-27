@@ -6,10 +6,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:subresource:status
-
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
@@ -25,10 +21,12 @@ type AuthRealmSpec struct {
 // AuthRealmStatus defines the observed state of AuthRealm
 type AuthRealmStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Important: Run "make generate" to regenerate code after modifying this file
 }
 
+// +genclient
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // AuthRealm is the Schema for the authrealms API
 type AuthRealm struct {
@@ -44,10 +42,10 @@ type AuthRealm struct {
 // AuthRealmList contains a list of AuthRealm
 type AuthRealmList struct {
 	metav1.TypeMeta `json:",inline"`
+	// Standard list metadata.
+	// +optional
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []AuthRealm `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&AuthRealm{}, &AuthRealmList{})
+	// List of AuthRealm.
+	// +listType=set
+	Items []AuthRealm `json:"items"`
 }

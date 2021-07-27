@@ -98,10 +98,15 @@ echo "install cluster"
 make deploy-coverage
 make functional-test
 
+echo "Wait 10 sec to let coverage to flush"
+sleep 10
+
+echo "remove deployment"
+kubectl delete deployment idp-mgmt-operator-controller-manager -n identitatem
+
 echo "Wait 10 sec for copy to AWS"
 sleep 10
 
-echo "delete clusters"
 make functional-test-full-clean
 
 if [ `find $FUNCT_TEST_COVERAGE -prune -empty 2>/dev/null` ]; then
