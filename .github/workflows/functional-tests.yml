@@ -19,6 +19,11 @@ jobs:
       with:
         go-version: 1.16
 
+    - name: Install kubebuilder
+      uses: RyanSiu1995/kubebuilder-action@v1.2
+      with:
+        version: 2.3.0        
+
     - name: Functional Tests
       run: make functional-test-full
   
