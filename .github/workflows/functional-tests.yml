@@ -29,4 +29,4 @@ jobs:
 
     - if:  ${{ failure() }}
       name: Logs after Tests Failed
-      run: KUBECONFIG=kind_kubeconfig.yaml kubectl logs  -n open-cluster-management `KUBECONFIG=kind_kubeconfig.yaml kubectl get po -n identitatem -oname | grep idp-mgmt-operator`
+      run: KUBECONFIG=kind_kubeconfig.yaml kubectl logs  -n identitatem `KUBECONFIG=kind_kubeconfig.yaml kubectl get po -n identitatem -oname | grep idp-mgmt-operator`
