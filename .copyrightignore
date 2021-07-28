@@ -4,3 +4,6 @@ _generated.go
 config/
 kind_kubeconfig.yaml
 kind_kubeconfig_internal.yaml
+# directories to ignore
+api/*
+dependencymagnet/*
