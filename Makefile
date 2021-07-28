@@ -39,7 +39,7 @@ run: generate fmt vet manifests
 	go run ./main.go
 
 run-coverage: generate fmt vet manifests
-	go test -covermode=atomic -coverpkg=github.com/identitatem/idp-mgmt-operator/controllers/... -tags testrunmain -run "^TestRunMain$$" -coverprofile=cover.out . 
+	go test -covermode=atomic -coverpkg=github.com/identitatem/idp-mgmt-operator/controllers/... -tags testrunmain -run "^TestRunMain$$" -coverprofile=cover.out .
 
 # Install CRDs into a cluster
 install: manifests
@@ -106,7 +106,7 @@ ifeq (, $(shell which controller-gen))
 	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$CONTROLLER_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.5 ;\
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.0 ;\
 	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
 	}
 CONTROLLER_GEN=$(GOBIN)/controller-gen
@@ -117,7 +117,7 @@ endif
 functional-test-full: docker-build-coverage
 	@build/run-functional-tests.sh $(IMG_COVERAGE)
 
-functional-test-full-clean: 
+functional-test-full-clean:
 	@build/run-functional-tests-clean.sh
 
 functional-test:

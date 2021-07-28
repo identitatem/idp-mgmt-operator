@@ -23,7 +23,6 @@ import (
 
 	authrealmv1 "github.com/identitatem/idp-mgmt-operator/api/authrealm/v1"
 	authclientset "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned"
-	// +kubebuilder:scaffold:imports
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -56,8 +55,6 @@ var _ = BeforeSuite(func(done Done) {
 
 	err = authrealmv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
-
-	// +kubebuilder:scaffold:scheme
 
 	authClientSet, err = authclientset.NewForConfig(cfg)
 	Expect(err).ToNot(HaveOccurred())
