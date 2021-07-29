@@ -60,16 +60,6 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
-  extraPortMappings:
-  - containerPort: 80
-    hostPort: 80
-    listenAddress: "0.0.0.0"
-  - containerPort: 443
-    hostPort: 443
-    listenAddress: "0.0.0.0"
-  - containerPort: 6443
-    hostPort: 32800
-    listenAddress: "0.0.0.0"
   kubeadmConfigPatches:
   - |
     kind: InitConfiguration #for worker use JoinConfiguration
@@ -79,8 +69,6 @@ nodes:
   extraMounts:
   - hostPath: "${FUNCT_TEST_COVERAGE}"
     containerPath: /tmp/coverage
-networking:
-  apiServerPort: 6443
 EOF
 
 echo "creating hub cluster"

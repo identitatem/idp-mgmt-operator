@@ -1,8 +1,9 @@
 // Copyright Contributors to the Open Cluster Management project
 
-package v1
+package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -16,12 +17,15 @@ type AuthRealmSpec struct {
 
 	// Foo is an example field of AuthRealm. Edit AuthRealm_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
+
+	// IdentityProviderRef reference an identity provider
+	IdentityProviderRef corev1.LocalObjectReference `json:"identityProviderRef,omitempty"`
 }
 
 // AuthRealmStatus defines the observed state of AuthRealm
 type AuthRealmStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make generate" to regenerate code after modifying this file
+	// Important: Run "make generate-clients" to regenerate code after modifying this file
 }
 
 // +genclient

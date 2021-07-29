@@ -6,20 +6,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.6.0
   creationTimestamp: null
-  name: authrealms.identitatem.io
+  name: identityproviders.identitatem.io
 spec:
   group: identitatem.io
   names:
-    kind: AuthRealm
-    listKind: AuthRealmList
-    plural: authrealms
-    singular: authrealm
+    kind: IdentityProvider
+    listKind: IdentityProviderList
+    plural: identityproviders
+    singular: identityprovider
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: AuthRealm is the Schema for the authrealms API
+        description: IdentityProvider is the Schema for the strategies API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,23 +34,15 @@ spec:
           metadata:
             type: object
           spec:
-            description: AuthRealmSpec defines the desired state of AuthRealm
+            description: IdentityProviderSpec defines the desired state of IdentityProvider
             properties:
               foo:
                 description: Foo is an example field of AuthRealm. Edit AuthRealm_types.go
                   to remove/update
                 type: string
-              identityProviderRef:
-                description: IdentityProviderRef reference an identity provider
-                properties:
-                  name:
-                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      TODO: Add other useful fields. apiVersion, kind, uid?'
-                    type: string
-                type: object
             type: object
           status:
-            description: AuthRealmStatus defines the observed state of AuthRealm
+            description: IdentityProviderStatus defines the observed state of IdentityProvider
             type: object
         type: object
     served: true

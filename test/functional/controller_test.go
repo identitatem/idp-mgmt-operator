@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"time"
 
-	authrealmv1 "github.com/identitatem/idp-mgmt-operator/api/authrealm/v1"
-	authclientset "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned"
+	identitatemclientset "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned"
+	authrealmv1alpah1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +30,7 @@ func init() {
 
 }
 
-var authClientSet *authclientset.Clientset
+var authClientSet *identitatemclientset.Clientset
 var cfg *rest.Config
 
 var _ = Describe("AuthRealm", func() {
@@ -48,7 +48,7 @@ var _ = Describe("AuthRealm", func() {
 		cfg, err := clientcmd.BuildConfigFromFlags("", kubeConfigFile)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(cfg).ToNot(BeNil())
-		authClientSet, err = authclientset.NewForConfig(cfg)
+		authClientSet, err = identitatemclientset.NewForConfig(cfg)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(authClientSet).ToNot(BeNil())
 	})
@@ -58,17 +58,17 @@ var _ = Describe("AuthRealm", func() {
 
 	It("process a AuthRealm", func() {
 		By("Create a AuthRealm", func() {
-			authRealm := authrealmv1.AuthRealm{
+			authRealm := authrealmv1alpah1.AuthRealm{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "myauthrealm",
 					Namespace: "default",
 				},
 			}
-			_, err := authClientSet.IdentitatemV1().AuthRealms("default").Create(context.TODO(), &authRealm, metav1.CreateOptions{})
+			_, err := authClientSet.IdentitatemV1alpha1().AuthRealms("default").Create(context.TODO(), &authRealm, metav1.CreateOptions{})
 			Expect(err).To(BeNil())
 		})
 		Eventually(func() error {
-			authRealm, err := authClientSet.IdentitatemV1().AuthRealms("default").Get(context.TODO(), "myauthrealm", metav1.GetOptions{})
+			authRealm, err := authClientSet.IdentitatemV1alpha1().AuthRealms("default").Get(context.TODO(), "myauthrealm", metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading authrealm", "Error", err)
 				return err
