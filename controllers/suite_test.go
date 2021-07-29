@@ -21,16 +21,15 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	authrealmv1 "github.com/identitatem/idp-mgmt-operator/api/authrealm/v1"
-	authclientset "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned"
-	// +kubebuilder:scaffold:imports
+	clientset "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned"
+	identitatemv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var cfg *rest.Config
-var authClientSet *authclientset.Clientset
+var clientSet *clientset.Clientset
 var k8sClient client.Client
 var testEnv *envtest.Environment
 
@@ -54,14 +53,12 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	err = authrealmv1.AddToScheme(scheme.Scheme)
+	err = identitatemv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	// +kubebuilder:scaffold:scheme
-
-	authClientSet, err = authclientset.NewForConfig(cfg)
+	clientSet, err = clientset.NewForConfig(cfg)
 	Expect(err).ToNot(HaveOccurred())
-	Expect(authClientSet).ToNot(BeNil())
+	Expect(clientSet).ToNot(BeNil())
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
@@ -79,13 +76,13 @@ var _ = AfterSuite(func() {
 var _ = Describe("Process AuthRealm: ", func() {
 	It("process a AuthRealm CR", func() {
 		By("creating a AuthRealm CR", func() {
-			authRealm := authrealmv1.AuthRealm{
+			authRealm := identitatemv1alpha1.AuthRealm{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "myauthrealm",
 					Namespace: "default",
 				},
 			}
-			_, err := authClientSet.IdentitatemV1().AuthRealms("default").Create(context.TODO(), &authRealm, metav1.CreateOptions{})
+			_, err := clientSet.IdentitatemV1alpha1().AuthRealms("default").Create(context.TODO(), &authRealm, metav1.CreateOptions{})
 			Expect(err).To(BeNil())
 		})
 		Eventually(func() error {
@@ -102,7 +99,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			if err != nil {
 				return err
 			}
-			authRealm, err := authClientSet.IdentitatemV1().AuthRealms("default").Get(context.TODO(), "myauthrealm", metav1.GetOptions{})
+			authRealm, err := clientSet.IdentitatemV1alpha1().AuthRealms("default").Get(context.TODO(), "myauthrealm", metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading authrealm", "Error", err)
 				return err

@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	authrealmv1 "github.com/identitatem/idp-mgmt-operator/api/authrealm/v1"
+	identitatemv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
 )
 
 // AuthRealmReconciler reconciles a AuthRealm object
@@ -32,7 +32,7 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// your logic here
 	// Fetch the ManagedCluster instance
-	instance := &authrealmv1.AuthRealm{}
+	instance := &identitatemv1alpha1.AuthRealm{}
 
 	if err := r.Client.Get(
 		context.TODO(),
@@ -59,6 +59,6 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&authrealmv1.AuthRealm{}).
+		For(&identitatemv1alpha1.AuthRealm{}).
 		Complete(r)
 }

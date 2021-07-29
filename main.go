@@ -12,7 +12,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	authrealmv1 "github.com/identitatem/idp-mgmt-operator/api/authrealm/v1"
+	authrealmv1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/controllers"
 	// +kubebuilder:scaffold:imports
 )

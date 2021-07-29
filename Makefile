@@ -39,7 +39,7 @@ run: generate fmt vet manifests
 	go run ./main.go
 
 run-coverage: generate fmt vet manifests
-	go test -covermode=atomic -coverpkg=github.com/identitatem/idp-mgmt-operator/controllers/... -tags testrunmain -run "^TestRunMain$$" -coverprofile=cover.out . 
+	go test -covermode=atomic -coverpkg=github.com/identitatem/${PROJECT_NAME}/controllers/... -tags testrunmain -run "^TestRunMain$$" -coverprofile=cover.out . 
 
 # Install CRDs into a cluster
 install: manifests
@@ -78,7 +78,7 @@ vet:
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-generate-clients:
+generate-clients: generate
 	./hack/update-codegen.sh
 
 # Build the docker image
@@ -106,7 +106,7 @@ ifeq (, $(shell which controller-gen))
 	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$CONTROLLER_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.5 ;\
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.0 ;\
 	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
 	}
 CONTROLLER_GEN=$(GOBIN)/controller-gen

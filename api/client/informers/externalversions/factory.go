@@ -10,7 +10,7 @@ import (
 	time "time"
 
 	versioned "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned"
-	authrealm "github.com/identitatem/idp-mgmt-operator/api/client/informers/externalversions/authrealm"
+	identitatem "github.com/identitatem/idp-mgmt-operator/api/client/informers/externalversions/identitatem"
 	internalinterfaces "github.com/identitatem/idp-mgmt-operator/api/client/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -158,9 +158,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Identitatem() authrealm.Interface
+	Identitatem() identitatem.Interface
 }
 
-func (f *sharedInformerFactory) Identitatem() authrealm.Interface {
-	return authrealm.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Identitatem() identitatem.Interface {
+	return identitatem.New(f, f.namespace, f.tweakListOptions)
 }
