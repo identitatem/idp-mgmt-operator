@@ -1,7 +1,9 @@
-apiVersion: identitatem.io/v1
+apiVersion: identitatem.io/v1alpha1
 kind: AuthRealm
 metadata:
   name: authrealm-sample
 spec:
   # Add fields here
   foo: bar
+  identityProviderRef:
+    name: myIdentityProvider
