@@ -75,7 +75,7 @@ vet:
 	go vet ./...
 
 # Generate code
-generate: controller-gen
+generate: kubebuilder-tools controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 generate-clients: generate
@@ -112,6 +112,17 @@ ifeq (, $(shell which controller-gen))
 CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
+endif
+
+kubebuilder-tools:
+ifeq (, $(shell which kubebuilder))
+	@{ \
+		set -ex ;\
+		KUBEBUILDER_TMP_DIR=$$(mktemp -d) ;\
+		cd $$KUBEBUILDER_TMP_DIR ;\
+		curl -L -o $$KUBEBUILDER_TMP_DIR/kubebuilder https://go.kubebuilder.io/dl/3.1.0/$$(go env GOOS)/$$(go env GOARCH) ;\
+		chmod +x $$KUBEBUILDER_TMP_DIR/kubebuilder && mv $$KUBEBUILDER_TMP_DIR/kubebuilder /usr/local/bin/ ;\
+	}
 endif
 
 functional-test-full: docker-build-coverage
