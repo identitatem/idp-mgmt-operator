@@ -125,18 +125,7 @@ functional-test:
 	@echo running functional tests
 	ginkgo -tags functional -v --slowSpecThreshold=30 test/functional -- -v=5
 
-kubebuilder-tools:
-ifeq (, $(shell which kubebuilder))
-		@{ \
-			set -ex ;\
-			KUBEBUILDER_TMP_DIR=$$(mktemp -d) ;\
-			cd $$KUBEBUILDER_TMP_DIR ;\
-			curl -L -o $$KUBEBUILDER_TMP_DIR/kubebuilder https://go.kubebuilder.io/dl/3.1.0/$$(go env GOOS)/$$(go env GOARCH) ;\
-			chmod +x $$KUBEBUILDER_TMP_DIR/kubebuilder && mv $$KUBEBUILDER_TMP_DIR/kubebuilder /usr/local/bin/ ;\
-		}
-endif
-
-# See https://book.kubebuilder.io/reference/envtest.html.  
+# See https://book.kubebuilder.io/reference/envtest.html.
 #    kubebuilder 2.3.x contained kubebuilder and etc in a tgz
 #    kubebuilder 3.x only had the kubebuilder, not etcd, so we had to download a different way
 # After running this make target, you will need to either:
