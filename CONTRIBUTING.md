@@ -1,6 +1,6 @@
 [comment]: # ( Copyright Contributors to the Open Cluster Management project )
 
-**Table of Contents** 
+**Table of Contents**
 
 - [Contributing guidelines](#contributing-guidelines)
     - [Contributions](#contributions)
@@ -37,6 +37,9 @@ Before you commit, please run following commands to check your code and then if 
 ```shell
 make check
 make test
+# NOTE: If `make test` returns the error:
+#  fork/exec /usr/local/kubebuilder/bin/etcd: no such file or directory
+# Please follow comments in the Makefile for `make envtest-tools`
 make functional-test-full
 ```
 
@@ -69,4 +72,3 @@ Important: the project must be in the GOPATH
 ```shell
 make generate-clients
 ```
-

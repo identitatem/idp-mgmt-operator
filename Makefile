@@ -1,5 +1,6 @@
 
 # Copyright Contributors to the Open Cluster Management project
+SHELL := /bin/bash
 
 export PROJECT_DIR            = $(shell 'pwd')
 export PROJECT_NAME			  = $(shell basename ${PROJECT_DIR})
@@ -39,7 +40,7 @@ run: generate fmt vet manifests
 	go run ./main.go
 
 run-coverage: generate fmt vet manifests
-	go test -covermode=atomic -coverpkg=github.com/identitatem/${PROJECT_NAME}/controllers/... -tags testrunmain -run "^TestRunMain$$" -coverprofile=cover.out . 
+	go test -covermode=atomic -coverpkg=github.com/identitatem/${PROJECT_NAME}/controllers/... -tags testrunmain -run "^TestRunMain$$" -coverprofile=cover.out .
 
 # Install CRDs into a cluster
 install: manifests
@@ -128,9 +129,32 @@ endif
 functional-test-full: docker-build-coverage
 	@build/run-functional-tests.sh $(IMG_COVERAGE)
 
-functional-test-full-clean: 
+functional-test-full-clean:
 	@build/run-functional-tests-clean.sh
 
 functional-test:
 	@echo running functional tests
 	ginkgo -tags functional -v --slowSpecThreshold=30 test/functional -- -v=5
+
+# See https://book.kubebuilder.io/reference/envtest.html.
+#    kubebuilder 2.3.x contained kubebuilder and etc in a tgz
+#    kubebuilder 3.x only had the kubebuilder, not etcd, so we had to download a different way
+# After running this make target, you will need to either:
+# - export KUBEBUILDER_ASSETS=$HOME/kubebuilder/bin
+# OR
+# - sudo mv $HOME/kubebuilder /usr/local
+#
+# This will allow you to run `make test`
+envtest-tools:
+ifeq (, $(shell which etcd))
+		@{ \
+			set -ex ;\
+			ENVTEST_TMP_DIR=$$(mktemp -d) ;\
+			cd $$ENVTEST_TMP_DIR ;\
+			K8S_VERSION=1.19.2 ;\
+			curl -sSLo envtest-bins.tar.gz https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-$$K8S_VERSION-$$(go env GOOS)-$$(go env GOARCH).tar.gz ;\
+			tar xf envtest-bins.tar.gz ;\
+			mv $$ENVTEST_TMP_DIR/kubebuilder $$HOME ;\
+			rm -rf $$ENVTEST_TMP_DIR ;\
+		}
+endif
