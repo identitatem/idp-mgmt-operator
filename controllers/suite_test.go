@@ -104,8 +104,8 @@ var _ = Describe("Process AuthRealm: ", func() {
 				logf.Log.Info("Error while reading authrealm", "Error", err)
 				return err
 			}
-			if len(authRealm.Spec.Foo) == 0 {
-				logf.Log.Info("AuthRealm Foo is still empty")
+			if len(authRealm.Spec.MappingMethod) == 0 {
+				logf.Log.Info("AuthRealm MappingMethod is still empty")
 				return fmt.Errorf("AuthRealm %s/%s not processed", authRealm.Namespace, authRealm.Name)
 			}
 			return nil

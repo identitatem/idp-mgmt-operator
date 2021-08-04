@@ -4,7 +4,3 @@ metadata:
   name: authrealm-sample
   namespace: default
 spec:
-  # Add fields here
-  foo: bar
-  identityProviderRef:
-    name: myIdentityProvider
