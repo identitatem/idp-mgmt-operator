@@ -10,6 +10,7 @@ rules:
   - identitatem.io
   resources:
   - authrealms
+  - identityproviders
   verbs:
   - create
   - delete
@@ -22,6 +23,7 @@ rules:
   - identitatem.io
   resources:
   - authrealms/status
+  - identityproviders/status
   verbs:
   - get
   - patch
