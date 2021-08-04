@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	identitatemv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
+	openshiftconfigv1 "github.com/openshift/api/config/v1"
 )
 
 // AuthRealmReconciler reconciles a AuthRealm object
@@ -49,7 +50,8 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return reconcile.Result{}, err
 	}
 
-	instance.Spec.Foo = "test"
+	instance.Spec.MappingMethod = openshiftconfigv1.MappingMethodClaim
+
 	if err := r.Client.Update(context.TODO(), instance); err != nil {
 		return ctrl.Result{}, err
 	}

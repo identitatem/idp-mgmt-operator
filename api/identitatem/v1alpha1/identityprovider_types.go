@@ -3,6 +3,7 @@
 package v1alpha1
 
 import (
+	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -13,16 +14,39 @@ import (
 type IdentityProviderSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make generate-clients" to regenerate code after modifying this file
+	// github enables user authentication using GitHub credentials
+	// +optional
+	GitHub *openshiftconfigv1.GitHubIdentityProvider `json:"github,omitempty"`
 
-	// Foo is an example field of AuthRealm. Edit AuthRealm_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// google enables user authentication using Google credentials
+	// +optional
+	Google *openshiftconfigv1.GoogleIdentityProvider `json:"google,omitempty"`
+
+	// htpasswd enables user authentication using an HTPasswd file to validate credentials
+	// +optional
+	HTPasswd *openshiftconfigv1.HTPasswdIdentityProvider `json:"htpasswd,omitempty"`
+
+	// ldap enables user authentication using LDAP credentials
+	// +optional
+	LDAP *openshiftconfigv1.LDAPIdentityProvider `json:"ldap,omitempty"`
+
+	// openID enables user authentication using OpenID credentials
+	// +optional
+	OpenID *openshiftconfigv1.OpenIDIdentityProvider `json:"openID,omitempty"`
 }
 
 // IdentityProviderStatus defines the observed state of IdentityProvider
 type IdentityProviderStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make generate-clients" to regenerate code after modifying this file
+	// Conditions contains the different condition statuses for this AuthRealm.
+	// +optional
+	Conditions []metav1.Condition `json:"conditions"`
 }
+
+const (
+	IdentityProviderSucceed string = "succeed"
+)
 
 // +genclient
 // +kubebuilder:object:root=true
