@@ -12,6 +12,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -85,30 +86,59 @@ var _ = Describe("Process AuthRealm: ", func() {
 			_, err := clientSet.IdentitatemV1alpha1().AuthRealms("default").Create(context.TODO(), &authRealm, metav1.CreateOptions{})
 			Expect(err).To(BeNil())
 		})
-		Eventually(func() error {
-			r := AuthRealmReconciler{
-				Client: k8sClient,
-				Log:    logf.Log,
-				Scheme: scheme.Scheme,
-			}
+		By("Processing a first time", func() {
+			Eventually(func() error {
+				r := AuthRealmReconciler{
+					Client: k8sClient,
+					Log:    logf.Log,
+					Scheme: scheme.Scheme,
+				}
 
-			req := ctrl.Request{}
-			req.Name = "myauthrealm"
-			req.Namespace = "default"
-			_, err := r.Reconcile(context.TODO(), req)
-			if err != nil {
-				return err
-			}
-			authRealm, err := clientSet.IdentitatemV1alpha1().AuthRealms("default").Get(context.TODO(), "myauthrealm", metav1.GetOptions{})
-			if err != nil {
-				logf.Log.Info("Error while reading authrealm", "Error", err)
-				return err
-			}
-			if len(authRealm.Spec.MappingMethod) == 0 {
-				logf.Log.Info("AuthRealm MappingMethod is still empty")
-				return fmt.Errorf("AuthRealm %s/%s not processed", authRealm.Namespace, authRealm.Name)
-			}
-			return nil
-		}, 30, 1).Should(BeNil())
+				req := ctrl.Request{}
+				req.Name = "myauthrealm"
+				req.Namespace = "default"
+				_, err := r.Reconcile(context.TODO(), req)
+				if err != nil {
+					return err
+				}
+				authRealm, err := clientSet.IdentitatemV1alpha1().AuthRealms("default").Get(context.TODO(), "myauthrealm", metav1.GetOptions{})
+				if err != nil {
+					logf.Log.Info("Error while reading authrealm", "Error", err)
+					return err
+				}
+				if len(authRealm.Spec.MappingMethod) == 0 {
+					logf.Log.Info("AuthRealm MappingMethod is still empty")
+					return fmt.Errorf("AuthRealm %s/%s not processed", authRealm.Namespace, authRealm.Name)
+				}
+				return nil
+			}, 30, 1).Should(BeNil())
+		})
+		By("Processing a second time", func() {
+			Eventually(func() error {
+				r := AuthRealmReconciler{
+					Client: k8sClient,
+					Log:    logf.Log,
+					Scheme: scheme.Scheme,
+				}
+
+				req := ctrl.Request{}
+				req.Name = "myauthrealm"
+				req.Namespace = "default"
+				_, err := r.Reconcile(context.TODO(), req)
+				if err != nil {
+					return err
+				}
+				authRealm, err := clientSet.IdentitatemV1alpha1().AuthRealms("default").Get(context.TODO(), "myauthrealm", metav1.GetOptions{})
+				if err != nil {
+					logf.Log.Info("Error while reading authrealm", "Error", err)
+					return err
+				}
+				if authRealm.Spec.MappingMethod != openshiftconfigv1.MappingMethodAdd {
+					logf.Log.Info("AuthRealm MappingMethod is still not add")
+					return fmt.Errorf("AuthRealm %s/%s not processed", authRealm.Namespace, authRealm.Name)
+				}
+				return nil
+			}, 30, 1).Should(BeNil())
+		})
 	})
 })
