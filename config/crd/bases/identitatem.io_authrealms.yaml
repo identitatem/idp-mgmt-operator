@@ -42,6 +42,15 @@ spec:
                 items:
                   description: AuthProxy defines the auth proxy (dex, rhsso...)
                   properties:
+                    certificatesSecretRef:
+                      description: Certificates references a secret containing `ca.crt`,
+                        `tls.crt`, and `tls.key`
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      type: object
                     host:
                       description: Host defines the url of the proxy
                       type: string
@@ -320,6 +329,10 @@ spec:
                 required:
                 - spec
                 type: object
+              remediateAction:
+                description: RemediateAction defines the remediation action to apply
+                  to the idp policy
+                type: string
             type: object
           status:
             description: AuthRealmStatus defines the observed state of AuthRealm

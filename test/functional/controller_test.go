@@ -12,11 +12,13 @@ import (
 	"time"
 
 	identitatemclientset "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned"
-	authrealmv1alpah1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
+	identitatemv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
@@ -32,6 +34,7 @@ func init() {
 }
 
 var authClientSet *identitatemclientset.Clientset
+var kubeClientSet *kubernetes.Clientset
 var cfg *rest.Config
 
 var _ = Describe("AuthRealm", func() {
@@ -54,6 +57,9 @@ var _ = Describe("AuthRealm", func() {
 		authClientSet, err = identitatemclientset.NewForConfig(cfg)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(authClientSet).ToNot(BeNil())
+		kubeClientSet, err = kubernetes.NewForConfig(cfg)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(kubeClientSet).ToNot(BeNil())
 	})
 
 	AfterEach(func() {
@@ -61,7 +67,7 @@ var _ = Describe("AuthRealm", func() {
 
 	It("process a AuthRealm CR", func() {
 		By("Create a AuthRealm", func() {
-			authRealm := authrealmv1alpah1.AuthRealm{
+			authRealm := identitatemv1alpha1.AuthRealm{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      AuthRealmName,
 					Namespace: AuthRealmNameSpace,
@@ -81,37 +87,47 @@ var _ = Describe("AuthRealm", func() {
 					logf.Log.Info("AuthRealm MappingMethod is still empty")
 					return fmt.Errorf("AuthRealm %s/%s not processed", authRealm.Namespace, authRealm.Name)
 				}
+				logf.Log.Info("AuthRealm", "MappingMethod", authRealm.Spec.MappingMethod)
 				return nil
 			}, 30, 1).Should(BeNil())
 		})
 	})
-	It("process a identityPRovider CR", func() {
+	It("process a identityPRovider CR in another NS, the mappingMethod should not be updated", func() {
 		IdentityProviderName := "myidentityprovider"
-		IdentityProviderNameeSpace := "default"
-		By("Create a AuthRealm", func() {
-			identityProvider := authrealmv1alpah1.IdentityProvider{
+		IdentityProviderNamespace := "anotherns"
+		By("Creating the other ns", func() {
+			ns := &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      IdentityProviderName,
-					Namespace: IdentityProviderNameeSpace,
+					Name: IdentityProviderNamespace,
 				},
 			}
-			_, err := authClientSet.IdentitatemV1alpha1().IdentityProviders(IdentityProviderNameeSpace).Create(context.TODO(), &identityProvider, metav1.CreateOptions{})
+			_, err := kubeClientSet.CoreV1().Namespaces().Create(context.TODO(), ns, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By("Create a IdentityProvider", func() {
+			identityProvider := identitatemv1alpha1.IdentityProvider{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      IdentityProviderName,
+					Namespace: IdentityProviderNamespace,
+				},
+			}
+			_, err := authClientSet.IdentitatemV1alpha1().IdentityProviders(IdentityProviderNamespace).Create(context.TODO(), &identityProvider, metav1.CreateOptions{})
 			Expect(err).To(BeNil())
 		})
 		By("Checking the AuthRealm for update on identityprovider creation", func() {
-			Eventually(func() error {
+			Consistently(func() error {
 				authRealm, err := authClientSet.IdentitatemV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
 				if err != nil {
 					logf.Log.Info("Error while reading authrealm", "Error", err)
 					return err
 				}
-				if authRealm.Spec.MappingMethod != openshiftconfigv1.MappingMethodAdd {
-					logf.Log.Info("AuthRealm MappingMethod is still not Add")
-					return fmt.Errorf("AuthRealm %s/%s not processed", authRealm.Namespace, authRealm.Name)
+				if authRealm.Spec.MappingMethod == openshiftconfigv1.MappingMethodClaim {
+					logf.Log.Info("AuthRealm MappingMethod is still Claim")
+					return nil
 				}
-				return nil
+				logf.Log.Info("AuthRealm", "MappingMethod", authRealm.Spec.MappingMethod)
+				return fmt.Errorf("AuthRealm %s/%s not changed and it is not Claim anymore", authRealm.Namespace, authRealm.Name)
 			}, 30, 1).Should(BeNil())
 		})
 	})
-
 })

@@ -85,7 +85,7 @@ kind load docker-image ${DOCKER_IMAGE_AND_TAG} --name=${CLUSTER_NAME} -v 99 || e
 echo "install cluster"
 make deploy-coverage
 make functional-test
-
+exit 1
 echo "Wait 10 sec to let coverage to flush"
 sleep 10
 

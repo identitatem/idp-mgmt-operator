@@ -3,6 +3,7 @@
 package v1alpha1
 
 import (
+	policyv1 "github.com/open-cluster-management/governance-policy-propagator/pkg/apis/policy/v1"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,6 +26,9 @@ type AuthRealmSpec struct {
 	// +optional
 	MappingMethod openshiftconfigv1.MappingMethodType `json:"mappingMethod,omitempty"`
 
+	//RemediateAction defines the remediation action to apply to the idp policy
+	RemediateAction policyv1.RemediationAction `json:"remediateAction,omitempty"`
+
 	//AuthProxy defines the list of authproxy to setup in each cluster defined by the placement.
 	AuthProxy []AuthProxy `json:"authProxy,omitempty"`
 }
@@ -42,6 +46,8 @@ type AuthProxy struct {
 	Type AuthProxyType `json:"type,omitempty"`
 	//Host defines the url of the proxy
 	Host string `json:"host,omitempty"`
+	//Certificates references a secret containing `ca.crt`, `tls.crt`, and `tls.key`
+	CertificatesSecretRef corev1.LocalObjectReference `json:"certificatesSecretRef,omitempty"`
 	// IdentityProviderRef reference an identity provider
 	IdentityProviderRefs []corev1.LocalObjectReference `json:"identityProviderRefs,omitempty"`
 }

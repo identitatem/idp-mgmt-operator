@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -52,13 +53,41 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return reconcile.Result{}, err
 	}
 
-	switch instance.Spec.MappingMethod {
-	case "":
-		instance.Spec.MappingMethod = openshiftconfigv1.MappingMethodClaim
-	case openshiftconfigv1.MappingMethodClaim:
+	r.Log.Info("Process", "Name", instance.GetName(), "Namespace", instance.GetNamespace())
+
+	if len(instance.Spec.AuthProxy) == 0 {
+		if instance.Spec.MappingMethod == "" {
+			instance.Spec.MappingMethod = openshiftconfigv1.MappingMethodClaim
+		}
+	} else {
 		instance.Spec.MappingMethod = openshiftconfigv1.MappingMethodAdd
 	}
 
+	r.Log.Info("Instance", "MappingMethod", instance.Spec.MappingMethod)
+
+	for _, ap := range instance.Spec.AuthProxy {
+		for _, idp := range ap.IdentityProviderRefs {
+			idpObj := &identitatemv1alpha1.IdentityProvider{}
+			err := r.Client.Get(context.TODO(), client.ObjectKey{
+				Name:      idp.Name,
+				Namespace: instance.Namespace,
+			}, idpObj)
+			if err != nil {
+				if errors.IsNotFound(err) {
+					continue
+				}
+				return ctrl.Result{}, err
+			}
+			err = controllerutil.SetOwnerReference(instance, idpObj, r.Scheme)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			err = r.Client.Update(context.TODO(), idpObj)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
 	if err := r.Client.Update(context.TODO(), instance); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -71,7 +100,17 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&identitatemv1alpha1.AuthRealm{}).
 		Watches(
 			&source.Kind{Type: &identitatemv1alpha1.IdentityProvider{}},
-			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &identitatemv1alpha1.AuthRealm{}},
+			// handler.EnqueueRequestsFromMapFunc(func(obj client.Object) []reconcile.Request {
+			// 	return []reconcile.Request{
+			// 		{
+			// 			NamespacedName: types.NamespacedName{
+			// 				Name:      obj.GetName(),
+			// 				Namespace: obj.GetNamespace(),
+			// 			},
+			// 		},
+			// 	}
+			// }),
+			&handler.EnqueueRequestForOwner{IsController: false, OwnerType: &identitatemv1alpha1.AuthRealm{}},
 		).
 		Complete(r)
 }
