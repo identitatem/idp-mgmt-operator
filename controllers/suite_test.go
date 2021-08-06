@@ -13,6 +13,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -75,18 +76,20 @@ var _ = AfterSuite(func() {
 })
 
 var _ = Describe("Process AuthRealm: ", func() {
-	It("process a AuthRealm CR", func() {
-		By("creating a AuthRealm CR", func() {
+	It("process a AuthRealm CR w/o identityProvider", func() {
+		AuthRealmName := "myauthrealm"
+		AuthRealmNameSpace := "default"
+		By("creating a AuthRealm CR w/o identityProvider", func() {
 			authRealm := identitatemv1alpha1.AuthRealm{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "myauthrealm",
-					Namespace: "default",
+					Name:      AuthRealmName,
+					Namespace: AuthRealmNameSpace,
 				},
 			}
-			_, err := clientSet.IdentitatemV1alpha1().AuthRealms("default").Create(context.TODO(), &authRealm, metav1.CreateOptions{})
+			_, err := clientSet.IdentitatemV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), &authRealm, metav1.CreateOptions{})
 			Expect(err).To(BeNil())
 		})
-		By("Processing a first time", func() {
+		By("Processing w/o identityProvider", func() {
 			Eventually(func() error {
 				r := AuthRealmReconciler{
 					Client: k8sClient,
@@ -101,19 +104,57 @@ var _ = Describe("Process AuthRealm: ", func() {
 				if err != nil {
 					return err
 				}
-				authRealm, err := clientSet.IdentitatemV1alpha1().AuthRealms("default").Get(context.TODO(), "myauthrealm", metav1.GetOptions{})
+				authRealm, err := clientSet.IdentitatemV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
 				if err != nil {
 					logf.Log.Info("Error while reading authrealm", "Error", err)
 					return err
 				}
-				if len(authRealm.Spec.MappingMethod) == 0 {
-					logf.Log.Info("AuthRealm MappingMethod is still empty")
+				if authRealm.Spec.MappingMethod != openshiftconfigv1.MappingMethodClaim {
+					logf.Log.Info("AuthRealm MappingMethod is still not claim")
 					return fmt.Errorf("AuthRealm %s/%s not processed", authRealm.Namespace, authRealm.Name)
 				}
 				return nil
 			}, 30, 1).Should(BeNil())
 		})
-		By("Processing a second time", func() {
+	})
+	It("process a AuthRealm CR with identityProvider", func() {
+		IdentityProviderName := "myidentityprovider"
+		IdentityProviderNamespace := "default"
+		AuthRealmName := "myauthrealmwithid"
+		AuthRealmNameSpace := "default"
+		By("Create a IdentityProvider", func() {
+			identityProvider := identitatemv1alpha1.IdentityProvider{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      IdentityProviderName,
+					Namespace: IdentityProviderNamespace,
+				},
+			}
+			_, err := clientSet.IdentitatemV1alpha1().IdentityProviders(IdentityProviderNamespace).Create(context.TODO(), &identityProvider, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By("Create a AuthRealm CR with identityProvider", func() {
+			authRealm := identitatemv1alpha1.AuthRealm{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      AuthRealmName,
+					Namespace: AuthRealmNameSpace,
+				},
+				Spec: identitatemv1alpha1.AuthRealmSpec{
+					AuthProxy: []identitatemv1alpha1.AuthProxy{
+						{
+							Type: identitatemv1alpha1.DexAuthProxy,
+							IdentityProviderRefs: []corev1.LocalObjectReference{
+								{
+									Name: IdentityProviderName,
+								},
+							},
+						},
+					},
+				},
+			}
+			_, err := clientSet.IdentitatemV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), &authRealm, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By("Processing with identityProvider", func() {
 			Eventually(func() error {
 				r := AuthRealmReconciler{
 					Client: k8sClient,
@@ -122,13 +163,13 @@ var _ = Describe("Process AuthRealm: ", func() {
 				}
 
 				req := ctrl.Request{}
-				req.Name = "myauthrealm"
-				req.Namespace = "default"
+				req.Name = AuthRealmName
+				req.Namespace = AuthRealmNameSpace
 				_, err := r.Reconcile(context.TODO(), req)
 				if err != nil {
 					return err
 				}
-				authRealm, err := clientSet.IdentitatemV1alpha1().AuthRealms("default").Get(context.TODO(), "myauthrealm", metav1.GetOptions{})
+				authRealm, err := clientSet.IdentitatemV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
 				if err != nil {
 					logf.Log.Info("Error while reading authrealm", "Error", err)
 					return err
@@ -137,8 +178,20 @@ var _ = Describe("Process AuthRealm: ", func() {
 					logf.Log.Info("AuthRealm MappingMethod is still not add")
 					return fmt.Errorf("AuthRealm %s/%s not processed", authRealm.Namespace, authRealm.Name)
 				}
+
 				return nil
 			}, 30, 1).Should(BeNil())
+		})
+		By("Checking ownerReference", func() {
+			identityProvider, err := clientSet.IdentitatemV1alpha1().IdentityProviders(IdentityProviderNamespace).Get(context.TODO(), IdentityProviderName, metav1.GetOptions{})
+			Expect(err).Should(BeNil())
+			found := false
+			for _, r := range identityProvider.OwnerReferences {
+				if r.Name == AuthRealmName {
+					found = true
+				}
+			}
+			Expect(found).To(BeTrue())
 		})
 	})
 })
