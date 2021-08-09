@@ -1,6 +1,0 @@
-apiVersion: identitatem.io/v1alpha1
-kind: IdentityProvider
-metadata:
-  name: identitityprovider-sample
-  namespace: default
-spec:

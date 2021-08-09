@@ -7,10 +7,9 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - identitatem.io
+  - identityconfig.identitatem.io
   resources:
   - authrealms
-  - identityproviders
   verbs:
   - create
   - delete
@@ -19,12 +18,3 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - identitatem.io
-  resources:
-  - authrealms/status
-  - identityproviders/status
-  verbs:
-  - get
-  - patch
-  - update

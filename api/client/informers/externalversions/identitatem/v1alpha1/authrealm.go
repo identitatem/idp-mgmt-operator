@@ -48,13 +48,13 @@ func NewFilteredAuthRealmInformer(client versioned.Interface, namespace string, 
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.IdentitatemV1alpha1().AuthRealms(namespace).List(context.TODO(), options)
+				return client.IdentityconfigV1alpha1().AuthRealms(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.IdentitatemV1alpha1().AuthRealms(namespace).Watch(context.TODO(), options)
+				return client.IdentityconfigV1alpha1().AuthRealms(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&identitatemv1alpha1.AuthRealm{},

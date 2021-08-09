@@ -11,11 +11,3 @@ type AuthRealmListerExpansion interface{}
 // AuthRealmNamespaceListerExpansion allows custom methods to be added to
 // AuthRealmNamespaceLister.
 type AuthRealmNamespaceListerExpansion interface{}
-
-// IdentityProviderListerExpansion allows custom methods to be added to
-// IdentityProviderLister.
-type IdentityProviderListerExpansion interface{}
-
-// IdentityProviderNamespaceListerExpansion allows custom methods to be added to
-// IdentityProviderNamespaceLister.
-type IdentityProviderNamespaceListerExpansion interface{}
