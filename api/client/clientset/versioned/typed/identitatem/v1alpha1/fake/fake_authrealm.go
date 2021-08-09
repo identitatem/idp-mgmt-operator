@@ -18,13 +18,13 @@ import (
 
 // FakeAuthRealms implements AuthRealmInterface
 type FakeAuthRealms struct {
-	Fake *FakeIdentitatemV1alpha1
+	Fake *FakeIdentityconfigV1alpha1
 	ns   string
 }
 
-var authrealmsResource = schema.GroupVersionResource{Group: "identitatem.io", Version: "v1alpha1", Resource: "authrealms"}
+var authrealmsResource = schema.GroupVersionResource{Group: "identityconfig.identitatem.io", Version: "v1alpha1", Resource: "authrealms"}
 
-var authrealmsKind = schema.GroupVersionKind{Group: "identitatem.io", Version: "v1alpha1", Kind: "AuthRealm"}
+var authrealmsKind = schema.GroupVersionKind{Group: "identityconfig.identitatem.io", Version: "v1alpha1", Kind: "AuthRealm"}
 
 // Get takes name of the authRealm, and returns the corresponding authRealm object, and an error if there is any.
 func (c *FakeAuthRealms) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AuthRealm, err error) {

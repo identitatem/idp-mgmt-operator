@@ -12,8 +12,6 @@ import (
 type Interface interface {
 	// AuthRealms returns a AuthRealmInformer.
 	AuthRealms() AuthRealmInformer
-	// IdentityProviders returns a IdentityProviderInformer.
-	IdentityProviders() IdentityProviderInformer
 }
 
 type version struct {
@@ -30,9 +28,4 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // AuthRealms returns a AuthRealmInformer.
 func (v *version) AuthRealms() AuthRealmInformer {
 	return &authRealmInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// IdentityProviders returns a IdentityProviderInformer.
-func (v *version) IdentityProviders() IdentityProviderInformer {
-	return &identityProviderInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

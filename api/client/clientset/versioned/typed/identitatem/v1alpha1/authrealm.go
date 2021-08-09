@@ -43,7 +43,7 @@ type authRealms struct {
 }
 
 // newAuthRealms returns a AuthRealms
-func newAuthRealms(c *IdentitatemV1alpha1Client, namespace string) *authRealms {
+func newAuthRealms(c *IdentityconfigV1alpha1Client, namespace string) *authRealms {
 	return &authRealms{
 		client: c.RESTClient(),
 		ns:     namespace,

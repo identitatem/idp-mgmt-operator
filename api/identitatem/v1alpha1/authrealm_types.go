@@ -7,7 +7,7 @@ import (
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	placementrulev1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
+	placementv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -20,7 +20,7 @@ type AuthRealmSpec struct {
 
 	// Placement defines a rule to select a set of ManagedClusters from the ManagedClusterSets bound
 	// to the placement namespace.
-	Placement *placementrulev1alpha1.Placement `json:"placement,omitempty"`
+	Placement *Placement `json:"placement,omitempty"`
 	// mappingMethod determines how identities from this provider are mapped to users
 	// Defaults to "claim"
 	// +optional
@@ -31,6 +31,12 @@ type AuthRealmSpec struct {
 
 	//AuthProxy defines the list of authproxy to setup in each cluster defined by the placement.
 	AuthProxy []AuthProxy `json:"authProxy,omitempty"`
+}
+
+//Placement defines the placement.
+type Placement struct {
+	Name string                          `json:"name,omitempty"`
+	Spec placementv1alpha1.PlacementSpec `json:"spec,omitempty"`
 }
 
 type AuthProxyType string
@@ -48,13 +54,37 @@ type AuthProxy struct {
 	Host string `json:"host,omitempty"`
 	//Certificates references a secret containing `ca.crt`, `tls.crt`, and `tls.key`
 	CertificatesSecretRef corev1.LocalObjectReference `json:"certificatesSecretRef,omitempty"`
-	// IdentityProviderRef reference an identity provider
-	IdentityProviderRefs []corev1.LocalObjectReference `json:"identityProviderRefs,omitempty"`
+	// IdentityProviders reference an identity provider
+	IdentityProviders []IdentityProvider `json:"identityProviders,omitempty"`
 }
 
 const (
 	LocalHost string = "local"
 )
+
+type IdentityProvider struct {
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// Important: Run "make generate-clients" to regenerate code after modifying this file
+	// github enables user authentication using GitHub credentials
+	// +optional
+	GitHub *openshiftconfigv1.GitHubIdentityProvider `json:"github,omitempty"`
+
+	// google enables user authentication using Google credentials
+	// +optional
+	Google *openshiftconfigv1.GoogleIdentityProvider `json:"google,omitempty"`
+
+	// htpasswd enables user authentication using an HTPasswd file to validate credentials
+	// +optional
+	HTPasswd *openshiftconfigv1.HTPasswdIdentityProvider `json:"htpasswd,omitempty"`
+
+	// ldap enables user authentication using LDAP credentials
+	// +optional
+	LDAP *openshiftconfigv1.LDAPIdentityProvider `json:"ldap,omitempty"`
+
+	// openID enables user authentication using OpenID credentials
+	// +optional
+	OpenID *openshiftconfigv1.OpenIDIdentityProvider `json:"openID,omitempty"`
+}
 
 // AuthRealmStatus defines the observed state of AuthRealm
 type AuthRealmStatus struct {

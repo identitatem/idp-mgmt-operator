@@ -5,5 +5,3 @@
 package v1alpha1
 
 type AuthRealmExpansion interface{}
-
-type IdentityProviderExpansion interface{}

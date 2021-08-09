@@ -158,9 +158,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Identitatem() identitatem.Interface
+	Identityconfig() identitatem.Interface
 }
 
-func (f *sharedInformerFactory) Identitatem() identitatem.Interface {
+func (f *sharedInformerFactory) Identityconfig() identitatem.Interface {
 	return identitatem.New(f, f.namespace, f.tweakListOptions)
 }

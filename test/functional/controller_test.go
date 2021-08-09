@@ -16,7 +16,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -73,60 +72,22 @@ var _ = Describe("AuthRealm", func() {
 					Namespace: AuthRealmNameSpace,
 				},
 			}
-			_, err := authClientSet.IdentitatemV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), &authRealm, metav1.CreateOptions{})
+			_, err := authClientSet.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), &authRealm, metav1.CreateOptions{})
 			Expect(err).To(BeNil())
 		})
 		By("Checking the AuthRealm for update on authrealm creation", func() {
 			Eventually(func() error {
-				authRealm, err := authClientSet.IdentitatemV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
+				authRealm, err := authClientSet.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
 				if err != nil {
 					logf.Log.Info("Error while reading authrealm", "Error", err)
 					return err
 				}
-				if len(authRealm.Spec.MappingMethod) == 0 {
+				if authRealm.Spec.MappingMethod != openshiftconfigv1.MappingMethodClaim {
 					logf.Log.Info("AuthRealm MappingMethod is still empty")
 					return fmt.Errorf("AuthRealm %s/%s not processed", authRealm.Namespace, authRealm.Name)
 				}
 				logf.Log.Info("AuthRealm", "MappingMethod", authRealm.Spec.MappingMethod)
 				return nil
-			}, 30, 1).Should(BeNil())
-		})
-	})
-	It("process a identityPRovider CR in another NS, the mappingMethod should not be updated", func() {
-		IdentityProviderName := "myidentityprovider"
-		IdentityProviderNamespace := "anotherns"
-		By("Creating the other ns", func() {
-			ns := &corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: IdentityProviderNamespace,
-				},
-			}
-			_, err := kubeClientSet.CoreV1().Namespaces().Create(context.TODO(), ns, metav1.CreateOptions{})
-			Expect(err).To(BeNil())
-		})
-		By("Create a IdentityProvider", func() {
-			identityProvider := identitatemv1alpha1.IdentityProvider{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      IdentityProviderName,
-					Namespace: IdentityProviderNamespace,
-				},
-			}
-			_, err := authClientSet.IdentitatemV1alpha1().IdentityProviders(IdentityProviderNamespace).Create(context.TODO(), &identityProvider, metav1.CreateOptions{})
-			Expect(err).To(BeNil())
-		})
-		By("Checking the AuthRealm for update on identityprovider creation", func() {
-			Consistently(func() error {
-				authRealm, err := authClientSet.IdentitatemV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
-				if err != nil {
-					logf.Log.Info("Error while reading authrealm", "Error", err)
-					return err
-				}
-				if authRealm.Spec.MappingMethod == openshiftconfigv1.MappingMethodClaim {
-					logf.Log.Info("AuthRealm MappingMethod is still Claim")
-					return nil
-				}
-				logf.Log.Info("AuthRealm", "MappingMethod", authRealm.Spec.MappingMethod)
-				return fmt.Errorf("AuthRealm %s/%s not changed and it is not Claim anymore", authRealm.Namespace, authRealm.Name)
 			}, 30, 1).Should(BeNil())
 		})
 	})
