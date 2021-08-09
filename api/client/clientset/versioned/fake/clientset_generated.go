@@ -6,8 +6,8 @@ package fake
 
 import (
 	clientset "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned"
-	identitatemv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned/typed/identitatem/v1alpha1"
-	fakeidentitatemv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned/typed/identitatem/v1alpha1/fake"
+	identityconfigv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned/typed/identitatem/v1alpha1"
+	fakeidentityconfigv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned/typed/identitatem/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -62,7 +62,7 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 
 var _ clientset.Interface = &Clientset{}
 
-// IdentitatemV1alpha1 retrieves the IdentitatemV1alpha1Client
-func (c *Clientset) IdentitatemV1alpha1() identitatemv1alpha1.IdentitatemV1alpha1Interface {
-	return &fakeidentitatemv1alpha1.FakeIdentitatemV1alpha1{Fake: &c.Fake}
+// IdentityconfigV1alpha1 retrieves the IdentityconfigV1alpha1Client
+func (c *Clientset) IdentityconfigV1alpha1() identityconfigv1alpha1.IdentityconfigV1alpha1Interface {
+	return &fakeidentityconfigv1alpha1.FakeIdentityconfigV1alpha1{Fake: &c.Fake}
 }

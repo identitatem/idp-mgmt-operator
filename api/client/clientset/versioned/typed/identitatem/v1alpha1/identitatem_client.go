@@ -10,27 +10,22 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
-type IdentitatemV1alpha1Interface interface {
+type IdentityconfigV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	AuthRealmsGetter
-	IdentityProvidersGetter
 }
 
-// IdentitatemV1alpha1Client is used to interact with features provided by the identitatem.io group.
-type IdentitatemV1alpha1Client struct {
+// IdentityconfigV1alpha1Client is used to interact with features provided by the identityconfig.identitatem.io group.
+type IdentityconfigV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *IdentitatemV1alpha1Client) AuthRealms(namespace string) AuthRealmInterface {
+func (c *IdentityconfigV1alpha1Client) AuthRealms(namespace string) AuthRealmInterface {
 	return newAuthRealms(c, namespace)
 }
 
-func (c *IdentitatemV1alpha1Client) IdentityProviders(namespace string) IdentityProviderInterface {
-	return newIdentityProviders(c, namespace)
-}
-
-// NewForConfig creates a new IdentitatemV1alpha1Client for the given config.
-func NewForConfig(c *rest.Config) (*IdentitatemV1alpha1Client, error) {
+// NewForConfig creates a new IdentityconfigV1alpha1Client for the given config.
+func NewForConfig(c *rest.Config) (*IdentityconfigV1alpha1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -39,12 +34,12 @@ func NewForConfig(c *rest.Config) (*IdentitatemV1alpha1Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &IdentitatemV1alpha1Client{client}, nil
+	return &IdentityconfigV1alpha1Client{client}, nil
 }
 
-// NewForConfigOrDie creates a new IdentitatemV1alpha1Client for the given config and
+// NewForConfigOrDie creates a new IdentityconfigV1alpha1Client for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *IdentitatemV1alpha1Client {
+func NewForConfigOrDie(c *rest.Config) *IdentityconfigV1alpha1Client {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -52,9 +47,9 @@ func NewForConfigOrDie(c *rest.Config) *IdentitatemV1alpha1Client {
 	return client
 }
 
-// New creates a new IdentitatemV1alpha1Client for the given RESTClient.
-func New(c rest.Interface) *IdentitatemV1alpha1Client {
-	return &IdentitatemV1alpha1Client{c}
+// New creates a new IdentityconfigV1alpha1Client for the given RESTClient.
+func New(c rest.Interface) *IdentityconfigV1alpha1Client {
+	return &IdentityconfigV1alpha1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {
@@ -72,7 +67,7 @@ func setConfigDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *IdentitatemV1alpha1Client) RESTClient() rest.Interface {
+func (c *IdentityconfigV1alpha1Client) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

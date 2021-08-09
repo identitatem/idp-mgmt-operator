@@ -43,6 +43,23 @@ make test
 make functional-test-full
 ```
 
+If the functional test fails, you can connect to the kind cluster by exporting the kubeconfig:
+
+```shell
+export KUBECONFIG=kind_kubeconfig.yaml
+```
+
+and check the operator logs with:
+
+```shell
+oc get pods -n identitatem
+```
+
+```shell
+oc logs -n identitatem <pod_name> manager
+```
+
+
 ## Build images
 
 Make sure your code build passed.

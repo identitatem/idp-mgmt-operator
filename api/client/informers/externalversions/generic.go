@@ -38,11 +38,9 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=identitatem.io, Version=v1alpha1
+	// Group=identityconfig.identitatem.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("authrealms"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Identitatem().V1alpha1().AuthRealms().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("identityproviders"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Identitatem().V1alpha1().IdentityProviders().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Identityconfig().V1alpha1().AuthRealms().Informer()}, nil
 
 	}
 

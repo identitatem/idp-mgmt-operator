@@ -39,7 +39,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 	})
 	It("create a AuthRealm CR", func() {
 		cr := sampleAuthRealm.DeepCopy()
-		createdCR, err := clientSet.IdentitatemV1alpha1().AuthRealms(cr.Namespace).Create(context.TODO(), cr, metav1.CreateOptions{})
+		createdCR, err := clientSet.IdentityconfigV1alpha1().AuthRealms(cr.Namespace).Create(context.TODO(), cr, metav1.CreateOptions{})
 		Expect(err).To(BeNil())
 		cu, err := dynamicClient.Resource(identitatemv1alpha1.SchemeGroupVersion.WithResource("authrealms")).
 			Namespace(cr.Namespace).
@@ -61,7 +61,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 		_, err = dynamicClient.Resource(identitatemv1alpha1.SchemeGroupVersion.WithResource("authrealms")).
 			Namespace(cr.Namespace).Create(context.TODO(), cu, metav1.CreateOptions{})
 		Expect(err).To(BeNil())
-		c, err := clientSet.IdentitatemV1alpha1().AuthRealms(cr.Namespace).Get(context.TODO(), sampleAuthRealm.Name, metav1.GetOptions{})
+		c, err := clientSet.IdentityconfigV1alpha1().AuthRealms(cr.Namespace).Get(context.TODO(), sampleAuthRealm.Name, metav1.GetOptions{})
 		Expect(err).Should(BeNil())
 		Expect(reflect.DeepEqual(cr.Spec, c.Spec)).To(BeTrue())
 		Expect(reflect.DeepEqual(cr.ObjectMeta.Name, c.ObjectMeta.Name)).To(BeTrue())
@@ -77,7 +77,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 		_, err = dynamicClient.Resource(identitatemv1alpha1.SchemeGroupVersion.WithResource("authrealms")).
 			Namespace(cr.Namespace).Create(context.TODO(), cu, metav1.CreateOptions{})
 		Expect(err).To(BeNil())
-		err = clientSet.IdentitatemV1alpha1().AuthRealms(cr.Namespace).Delete(context.TODO(), sampleAuthRealm.Name, metav1.DeleteOptions{})
+		err = clientSet.IdentityconfigV1alpha1().AuthRealms(cr.Namespace).Delete(context.TODO(), sampleAuthRealm.Name, metav1.DeleteOptions{})
 		Expect(err).Should(BeNil())
 		err = dynamicClient.Resource(identitatemv1alpha1.SchemeGroupVersion.WithResource("authrealms")).
 			Namespace(cr.Namespace).Delete(context.TODO(), cr.Name, metav1.DeleteOptions{})
