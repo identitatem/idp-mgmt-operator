@@ -5,6 +5,8 @@ go 1.16
 require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v0.4.0
+	github.com/identitatem/dex-operator v0.0.2
+	github.com/identitatem/idp-strategy-operator v0.0.0-20210809192815-024cce5d037e
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
 	github.com/open-cluster-management/governance-policy-propagator v0.0.0-20210804185825-b56cfe491b10
