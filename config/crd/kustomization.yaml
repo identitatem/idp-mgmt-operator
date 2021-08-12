@@ -3,6 +3,9 @@
 # It should be run by config/default
 resources:
 - bases/identityconfig.identitatem.io_authrealms.yaml
+- bases/identityconfig.identitatem.io_strategies.yaml
+- bases/auth.identitatem.io_dexservers.yaml
+- bases/auth.identitatem.io_dexclients.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

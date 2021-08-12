@@ -24,6 +24,8 @@
 *.swo
 *~
 
+.vscode
+
 .DS_Store
 
 /test/functional/coverage

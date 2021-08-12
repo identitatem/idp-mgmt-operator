@@ -28,6 +28,7 @@ spec:
       - args:
         - --
         - --enable-leader-election
+        - -v 5
         image: controller:latest
         name: manager
         imagePullPolicy: IfNotPresent
