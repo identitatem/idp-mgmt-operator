@@ -27,10 +27,21 @@ type AuthRealmSpec struct {
 	MappingMethod openshiftconfigv1.MappingMethodType `json:"mappingMethod,omitempty"`
 
 	//RemediateAction defines the remediation action to apply to the idp policy
+	// +kubebuilder:validation:Enum=Enforce;inform
+	// +required
 	RemediateAction policyv1.RemediationAction `json:"remediateAction,omitempty"`
 
-	//AuthProxy defines the list of authproxy to setup in each cluster defined by the placement.
-	AuthProxy []AuthProxy `json:"authProxy,omitempty"`
+	// +kubebuilder:validation:Enum=dex;rhsso
+	// +required
+	Type AuthProxyType `json:"type,omitempty"`
+	//Host defines the url of the proxy
+	// +required
+	Host string `json:"host,omitempty"`
+	//Certificates references a secret containing `ca.crt`, `tls.crt`, and `tls.key`
+	CertificatesSecretRef corev1.LocalObjectReference `json:"certificatesSecretRef,omitempty"`
+	// IdentityProviders reference an identity provider
+	// +required
+	IdentityProviders []IdentityProvider `json:"identityProviders,omitempty"`
 }
 
 //Placement defines the placement.
@@ -42,21 +53,9 @@ type Placement struct {
 type AuthProxyType string
 
 const (
-	DexAuthProxy   AuthProxyType = "dex"
-	RHSSOAuthProxy AuthProxyType = "rhsso"
+	AuthProxyDex   AuthProxyType = "dex"
+	AuthProxyRHSSO AuthProxyType = "rhsso"
 )
-
-//AuthProxy defines the auth proxy (dex, rhsso...)
-type AuthProxy struct {
-	//AuthProxyType the proxy type (dex, rhsso...)
-	Type AuthProxyType `json:"type,omitempty"`
-	//Host defines the url of the proxy
-	Host string `json:"host,omitempty"`
-	//Certificates references a secret containing `ca.crt`, `tls.crt`, and `tls.key`
-	CertificatesSecretRef corev1.LocalObjectReference `json:"certificatesSecretRef,omitempty"`
-	// IdentityProviders reference an identity provider
-	IdentityProviders []IdentityProvider `json:"identityProviders,omitempty"`
-}
 
 const (
 	LocalHost string = "local"
