@@ -2,6 +2,9 @@
 # Copyright Contributors to the Open Cluster Management project
 SHELL := /bin/bash
 
+
+BEFORE_SCRIPT := $(shell build/before-make.sh)
+
 export PROJECT_DIR            = $(shell 'pwd')
 export PROJECT_NAME			  = $(shell basename ${PROJECT_DIR})
 
