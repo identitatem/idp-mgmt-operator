@@ -1,5 +1,7 @@
 
+# Copyright Contributors to the Open Cluster Management project
 SHELL := /bin/bash
+
 
 BEFORE_SCRIPT := $(shell build/before-make.sh)
 
