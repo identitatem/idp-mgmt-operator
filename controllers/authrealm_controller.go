@@ -13,8 +13,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	identitatemv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
-	openshiftconfigv1 "github.com/openshift/api/config/v1"
+	identitatemdexserverv1lapha1 "github.com/identitatem/dex-operator/api/v1alpha1"
+	identitatemmgmtv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
+	identitatemstrategyv1alpha1 "github.com/identitatem/idp-strategy-operator/api/identitatem/v1alpha1"
 )
 
 // AuthRealmReconciler reconciles a AuthRealm object
@@ -24,7 +25,9 @@ type AuthRealmReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexservers,dexclients},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources={namespaces,secrets},verbs=get;list;watch;create;update;patch;delete
 
 func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
@@ -32,7 +35,7 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// your logic here
 	// Fetch the ManagedCluster instance
-	instance := &identitatemv1alpha1.AuthRealm{}
+	instance := &identitatemmgmtv1alpha1.AuthRealm{}
 
 	if err := r.Client.Get(
 		context.TODO(),
@@ -49,19 +52,39 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return reconcile.Result{}, err
 	}
 
+	//if deletetimestamp then delete dex namespace
+	if instance.DeletionTimestamp != nil {
+		if err := r.deleteAuthRealmNamespace(instance); err != nil {
+			return reconcile.Result{}, err
+		}
+	}
 	r.Log.Info("Process", "Name", instance.GetName(), "Namespace", instance.GetNamespace())
 
-	if len(instance.Spec.AuthProxy) == 0 {
-		if instance.Spec.MappingMethod == "" {
-			instance.Spec.MappingMethod = openshiftconfigv1.MappingMethodClaim
-		}
-	} else {
-		instance.Spec.MappingMethod = openshiftconfigv1.MappingMethodAdd
+	if err := r.Client.Update(context.TODO(), instance); err != nil {
+		return ctrl.Result{}, err
 	}
 
-	r.Log.Info("Instance", "MappingMethod", instance.Spec.MappingMethod)
+	//Synchronize Dex CR
+	switch {
+	case instance.Spec.Type == identitatemmgmtv1alpha1.AuthProxyDex ||
+		instance.Spec.Type == "":
+		if err := r.syncDexCRs(instance); err != nil {
+			return ctrl.Result{}, err
+		}
+	case instance.Spec.Type == identitatemmgmtv1alpha1.AuthProxyRHSSO:
+		if err := r.syncRHSSOCRs(instance); err != nil {
+			return ctrl.Result{}, err
+		}
+	default:
+	}
 
-	if err := r.Client.Update(context.TODO(), instance); err != nil {
+	//Create GRC strategy
+	if err := r.createStrategy(identitatemstrategyv1alpha1.GrcStrategyType, instance); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	//Create Backplane strategy
+	if err := r.createStrategy(identitatemstrategyv1alpha1.BackplaneStrategyType, instance); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -69,7 +92,15 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := identitatemstrategyv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		return err
+	}
+	if err := identitatemdexserverv1lapha1.AddToScheme(mgr.GetScheme()); err != nil {
+		return err
+	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&identitatemv1alpha1.AuthRealm{}).
+		For(&identitatemmgmtv1alpha1.AuthRealm{}).
+		Owns(&identitatemstrategyv1alpha1.Strategy{}).
+		Owns(&identitatemdexserverv1lapha1.DexServer{}).
 		Complete(r)
 }
