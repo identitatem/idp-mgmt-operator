@@ -1,6 +1,6 @@
 
 SHELL := /bin/bash
-
+echo "hello"
 
 BEFORE_SCRIPT := $(shell build/before-make.sh)
 
