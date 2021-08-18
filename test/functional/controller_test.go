@@ -19,6 +19,7 @@ import (
 	. "github.com/onsi/gomega"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -41,6 +42,7 @@ var strategyClientSet *identitatemstrategyclientset.Clientset
 
 var cfg *rest.Config
 var kubeClient *kubernetes.Clientset
+var apiExtensionsClient *apiextensionsclient.Clientset
 
 var _ = Describe("AuthRealm", func() {
 	AuthRealmName := "test-authrealm"
@@ -50,7 +52,6 @@ var _ = Describe("AuthRealm", func() {
 		SetDefaultEventuallyTimeout(20 * time.Second)
 		SetDefaultEventuallyPollingInterval(1 * time.Second)
 
-		var err error
 		kubeConfigFile := os.Getenv("KUBECONFIG")
 		if len(kubeConfigFile) == 0 {
 			home := homedir.HomeDir()
@@ -68,12 +69,26 @@ var _ = Describe("AuthRealm", func() {
 		kubeClient, err = kubernetes.NewForConfig(cfg)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(kubeClient).ToNot(BeNil())
+		apiExtensionsClient, err = apiextensionsclient.NewForConfig(cfg)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(kubeClient).ToNot(BeNil())
 	})
 
 	AfterEach(func() {
 	})
 
 	It("process a AuthRealm CR", func() {
+		By("checking CRD", func() {
+			Eventually(func() error {
+				_, err := apiExtensionsClient.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), "authrealms.identityconfig.identitatem.io", metav1.GetOptions{})
+				if err != nil {
+					logf.Log.Info("Error while reading authrealms crd", "Error", err)
+					return err
+				}
+				return nil
+			}, 30, 1).Should(BeNil())
+
+		})
 		By("creation test namespace", func() {
 			ns := &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -114,6 +129,43 @@ var _ = Describe("AuthRealm", func() {
 				return nil
 			}, 30, 1).Should(BeNil())
 		})
+		By("Checking the dex-operator deployment creation", func() {
+			Eventually(func() error {
+				_, err := kubeClient.AppsV1().Deployments(AuthRealmName).
+					Get(context.TODO(), "dex-operator", metav1.GetOptions{})
+				if err != nil {
+					logf.Log.Info("Error while reading deployments", "Error", err)
+					return err
+				}
+				return nil
+			}, 60, 1).Should(BeNil())
+		})
+		By("Checking the strategy backplane creation", func() {
+			Eventually(func() error {
+				_, err := strategyClientSet.
+					IdentityconfigV1alpha1().
+					Strategies(AuthRealmNameSpace).
+					Get(context.TODO(), AuthRealmName+"-"+string(identitatemstrategyv1alpha1.BackplaneStrategyType), metav1.GetOptions{})
+				if err != nil {
+					logf.Log.Info("Error while reading strategy", "Error", err)
+					return err
+				}
+				return nil
+			}, 60, 1).Should(BeNil())
+		})
+		By("Checking the strategy grc creation", func() {
+			Eventually(func() error {
+				_, err := strategyClientSet.
+					IdentityconfigV1alpha1().
+					Strategies(AuthRealmNameSpace).
+					Get(context.TODO(), AuthRealmName+"-"+string(identitatemstrategyv1alpha1.GrcStrategyType), metav1.GetOptions{})
+				if err != nil {
+					logf.Log.Info("Error while reading strategy", "Error", err)
+					return err
+				}
+				return nil
+			}, 60, 1).Should(BeNil())
+		})
 	})
 	//TODO check dexserver when update authrealm
 	It("Delete the authrealm", func() {
@@ -132,27 +184,31 @@ var _ = Describe("AuthRealm", func() {
 					return err
 				}
 				return fmt.Errorf("Authrealm still exists")
-			}, 30, 1).Should(BeNil())
-		})
-		By("Checking strategy Backplane deleted", func() {
-			_, err := strategyClientSet.
-				IdentityconfigV1alpha1().
-				Strategies(AuthRealmNameSpace).
-				Get(context.TODO(), AuthRealmName+"-"+string(identitatemstrategyv1alpha1.BackplaneStrategyType), metav1.GetOptions{})
-			Expect(errors.IsNotFound(err)).To(BeTrue())
-		})
-		By("Checking strategy GRC deleted", func() {
-			_, err := strategyClientSet.
-				IdentityconfigV1alpha1().
-				Strategies(AuthRealmNameSpace).
-				Get(context.TODO(), AuthRealmName+"-"+string(identitatemstrategyv1alpha1.GrcStrategyType), metav1.GetOptions{})
-			Expect(errors.IsNotFound(err)).To(BeTrue())
+			}, 60, 1).Should(BeNil())
 		})
 		By("Checking authrealm ns deleted", func() {
 			Eventually(func() bool {
 				_, err := kubeClient.CoreV1().Namespaces().Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
 				return errors.IsNotFound(err)
-			}, 30, 1).Should(BeTrue())
+			}, 60, 1).Should(BeTrue())
+		})
+		By("Checking strategy Backplane deleted", func() {
+			Eventually(func() error {
+				_, err := strategyClientSet.
+					IdentityconfigV1alpha1().
+					Strategies(AuthRealmNameSpace).
+					Get(context.TODO(), AuthRealmName+"-"+string(identitatemstrategyv1alpha1.BackplaneStrategyType), metav1.GetOptions{})
+				return err
+			}, 60, 1).ShouldNot(BeNil())
+		})
+		By("Checking strategy GRC deleted", func() {
+			Eventually(func() error {
+				_, err := strategyClientSet.
+					IdentityconfigV1alpha1().
+					Strategies(AuthRealmNameSpace).
+					Get(context.TODO(), AuthRealmName+"-"+string(identitatemstrategyv1alpha1.GrcStrategyType), metav1.GetOptions{})
+				return err
+			}, 60, 1).ShouldNot(BeNil())
 		})
 	})
 })

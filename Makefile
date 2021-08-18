@@ -126,6 +126,9 @@ ifeq (, $(shell which kubebuilder))
 	}
 endif
 
+add-external-crds:
+	@for FILE in "config/crd/external"; do kubectl apply -f $$FILE;done
+
 functional-test-full: docker-build-coverage
 	@build/run-functional-tests.sh $(IMG_COVERAGE)
 

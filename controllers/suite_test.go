@@ -4,6 +4,7 @@ package controllers
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -11,8 +12,12 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,19 +55,30 @@ func TestAPIs(t *testing.T) {
 var _ = BeforeSuite(func(done Done) {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter)))
 	By("bootstrapping test environment")
+	err := os.Setenv(dexOperatorImageEnvName, "dex_operator_inage")
+	Expect(err).NotTo(HaveOccurred())
+	err = identitatemmgmtv1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = identitatemstrategyv1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).Should(BeNil())
+	err = identitatemdexserverv1lapha1.AddToScheme(scheme.Scheme)
+	Expect(err).Should(BeNil())
+	err = appsv1.AddToScheme(scheme.Scheme)
+	Expect(err).Should(BeNil())
 	testEnv = &envtest.Environment{
+		Scheme: scheme.Scheme,
+		CRDs: []client.Object{
+			&appsv1.Deployment{},
+		},
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "config", "crd", "bases"),
+			filepath.Join("..", "config", "crd", "external"),
 		},
 	}
 
-	var err error
 	cfg, err = testEnv.Start()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
-
-	err = identitatemmgmtv1alpha1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
 
 	clientSetMgmt, err = clientsetmgmt.NewForConfig(cfg)
 	Expect(err).ToNot(HaveOccurred())
@@ -78,14 +94,13 @@ var _ = BeforeSuite(func(done Done) {
 
 	By("Init the reconciler")
 	r = AuthRealmReconciler{
-		Client: k8sClient,
-		Log:    logf.Log,
-		Scheme: scheme.Scheme,
+		Client:             k8sClient,
+		KubeClient:         kubernetes.NewForConfigOrDie(cfg),
+		DynamicClient:      dynamic.NewForConfigOrDie(cfg),
+		APIExtensionClient: apiextensionsclient.NewForConfigOrDie(cfg),
+		Log:                logf.Log,
+		Scheme:             scheme.Scheme,
 	}
-	err = identitatemstrategyv1alpha1.AddToScheme(scheme.Scheme)
-	Expect(err).Should(BeNil())
-	err = identitatemdexserverv1lapha1.AddToScheme(scheme.Scheme)
-	Expect(err).Should(BeNil())
 
 	close(done)
 }, 60)
@@ -169,6 +184,11 @@ var _ = Describe("Process AuthRealm: ", func() {
 		By("Checking Dex Namespace", func() {
 			ns := &corev1.Namespace{}
 			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName}, ns)
+			Expect(err).Should(BeNil())
+		})
+		By("Checking Dex Deployment", func() {
+			ns := &appsv1.Deployment{}
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: "dex-operator", Namespace: AuthRealmName}, ns)
 			Expect(err).Should(BeNil())
 		})
 		By("Checking DexServer", func() {

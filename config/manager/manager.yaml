@@ -29,6 +29,9 @@ spec:
         - --
         - --enable-leader-election
         - -v 5
+        env:
+        - name: DEX_OPERATOR_IMAGE
+          value: "quay.io/identitatem/dex-operator@sha256:b4d5f190c160c99e0f3c67796ff1c8a499a5d98b57c0ee295a9a5b210962e7a8"
         image: controller:latest
         name: manager
         imagePullPolicy: IfNotPresent
@@ -42,6 +45,7 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+      serviceAccountName: idp-mgmt-operator-controller-manager
       terminationGracePeriodSeconds: 10
       volumes:
         - name: coverage-dir
