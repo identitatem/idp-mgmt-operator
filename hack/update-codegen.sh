@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright Contributors to the Open Cluster Management project
+# Copyright Red Hat
 
 set -o errexit
 set -o nounset

@@ -1,5 +1,5 @@
 
-# Copyright Contributors to the Open Cluster Management project
+# Copyright Red Hat
 SHELL := /bin/bash
 
 export PROJECT_DIR            = $(shell 'pwd')
