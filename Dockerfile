@@ -1,5 +1,5 @@
 
-# Copyright Contributors to the Open Cluster Management project
+# Copyright Red Hat
 
 FROM registry.ci.openshift.org/open-cluster-management/builder:go1.16-linux AS builder
 

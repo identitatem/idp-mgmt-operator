@@ -1,5 +1,5 @@
 
-# Copyright Contributors to the Open Cluster Management project
+# Copyright Red Hat
 SHELL := /bin/bash
 
 export PROJECT_DIR            = $(shell 'pwd')
@@ -125,6 +125,9 @@ ifeq (, $(shell which kubebuilder))
 		chmod +x $$KUBEBUILDER_TMP_DIR/kubebuilder && mv $$KUBEBUILDER_TMP_DIR/kubebuilder /usr/local/bin/ ;\
 	}
 endif
+
+add-external-crds:
+	@for FILE in "config/crd/external"; do kubectl apply -f $$FILE;done
 
 functional-test-full: docker-build-coverage
 	@build/run-functional-tests.sh $(IMG_COVERAGE)

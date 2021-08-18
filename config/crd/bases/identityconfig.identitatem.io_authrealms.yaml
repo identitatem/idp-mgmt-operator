@@ -347,10 +347,8 @@ spec:
                   name:
                     type: string
                   spec:
-                    description: PlacementSpec defines the attributes of Placement.
-                      An empty PlacementSpec selects all ManagedClusters from the
-                      ManagedClusterSets bound to the placement namespace. The containing
-                      fields are ANDed.
+                    description: TODO remove the Spec... placementv1alpha1.PlacementSpec
+                      `json:",inline"`
                     properties:
                       clusterSets:
                         description: ClusterSets represent the ManagedClusterSets

@@ -1,19 +1,32 @@
-// Copyright Contributors to the Open Cluster Management project
+// Copyright Red Hat
 
 package controllers
 
 import (
 	"context"
 	"fmt"
+	"os"
 
 	identitatemdexserverv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
+	dexoperatorconfig "github.com/identitatem/dex-operator/config"
 	identitatemmgmtv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
+	"github.com/identitatem/idp-mgmt-operator/deploy"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const (
+	dexOperatorImageEnvName string = "DEX_OPERATOR_IMAGE"
+)
+
+type Values struct {
+	Image     string
+	AuthRealm *identitatemmgmtv1alpha1.AuthRealm
+}
 
 func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemmgmtv1alpha1.AuthRealm) error {
 	r.Log.Info("syncDexCRs", "AuthRealm.Name", authRealm.Name, "AuthRealm.Namespace", authRealm.Namespace)
@@ -21,24 +34,73 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemmgmtv1alpha1.Auth
 	if len(authRealm.Spec.IdentityProviders) != 1 {
 		return fmt.Errorf("the identityproviders array of the authrealm %s can have only and only one element", authRealm.Name)
 	}
-	r.Log.Info("syncDexCRs manage dex namespace", "Name", authRealm.Name)
-	ns := &corev1.Namespace{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: authRealm.Name}, ns); err != nil {
-		if !errors.IsNotFound(err) {
-			return err
-		}
-		ns = &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: authRealm.Name,
-			},
-		}
-		r.Log.V(1).Info("syncDexCRs create namespace", "Name", authRealm.Name)
-		if err := r.Client.Create(context.TODO(), ns); err != nil {
-			return err
-		}
+
+	// Create namespace and Install the dex-operator
+	if err := r.installDexOperator(authRealm); err != nil {
+		return err
+	}
+	//Create DexServer CR
+	if err := r.createDexServer(authRealm); err != nil {
+		return err
 	}
 
-	r.Log.Info("syncDexCRs manage dexServer", "Name", authRealm.Name, "Namespace", authRealm.Name)
+	return nil
+}
+
+func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemmgmtv1alpha1.AuthRealm) error {
+	r.Log.Info("installDexOperator", "Name", authRealm.Name, "Namespace", authRealm.Name)
+
+	applierBuilder := &clusteradmapply.ApplierBuilder{}
+	applier := applierBuilder.WithClient(r.KubeClient, r.APIExtensionClient, r.DynamicClient).Build()
+
+	dexOperatorInage := os.Getenv(dexOperatorImageEnvName)
+	if len(dexOperatorInage) == 0 {
+		return fmt.Errorf("EnvVar %s not provided", dexOperatorImageEnvName)
+	}
+	values := Values{
+		Image:     dexOperatorInage,
+		AuthRealm: authRealm,
+	}
+	//Create the namespace
+	readerDeploy := deploy.GetScenarioResourcesReader()
+
+	files := []string{
+		"dex-operator/namespace.yaml",
+		"dex-operator/service_account.yaml",
+		"dex-operator/role_binding.yaml",
+	}
+
+	out, err := applier.ApplyDirectly(readerDeploy, values, false, "", files...)
+	if err != nil {
+		return err
+	}
+	if len(out) > 0 {
+		r.Log.Info(fmt.Sprintf("namespace:\n%s\n", out[0]))
+	}
+
+	readerDexOperator := dexoperatorconfig.GetScenarioResourcesReader()
+
+	out, err = applier.ApplyDirectly(readerDexOperator, values, false, "", "rbac/role.yaml")
+	if err != nil {
+		return err
+	}
+	if len(out) > 0 {
+		r.Log.Info(fmt.Sprintf("dex role:\n%s\n", out[0]))
+	}
+
+	out, err = applier.ApplyDeployments(readerDeploy, values, false, "", "dex-operator/operator.yaml")
+	if err != nil {
+		return err
+	}
+	if len(out) > 0 {
+		r.Log.Info(fmt.Sprintf("deployments:\n%s\n", out[0]))
+	}
+
+	return nil
+}
+
+func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemmgmtv1alpha1.AuthRealm) error {
+	r.Log.Info("createDexServer", "Name", authRealm.Name, "Namespace", authRealm.Name)
 	dexServerExists := true
 	dexServer := &identitatemdexserverv1alpha1.DexServer{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: authRealm.Name, Namespace: authRealm.Name}, dexServer); err != nil {
@@ -60,49 +122,17 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemmgmtv1alpha1.Auth
 
 	switch dexServerExists {
 	case true:
-		r.Log.V(1).Info("syncDexCRs update dexServer", "Name", authRealm.Name, "Namespace", authRealm.Name)
+		r.Log.V(1).Info("createDexServer update dexServer", "Name", authRealm.Name, "Namespace", authRealm.Name)
 		if err := r.Client.Update(context.TODO(), dexServer); err != nil {
 			return err
 		}
 	case false:
-		r.Log.V(1).Info("syncDexCRs create dexServer", "Name", authRealm.Name, "Namespace", authRealm.Name)
+		r.Log.V(1).Info("createDexServer create dexServer", "Name", authRealm.Name, "Namespace", authRealm.Name)
 		if err := r.Client.Create(context.TODO(), dexServer); err != nil {
 			return err
 		}
 	}
 
-	// r.Log.Info("syncDexCRs manage dexClient", "Name", authRealm.Name, "Namespace", authRealm.Name)
-	// dexClientExists := true
-	// dexClient := &identitatemdexserverv1alpha1.DexClient{}
-	// if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: authRealm.Name, Namespace: authRealm.Name}, dexClient); err != nil {
-	// 	if !errors.IsNotFound(err) {
-	// 		return err
-	// 	}
-	// 	dexClientExists = false
-	// 	dexClient = &identitatemdexserverv1alpha1.DexClient{
-	// 		ObjectMeta: metav1.ObjectMeta{
-	// 			Name:      authRealm.Name,
-	// 			Namespace: authRealm.Name,
-	// 		},
-	// 	}
-	// }
-
-	// if err := r.updateDexClient(authRealm); err != nil {
-	// 	return err
-	// }
-
-	// switch dexClientExists {
-	// case true:
-	// 	r.Log.V(1).Info("syncDexCRs update dexClient", "Name", authRealm.Name, "Namespace", authRealm.Name)
-	// 	if err := r.Client.Update(context.TODO(), dexClient); err != nil {
-	// 		return err
-	// 	}
-	// case false:
-	// 	r.Log.V(1).Info("syncDexCRs update dexClient", "Name", authRealm.Name, "Namespace", authRealm.Name)
-	// 	if err := r.Client.Create(context.TODO(), dexClient); err != nil {
-	// 		return err
-	// 	}
-	// }
 	return nil
 }
 
@@ -212,12 +242,5 @@ func (r *AuthRealmReconciler) deleteAuthRealmNamespace(authRealm *identitatemmgm
 		}
 		return err
 	}
-	if err := r.Client.Delete(context.TODO(), ns); err != nil {
-		return err
-	}
-	return nil
+	return r.Client.Delete(context.TODO(), ns)
 }
-
-// func (r *AuthRealmReconciler) updateDexClient(authRealm *identitatemmgmtv1alpha1.AuthRealm) error {
-// 	return nil
-// }

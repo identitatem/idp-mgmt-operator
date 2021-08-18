@@ -1,0 +1,6 @@
+# Copyright Red Hat
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "{{ .AuthRealm.Name }}"

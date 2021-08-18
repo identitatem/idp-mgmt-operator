@@ -1,7 +1,7 @@
 #!/bin/bash
 ###############################################################################
 # Copyright (c) Red Hat, Inc.
-# Copyright Contributors to the Open Cluster Management project
+# Copyright Red Hat
 ###############################################################################
 
 set -e
@@ -83,6 +83,7 @@ API_SERVER_URL=$(cat ${KIND_KUBECONFIG_INTERNAL}| grep "server:" |cut -d ":" -f2
 kind load docker-image ${DOCKER_IMAGE_AND_TAG} --name=${CLUSTER_NAME} -v 99 || echo "failed to load image locally, will use imagePullSecret"
 
 echo "install cluster"
+make add-external-crds
 make deploy-coverage
 make functional-test
 
