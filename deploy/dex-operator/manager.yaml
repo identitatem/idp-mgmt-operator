@@ -5,23 +5,21 @@ metadata:
   name: dex-operator
   namespace: {{ .AuthRealm.Name }}
   labels:
-    control-plane: controller-manager
+    control-plane: dex-operator
 spec:
   selector:
     matchLabels:
-      control-plane: controller-manager
+      control-plane: dex-operator
   replicas: 1
   template:
     metadata:
       labels:
-        control-plane: controller-manager
+        control-plane: dex-operator
     spec:
       securityContext:
         runAsNonRoot: true
       containers:
-      - command:
-        - /manager
-        args:
+      - args:
         - --leader-elect
         image: {{ .Image }}
         imagePullPolicy: Always

@@ -46,9 +46,8 @@ type AuthRealmSpec struct {
 
 //Placement defines the placement.
 type Placement struct {
-	Name string `json:"name,omitempty"`
-	//TODO remove the Spec...
-	//placementv1alpha1.PlacementSpec `json:",inline"`
+	//TODO what if the end-user give an existing placement name
+	Name string                          `json:"name,omitempty"`
 	Spec placementv1alpha1.PlacementSpec `json:"spec,omitempty"`
 }
 

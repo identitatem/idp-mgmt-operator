@@ -11,22 +11,17 @@ import (
 	dexoperatorconfig "github.com/identitatem/dex-operator/config"
 	identitatemmgmtv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/deploy"
-	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
+	clusteradmasset "open-cluster-management.io/clusteradm/pkg/helpers/asset"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	dexOperatorImageEnvName string = "DEX_OPERATOR_IMAGE"
 )
-
-type Values struct {
-	Image     string
-	AuthRealm *identitatemmgmtv1alpha1.AuthRealm
-}
 
 func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemmgmtv1alpha1.AuthRealm) error {
 	r.Log.Info("syncDexCRs", "AuthRealm.Name", authRealm.Name, "AuthRealm.Namespace", authRealm.Namespace)
@@ -51,49 +46,70 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemmgmtv1alp
 	r.Log.Info("installDexOperator", "Name", authRealm.Name, "Namespace", authRealm.Name)
 
 	applierBuilder := &clusteradmapply.ApplierBuilder{}
-	applier := applierBuilder.WithClient(r.KubeClient, r.APIExtensionClient, r.DynamicClient).Build()
+	applier := applierBuilder.
+		WithClient(r.KubeClient, r.APIExtensionClient, r.DynamicClient).
+		WithTemplateFuncMap(FuncMap()).
+		Build()
 
 	dexOperatorInage := os.Getenv(dexOperatorImageEnvName)
 	if len(dexOperatorInage) == 0 {
 		return fmt.Errorf("EnvVar %s not provided", dexOperatorImageEnvName)
 	}
-	values := Values{
-		Image:     dexOperatorInage,
-		AuthRealm: authRealm,
-	}
+
 	//Create the namespace
 	readerDeploy := deploy.GetScenarioResourcesReader()
+	readerDexOperator := dexoperatorconfig.GetScenarioResourcesReader()
+
+	values := struct {
+		Image     string
+		AuthRealm *identitatemmgmtv1alpha1.AuthRealm
+		Reader    *clusteradmasset.ScenarioResourcesReader
+		File      string
+		NewName   string
+	}{
+		Image:     dexOperatorInage,
+		AuthRealm: authRealm,
+		Reader:    readerDexOperator,
+		File:      "rbac/role.yaml",
+		NewName:   "dex-operator-manager-role",
+	}
 
 	files := []string{
 		"dex-operator/namespace.yaml",
 		"dex-operator/service_account.yaml",
+		"dex-operator/role.yaml",
 		"dex-operator/role_binding.yaml",
 	}
 
-	out, err := applier.ApplyDirectly(readerDeploy, values, false, "", files...)
+	_, err := applier.ApplyDirectly(readerDeploy, values, false, "", files...)
 	if err != nil {
 		return err
 	}
-	if len(out) > 0 {
-		r.Log.Info(fmt.Sprintf("namespace:\n%s\n", out[0]))
-	}
 
-	readerDexOperator := dexoperatorconfig.GetScenarioResourcesReader()
-
-	out, err = applier.ApplyDirectly(readerDexOperator, values, false, "", "rbac/role.yaml")
+	_, err = applier.ApplyDeployments(readerDeploy, values, false, "", "dex-operator/manager.yaml")
 	if err != nil {
 		return err
 	}
-	if len(out) > 0 {
-		r.Log.Info(fmt.Sprintf("dex role:\n%s\n", out[0]))
-	}
 
-	out, err = applier.ApplyDeployments(readerDeploy, values, false, "", "dex-operator/operator.yaml")
+	return nil
+}
+
+func (r *AuthRealmReconciler) installDexCRDs() error {
+	r.Log.Info("installDexCRDs")
+
+	applierBuilder := &clusteradmapply.ApplierBuilder{}
+	applier := applierBuilder.
+		WithClient(r.KubeClient, r.APIExtensionClient, r.DynamicClient).
+		WithTemplateFuncMap(FuncMap()).
+		Build()
+
+	readerIDPStrategyOperator := dexoperatorconfig.GetScenarioResourcesReader()
+	files := []string{"crd/bases/auth.identitatem.io_dexclients.yaml",
+		"crd/bases/auth.identitatem.io_dexservers.yaml"}
+
+	_, err := applier.ApplyDirectly(readerIDPStrategyOperator, nil, false, "", files...)
 	if err != nil {
 		return err
-	}
-	if len(out) > 0 {
-		r.Log.Info(fmt.Sprintf("deployments:\n%s\n", out[0]))
 	}
 
 	return nil
@@ -159,38 +175,39 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemmgmtv1alpha1
 
 func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemmgmtv1alpha1.AuthRealm) (cs []identitatemdexserverv1alpha1.ConnectorSpec, err error) {
 	r.Log.Info("createDexConnectors", "Name", authRealm.Name, "Namespace", authRealm.Name)
+	//TODO loop on identity providers
 	idp := authRealm.Spec.IdentityProviders[0]
 	cs = make([]identitatemdexserverv1alpha1.ConnectorSpec, 0)
 	if idp.GitHub != nil {
-		c, err := r.createConnector(authRealm, "github")
+		c, err := r.createConnector(authRealm, "github", idp.GitHub.ClientSecret.Name)
 		if err != nil {
 			return nil, err
 		}
 		cs = append(cs, *c)
 	}
 	if idp.Google != nil {
-		c, err := r.createConnector(authRealm, "google")
+		c, err := r.createConnector(authRealm, "google", idp.Google.ClientSecret.Name)
 		if err != nil {
 			return nil, err
 		}
 		cs = append(cs, *c)
 	}
 	if idp.HTPasswd != nil {
-		c, err := r.createConnector(authRealm, "htppasswd")
+		c, err := r.createConnector(authRealm, "htppasswd", "")
 		if err != nil {
 			return nil, err
 		}
 		cs = append(cs, *c)
 	}
 	if idp.LDAP != nil {
-		c, err := r.createConnector(authRealm, "ldap")
+		c, err := r.createConnector(authRealm, "ldap", idp.LDAP.BindPassword.Name)
 		if err != nil {
 			return nil, err
 		}
 		cs = append(cs, *c)
 	}
 	if idp.OpenID != nil {
-		c, err := r.createConnector(authRealm, "oidc")
+		c, err := r.createConnector(authRealm, "oidc", idp.OpenID.ClientSecret.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -200,26 +217,7 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemmgmtv1al
 }
 
 func (r *AuthRealmReconciler) createConnector(authRealm *identitatemmgmtv1alpha1.AuthRealm,
-	identityProviderType string) (c *identitatemdexserverv1alpha1.ConnectorSpec, err error) {
-
-	clientSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", authRealm.Name, identityProviderType),
-			Namespace: authRealm.Name,
-		},
-		Data: map[string][]byte{
-			"client-secret": []byte(helpers.RandStringRunes(32)),
-		},
-	}
-
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: clientSecret.Name, Namespace: clientSecret.Namespace}, clientSecret); err != nil {
-		if !errors.IsNotFound(err) {
-			return nil, err
-		}
-		if err := r.Client.Create(context.TODO(), clientSecret); err != nil {
-			return nil, err
-		}
-	}
+	identityProviderType string, clientSecretName string) (c *identitatemdexserverv1alpha1.ConnectorSpec, err error) {
 
 	c = &identitatemdexserverv1alpha1.ConnectorSpec{
 		Type: identityProviderType,
@@ -227,7 +225,7 @@ func (r *AuthRealmReconciler) createConnector(authRealm *identitatemmgmtv1alpha1
 		Id:   authRealm.Name,
 		Config: identitatemdexserverv1alpha1.ConfigSpec{
 			ClientID:        authRealm.Name,
-			ClientSecretRef: clientSecret.Name,
+			ClientSecretRef: clientSecretName,
 		},
 	}
 

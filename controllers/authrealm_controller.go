@@ -128,6 +128,15 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := appsv1.AddToScheme(mgr.GetScheme()); err != nil {
 		return err
 	}
+	if err := r.installIDPStrategyCRDs(); err != nil {
+		return err
+	}
+	if err := r.installDexCRDs(); err != nil {
+		return err
+	}
+	if err := r.installIDPStrategyOperator(); err != nil {
+		return err
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&identitatemmgmtv1alpha1.AuthRealm{}).
 		Owns(&identitatemstrategyv1alpha1.Strategy{}).

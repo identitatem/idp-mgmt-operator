@@ -45,8 +45,8 @@ var kubeClient *kubernetes.Clientset
 var apiExtensionsClient *apiextensionsclient.Clientset
 
 var _ = Describe("AuthRealm", func() {
-	AuthRealmName := "test-authrealm"
-	AuthRealmNameSpace := "test"
+	AuthRealmName := "my-authrealm"
+	AuthRealmNameSpace := "my-authrealm-ns"
 	BeforeEach(func() {
 		logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter)))
 		SetDefaultEventuallyTimeout(20 * time.Second)

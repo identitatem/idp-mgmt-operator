@@ -588,10 +588,10 @@ github.com/huandu/xstrings v1.3.2 h1:L18LIDzqlW6xN2rEkpdV8+oL/IXWJ1APd+vsdYy4Wdw
 github.com/huandu/xstrings v1.3.2/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365/go.mod h1:SK73tn/9oHe+/Y0h39VT4UCxmurVJkR5NA7kMEAOgSE=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
-github.com/identitatem/dex-operator v0.0.4-0.20210818160217-d91d9387dda1 h1:OAuKWu3iZgTnERXaN/fnIdM+3iaz5MwWKlFTo6JeIqI=
-github.com/identitatem/dex-operator v0.0.4-0.20210818160217-d91d9387dda1/go.mod h1:KRhw4eGjB5/Ck4UMRUT1e6Rf/+1irRJvhvS3Uhvb0do=
-github.com/identitatem/idp-strategy-operator v0.0.0-20210809192815-024cce5d037e h1:fVIDbnbp8knWXo+3wCG/9EIc58JdgCdcKSpLlKPSV1Q=
-github.com/identitatem/idp-strategy-operator v0.0.0-20210809192815-024cce5d037e/go.mod h1:DKmdBl4qjyFaHMcJESLqxCTVLHoCbKVy2ud5JgXIGHw=
+github.com/identitatem/dex-operator v0.0.2/go.mod h1:NWjjohWVKckQZPfduJgMkcEnPjiJY9KLxeBnLJy2wcU=
+github.com/identitatem/dex-operator v0.0.4-0.20210823143514-03bf1caa0cb1 h1:kyrYD9SFQe+BSRD84rh/oQ8a663NbJyZBVfkm8FhRF8=
+github.com/identitatem/dex-operator v0.0.4-0.20210823143514-03bf1caa0cb1/go.mod h1:Z37xv2KN5CsHycQOEUkJxANhVqY6x5D31dxE81+50kg=
+github.com/identitatem/idp-mgmt-operator v0.0.0-20210816175333-8714ccda628f/go.mod h1:TSFxD23e/gbDrRl8ykux5fHh83sIEvMS1mLqz03C8XI=
 github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
 github.com/imdario/mergo v0.3.6/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
 github.com/imdario/mergo v0.3.7/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
@@ -807,9 +807,11 @@ github.com/opencontainers/runc v0.0.0-20190115041553-12f6a991201f/go.mod h1:qT5X
 github.com/opencontainers/runc v0.1.1/go.mod h1:qT5XzbpPznkRYVz/mWwUaVBUv2rmF59PVA73FjuZG0U=
 github.com/opencontainers/runtime-spec v0.1.2-0.20190507144316-5b71a03e2700/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
 github.com/opencontainers/runtime-tools v0.0.0-20181011054405-1d69bd0f9c39/go.mod h1:r3f7wjNzSs2extwzU3Y+6pKfobzPh+kKFJ3ofN+3nfs=
+github.com/openshift/api v0.0.0-20210127195806-54e5e88cf848/go.mod h1:Si/I9UGeRR3qzg01YWPmtlr0GeGk2fnuggXJRmjAZ6U=
 github.com/openshift/api v0.0.0-20210521075222-e273a339932a h1:aBPwLqCg66SbQd+HrjB1GhgTfPtqSY4aeB022tEYmE0=
 github.com/openshift/api v0.0.0-20210521075222-e273a339932a/go.mod h1:izBmoXbUu3z5kUa4FjZhvekTsyzIWiOoaIgJiZBBMQs=
 github.com/openshift/build-machinery-go v0.0.0-20200424080330-082bf86082cc/go.mod h1:1CkcsT3aVebzRBzVTSbiKSkJMsC/CASqxesfqEMfJEc=
+github.com/openshift/build-machinery-go v0.0.0-20200819073603-48aa266c95f7/go.mod h1:b1BuldmJlbA/xYtdZvKi+7j5YGB44qJUJDZ9zwiNCfE=
 github.com/openshift/build-machinery-go v0.0.0-20210115170933-e575b44a7a94/go.mod h1:b1BuldmJlbA/xYtdZvKi+7j5YGB44qJUJDZ9zwiNCfE=
 github.com/openshift/build-machinery-go v0.0.0-20210423112049-9415d7ebd33e/go.mod h1:b1BuldmJlbA/xYtdZvKi+7j5YGB44qJUJDZ9zwiNCfE=
 github.com/openshift/client-go v0.0.0-20210521082421-73d9475a9142/go.mod h1:fjS8r9mqDVsPb5td3NehsNOAWa4uiFkYEfVZioQ2gH0=

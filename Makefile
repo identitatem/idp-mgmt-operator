@@ -102,14 +102,14 @@ docker-push:
 # download controller-gen if necessary
 controller-gen:
 ifeq (, $(shell which controller-gen))
-	@{ \
+	@( \
 	set -e ;\
 	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$CONTROLLER_GEN_TMP_DIR ;\
 	go mod init tmp ;\
 	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.0 ;\
 	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-	}
+	)
 CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
@@ -126,8 +126,8 @@ ifeq (, $(shell which kubebuilder))
 	}
 endif
 
-add-external-crds:
-	@for FILE in "config/crd/external"; do kubectl apply -f $$FILE;done
+functional-test-crds:
+	@for FILE in "test/config/crd/external"; do kubectl apply -f $$FILE;done
 
 functional-test-full: docker-build-coverage
 	@build/run-functional-tests.sh $(IMG_COVERAGE)

@@ -16,6 +16,9 @@ RUN microdnf update
 RUN microdnf install -y --nodocs jq
 RUN microdnf install -y --nodocs openssl
 
+# Copy needed crd for test
+COPY test/config/crd/external test/config/crd/external
+
 # install operator binary
 RUN cp ${OPERATOR}-coverage ${OPERATOR}
 

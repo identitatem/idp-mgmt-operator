@@ -1,0 +1,1 @@
+{{ replaceObjectName .Reader .File .NewName }}

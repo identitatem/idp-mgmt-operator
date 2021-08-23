@@ -8,12 +8,15 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ghodss/yaml"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -27,11 +30,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	identitatemdexserverv1lapha1 "github.com/identitatem/dex-operator/api/v1alpha1"
+	dexoperatorconfig "github.com/identitatem/dex-operator/config"
 	clientsetmgmt "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned"
 	identitatemmgmtv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
+	idpmgmtoperatorconfig "github.com/identitatem/idp-mgmt-operator/config"
 	clientsetstrategy "github.com/identitatem/idp-strategy-operator/api/client/clientset/versioned"
 	identitatemstrategyv1alpha1 "github.com/identitatem/idp-strategy-operator/api/identitatem/v1alpha1"
+	idpstrategyoperatorconfig "github.com/identitatem/idp-strategy-operator/config"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
+	clusteradmasset "open-cluster-management.io/clusteradm/pkg/helpers/asset"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -53,7 +60,8 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func(done Done) {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter)))
+	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
 	By("bootstrapping test environment")
 	err := os.Setenv(dexOperatorImageEnvName, "dex_operator_inage")
 	Expect(err).NotTo(HaveOccurred())
@@ -65,14 +73,28 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).Should(BeNil())
 	err = appsv1.AddToScheme(scheme.Scheme)
 	Expect(err).Should(BeNil())
+
+	readerStrategy := idpstrategyoperatorconfig.GetScenarioResourcesReader()
+	strategyCRD, err := getCRD(readerStrategy, "crd/bases/identityconfig.identitatem.io_strategies.yaml")
+	Expect(err).Should(BeNil())
+
+	readerDex := dexoperatorconfig.GetScenarioResourcesReader()
+	dexClientCRD, err := getCRD(readerDex, "crd/bases/auth.identitatem.io_dexclients.yaml")
+	Expect(err).Should(BeNil())
+
+	dexServerCRD, err := getCRD(readerDex, "crd/bases/auth.identitatem.io_dexservers.yaml")
+	Expect(err).Should(BeNil())
+
 	testEnv = &envtest.Environment{
 		Scheme: scheme.Scheme,
 		CRDs: []client.Object{
-			&appsv1.Deployment{},
+			strategyCRD,
+			dexClientCRD,
+			dexServerCRD,
 		},
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "config", "crd", "bases"),
-			filepath.Join("..", "config", "crd", "external"),
+			filepath.Join("..", "test", "config", "crd", "external"),
 		},
 	}
 
@@ -112,9 +134,16 @@ var _ = AfterSuite(func() {
 })
 
 var _ = Describe("Process AuthRealm: ", func() {
-	AuthRealmName := "test-authrealm"
-	AuthRealmNameSpace := "test"
-	CertificatesSecretRef := "test-certs"
+	AuthRealmName := "my-authrealm"
+	AuthRealmNameSpace := "my-authrealm-ns"
+	CertificatesSecretRef := "my-certs"
+	It("Check CRDs availability", func() {
+		By("Checking authrealms CRD", func() {
+			readerStrategy := idpmgmtoperatorconfig.GetScenarioResourcesReader()
+			_, err := getCRD(readerStrategy, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
+			Expect(err).Should(BeNil())
+		})
+	})
 	It("process a AuthRealm CR", func() {
 		By("creation test namespace", func() {
 			ns := &corev1.Namespace{
@@ -154,7 +183,11 @@ var _ = Describe("Process AuthRealm: ", func() {
 					},
 					IdentityProviders: []identitatemmgmtv1alpha1.IdentityProvider{
 						{
-							GitHub: &openshiftconfigv1.GitHubIdentityProvider{},
+							GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+								ClientSecret: openshiftconfigv1.SecretNameReference{
+									Name: AuthRealmName + "-github",
+								},
+							},
 						},
 					},
 				},
@@ -258,3 +291,16 @@ var _ = Describe("Process AuthRealm: ", func() {
 		})
 	})
 })
+
+func getCRD(reader *clusteradmasset.ScenarioResourcesReader, file string) (*apiextensionsv1.CustomResourceDefinition, error) {
+	b, err := reader.Asset(file)
+	if err != nil {
+		return nil, err
+	}
+	crd := &apiextensionsv1.CustomResourceDefinition{}
+	if err := yaml.Unmarshal(b, crd); err != nil {
+		return nil, err
+	}
+	return crd, nil
+	// apiClient.ApiextensionsV1().CustomResourceDefinitions().Get()
+}
