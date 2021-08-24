@@ -16,9 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	authrealmv1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
-	idpmgmtoperatorconfig "github.com/identitatem/idp-mgmt-operator/config"
 	"github.com/identitatem/idp-mgmt-operator/controllers"
-	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -70,19 +68,6 @@ func main() {
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
-
-	//Install CRD
-	applierBuilder := &clusteradmapply.ApplierBuilder{}
-	applier := applierBuilder.WithClient(r.KubeClient, r.APIExtensionClient, r.DynamicClient).Build()
-
-	readerIDPMgmtOperator := idpmgmtoperatorconfig.GetScenarioResourcesReader()
-
-	file := "crd/bases/identityconfig.identitatem.io_authrealms.yaml"
-	_, err = applier.ApplyDirectly(readerIDPMgmtOperator, nil, false, "", file)
-	if err != nil {
-		setupLog.Error(err, "unable to create install the crd for controller", "crd", file, "controller", "AuthRealm")
-		os.Exit(1)
-	}
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

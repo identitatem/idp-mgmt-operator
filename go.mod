@@ -17,13 +17,14 @@ require (
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/code-generator v0.22.0
 	k8s.io/klog/v2 v2.10.0
-	open-cluster-management.io/api v0.0.0-20210804091127-340467ff6239
+	open-cluster-management.io/api v0.0.0-20210804091127-340467ff6239 // indirect
 	open-cluster-management.io/clusteradm v0.1.0-alpha.5
 	sigs.k8s.io/controller-runtime v0.9.6
 	sigs.k8s.io/controller-tools v0.5.0
 )
 
 replace (
+	github.com/identitatem/idp-strategy-operator => /Users/dvernier/go/src/github.com/identitatem/idp-strategy-operator
 	k8s.io/api => k8s.io/api v0.22.0
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.22.0
 	k8s.io/apimachinery => k8s.io/apimachinery v0.22.0

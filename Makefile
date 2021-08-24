@@ -29,8 +29,13 @@ check-copyright:
 	@build/check-copyright.sh
 
 test: generate fmt vet manifests
-	go test ./... -coverprofile cover.out
-
+	@go test ./... -coverprofile cover.out ;\
+	COVERAGE=`go tool cover -func="cover.out" | grep "total:" | awk '{ print $$3 }' | sed 's/[][()><%]/ /g'` ;\
+	echo "-------------------------------------------------------------------------" ;\
+	echo "TOTAL COVERAGE IS $$COVERAGE%" ;\
+	echo "-------------------------------------------------------------------------" ;\
+	go tool cover -html "cover.out" -o ${PROJECT_DIR}/cover.html 
+	
 # Build manager binary
 manager: generate fmt vet
 	go build -o bin/manager main.go
@@ -117,14 +122,15 @@ endif
 
 kubebuilder-tools:
 ifeq (, $(shell which kubebuilder))
-	@{ \
+	@( \
 		set -ex ;\
 		KUBEBUILDER_TMP_DIR=$$(mktemp -d) ;\
 		cd $$KUBEBUILDER_TMP_DIR ;\
-		curl -L -o $$KUBEBUILDER_TMP_DIR/kubebuilder https://go.kubebuilder.io/dl/3.1.0/$$(go env GOOS)/$$(go env GOARCH) ;\
+		curl -L -o $$KUBEBUILDER_TMP_DIR/kubebuilder https://github.com/kubernetes-sigs/kubebuilder/releases/download/3.1.0/$$(go env GOOS)/$$(go env GOARCH) ;\
 		chmod +x $$KUBEBUILDER_TMP_DIR/kubebuilder && mv $$KUBEBUILDER_TMP_DIR/kubebuilder /usr/local/bin/ ;\
-	}
+	)
 endif
+
 
 functional-test-crds:
 	@for FILE in "test/config/crd/external"; do kubectl apply -f $$FILE;done

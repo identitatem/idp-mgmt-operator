@@ -7,7 +7,6 @@ import (
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	placementv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -20,7 +19,7 @@ type AuthRealmSpec struct {
 
 	// Placement defines a rule to select a set of ManagedClusters from the ManagedClusterSets bound
 	// to the placement namespace.
-	Placement *Placement `json:"placement,omitempty"`
+	PlacementRef corev1.LocalObjectReference `json:"placementRef,omitempty"`
 	// mappingMethod determines how identities from this provider are mapped to users
 	// Defaults to "claim"
 	// +optional
@@ -42,13 +41,6 @@ type AuthRealmSpec struct {
 	// IdentityProviders reference an identity provider
 	// +required
 	IdentityProviders []IdentityProvider `json:"identityProviders,omitempty"`
-}
-
-//Placement defines the placement.
-type Placement struct {
-	//TODO what if the end-user give an existing placement name
-	Name string                          `json:"name,omitempty"`
-	Spec placementv1alpha1.PlacementSpec `json:"spec,omitempty"`
 }
 
 type AuthProxyType string

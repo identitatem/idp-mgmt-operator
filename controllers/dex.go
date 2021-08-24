@@ -176,6 +176,9 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemmgmtv1alpha1
 func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemmgmtv1alpha1.AuthRealm) (cs []identitatemdexserverv1alpha1.ConnectorSpec, err error) {
 	r.Log.Info("createDexConnectors", "Name", authRealm.Name, "Namespace", authRealm.Name)
 	//TODO loop on identity providers
+	if len(authRealm.Spec.IdentityProviders) > 1 {
+		return nil, fmt.Errorf("more than 1 identityProvider in %s/%s", authRealm.Name, authRealm.Name)
+	}
 	idp := authRealm.Spec.IdentityProviders[0]
 	cs = make([]identitatemdexserverv1alpha1.ConnectorSpec, 0)
 	if idp.GitHub != nil {
@@ -212,6 +215,9 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemmgmtv1al
 			return nil, err
 		}
 		cs = append(cs, *c)
+	}
+	if len(cs) == 0 {
+		return nil, fmt.Errorf("no identityProvider defined in %s/%s", authRealm.Name, authRealm.Name)
 	}
 	return cs, err
 }

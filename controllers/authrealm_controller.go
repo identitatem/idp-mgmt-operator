@@ -23,6 +23,9 @@ import (
 	identitatemdexserverv1lapha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemmgmtv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
 	identitatemstrategyv1alpha1 "github.com/identitatem/idp-strategy-operator/api/identitatem/v1alpha1"
+
+	idpmgmtoperatorconfig "github.com/identitatem/idp-mgmt-operator/config"
+	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 )
 
 const (
@@ -119,6 +122,17 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	//Install CRD
+	applierBuilder := &clusteradmapply.ApplierBuilder{}
+	applier := applierBuilder.WithClient(r.KubeClient, r.APIExtensionClient, r.DynamicClient).Build()
+
+	readerIDPMgmtOperator := idpmgmtoperatorconfig.GetScenarioResourcesReader()
+
+	file := "crd/bases/identityconfig.identitatem.io_authrealms.yaml"
+	if _, err := applier.ApplyDirectly(readerIDPMgmtOperator, nil, false, "", file); err != nil {
+		return err
+	}
+
 	if err := identitatemstrategyv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		return err
 	}

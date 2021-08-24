@@ -290,6 +290,99 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
 		})
 	})
+	It("process AuthRealm CR with 2 identityProviders", func() {
+		By("creating a AuthRealm CR type dex", func() {
+			authRealm := &identitatemmgmtv1alpha1.AuthRealm{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      AuthRealmName + "-1",
+					Namespace: AuthRealmNameSpace,
+				},
+				Spec: identitatemmgmtv1alpha1.AuthRealmSpec{
+					Type: identitatemmgmtv1alpha1.AuthProxyDex,
+					CertificatesSecretRef: corev1.LocalObjectReference{
+						Name: CertificatesSecretRef,
+					},
+					IdentityProviders: []identitatemmgmtv1alpha1.IdentityProvider{
+						{
+							GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+								ClientSecret: openshiftconfigv1.SecretNameReference{
+									Name: AuthRealmName + "-github",
+								},
+							},
+						},
+						{
+							GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+								ClientSecret: openshiftconfigv1.SecretNameReference{
+									Name: AuthRealmName + "-github",
+								},
+							},
+						},
+					},
+				},
+			}
+			_, err := clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By("Run reconcile again", func() {
+			req := ctrl.Request{}
+			req.Name = AuthRealmName + "-1"
+			req.Namespace = AuthRealmNameSpace
+			_, err := r.Reconcile(context.TODO(), req)
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+	It("process AuthRealm CR without identityProviders", func() {
+		By("creating a AuthRealm CR type dex", func() {
+			authRealm := &identitatemmgmtv1alpha1.AuthRealm{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      AuthRealmName + "-2",
+					Namespace: AuthRealmNameSpace,
+				},
+				Spec: identitatemmgmtv1alpha1.AuthRealmSpec{
+					Type: identitatemmgmtv1alpha1.AuthProxyDex,
+					CertificatesSecretRef: corev1.LocalObjectReference{
+						Name: CertificatesSecretRef,
+					},
+					IdentityProviders: []identitatemmgmtv1alpha1.IdentityProvider{},
+				},
+			}
+			_, err := clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By("Run reconcile again", func() {
+			req := ctrl.Request{}
+			req.Name = AuthRealmName + "-2"
+			req.Namespace = AuthRealmNameSpace
+			_, err := r.Reconcile(context.TODO(), req)
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+	It("process AuthRealm CR with identityProviders nil", func() {
+		By("creating a AuthRealm CR type dex", func() {
+			authRealm := &identitatemmgmtv1alpha1.AuthRealm{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      AuthRealmName + "-3",
+					Namespace: AuthRealmNameSpace,
+				},
+				Spec: identitatemmgmtv1alpha1.AuthRealmSpec{
+					Type: identitatemmgmtv1alpha1.AuthProxyDex,
+					CertificatesSecretRef: corev1.LocalObjectReference{
+						Name: CertificatesSecretRef,
+					},
+				},
+			}
+			_, err := clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By("Run reconcile again", func() {
+			req := ctrl.Request{}
+			req.Name = AuthRealmName + "-3"
+			req.Namespace = AuthRealmNameSpace
+			_, err := r.Reconcile(context.TODO(), req)
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+
 })
 
 func getCRD(reader *clusteradmasset.ScenarioResourcesReader, file string) (*apiextensionsv1.CustomResourceDefinition, error) {
