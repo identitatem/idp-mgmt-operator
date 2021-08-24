@@ -24,7 +24,6 @@ require (
 )
 
 replace (
-	github.com/identitatem/idp-strategy-operator => /Users/dvernier/go/src/github.com/identitatem/idp-strategy-operator
 	k8s.io/api => k8s.io/api v0.22.0
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.22.0
 	k8s.io/apimachinery => k8s.io/apimachinery v0.22.0
