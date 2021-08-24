@@ -594,6 +594,8 @@ github.com/identitatem/dex-operator v0.0.4-0.20210823143514-03bf1caa0cb1 h1:kyrY
 github.com/identitatem/dex-operator v0.0.4-0.20210823143514-03bf1caa0cb1/go.mod h1:Z37xv2KN5CsHycQOEUkJxANhVqY6x5D31dxE81+50kg=
 github.com/identitatem/idp-mgmt-operator v0.0.0-20210816175333-8714ccda628f/go.mod h1:TSFxD23e/gbDrRl8ykux5fHh83sIEvMS1mLqz03C8XI=
 github.com/identitatem/idp-mgmt-operator v0.0.0-20210818210855-8eb7808be310/go.mod h1:FuaE9NEqCPpV/yACowaU2bV1GiCMaWmstzOtpAWzZ/A=
+github.com/identitatem/idp-strategy-operator v0.0.0-20210809192815-024cce5d037e h1:fVIDbnbp8knWXo+3wCG/9EIc58JdgCdcKSpLlKPSV1Q=
+github.com/identitatem/idp-strategy-operator v0.0.0-20210809192815-024cce5d037e/go.mod h1:DKmdBl4qjyFaHMcJESLqxCTVLHoCbKVy2ud5JgXIGHw=
 github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
 github.com/imdario/mergo v0.3.6/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
 github.com/imdario/mergo v0.3.7/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
