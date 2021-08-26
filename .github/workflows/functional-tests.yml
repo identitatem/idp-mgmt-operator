@@ -20,12 +20,10 @@ jobs:
         go-version: 1.16
 
     - name: Install kubebuilder
-      uses: RyanSiu1995/kubebuilder-action@v1.2
-      with:
-        version: 2.3.0        
+      run: make envtest-tools
 
     - name: Functional Tests
-      run: make functional-test-full
+      run:  export KUBEBUILDER_ASSETS=$HOME/kubebuilder/bin; make functional-test-full
 
     - if:  ${{ failure() }}
       name: Logs after Tests Failed

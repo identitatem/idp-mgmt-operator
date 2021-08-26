@@ -83,15 +83,18 @@ API_SERVER_URL=$(cat ${KIND_KUBECONFIG_INTERNAL}| grep "server:" |cut -d ":" -f2
 kind load docker-image ${DOCKER_IMAGE_AND_TAG} --name=${CLUSTER_NAME} -v 99 || echo "failed to load image locally, will use imagePullSecret"
 
 echo "install cluster"
-make add-external-crds
+make functional-test-crds
 make deploy-coverage
+echo "Wait deployment stabilize"
+sleep 10
+echo "Launch functional-test"
 make functional-test
-
+# exit 1
 echo "Wait 10 sec to let coverage to flush"
 sleep 10
 
 echo "remove deployment"
-kubectl delete deployment idp-mgmt-operator-controller-manager -n identitatem
+make undeploy
 
 echo "Wait 10 sec for copy to AWS"
 sleep 10

@@ -22,6 +22,8 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
+      securityContext:
+        fsGroup: 2000
       containers:
       - args:
         - --
@@ -35,10 +37,13 @@ spec:
         - name: DEX_OPERATOR_IMAGE
           value: "quay.io/identitatem/dex-operator:latest"
         - name: IDP_STRATEGY_OPERATOR_IMAGE
-          value: "quay.io/identitatem/idp-strategy-operator@sha256:94ced03077efaa7f7f6edfa428e78958e895df63d923dfe9d29a1994d3e517fa"
-        image: quay.io/identitatem/idp-mgmt-operator:latest
+          value: "quay.io/identitatem/idp-strategy-operator@sha256:ec3830ee6fd74a4d25e43a0e6b26884ab64b437fa3323591f157835d622a9137"
+        image: controller:latest
         name: manager
         imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - mountPath: /tmp/coverage
+            name: coverage-dir  
         resources:
           limits:
             cpu: 100m
@@ -48,3 +53,10 @@ spec:
             memory: 20Mi
       serviceAccountName: idp-mgmt-operator-controller-manager
       terminationGracePeriodSeconds: 10
+      volumes:
+        - name: coverage-dir
+          hostPath:
+            # directory location on host
+            path: /tmp/coverage
+            # this field is optional
+            type: Directory

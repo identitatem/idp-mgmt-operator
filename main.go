@@ -15,10 +15,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	authrealmv1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
-	idpmgmtoperatorconfig "github.com/identitatem/idp-mgmt-operator/config"
+	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/controllers"
-	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -30,7 +28,7 @@ var (
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
-	_ = authrealmv1.AddToScheme(scheme)
+	_ = identitatemv1alpha1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -57,32 +55,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	r := &controllers.AuthRealmReconciler{
+	if err = (&controllers.AuthRealmReconciler{
 		Client:             mgr.GetClient(),
 		KubeClient:         kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
 		DynamicClient:      dynamic.NewForConfigOrDie(ctrl.GetConfigOrDie()),
 		APIExtensionClient: apiextensionsclient.NewForConfigOrDie(ctrl.GetConfigOrDie()),
 		Log:                ctrl.Log.WithName("controllers").WithName("AuthRealm"),
 		Scheme:             mgr.GetScheme(),
-	}
-	if err = r.SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AuthRealm")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
-
-	//Install CRD
-	applierBuilder := &clusteradmapply.ApplierBuilder{}
-	applier := applierBuilder.WithClient(r.KubeClient, r.APIExtensionClient, r.DynamicClient).Build()
-
-	readerIDPMgmtOperator := idpmgmtoperatorconfig.GetScenarioResourcesReader()
-
-	file := "crd/bases/identityconfig.identitatem.io_authrealms.yaml"
-	_, err = applier.ApplyDirectly(readerIDPMgmtOperator, nil, false, "", file)
-	if err != nil {
-		setupLog.Error(err, "unable to create install the crd for controller", "crd", file, "controller", "AuthRealm")
-		os.Exit(1)
-	}
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

@@ -8,12 +8,15 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ghodss/yaml"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -27,19 +30,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	identitatemdexserverv1lapha1 "github.com/identitatem/dex-operator/api/v1alpha1"
-	clientsetmgmt "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned"
-	identitatemmgmtv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
-	clientsetstrategy "github.com/identitatem/idp-strategy-operator/api/client/clientset/versioned"
-	identitatemstrategyv1alpha1 "github.com/identitatem/idp-strategy-operator/api/identitatem/v1alpha1"
+	dexoperatorconfig "github.com/identitatem/dex-operator/config"
+	idpclientset "github.com/identitatem/idp-client-api/api/client/clientset/versioned"
+	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	idpconfig "github.com/identitatem/idp-client-api/config"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
+	clusteradmasset "open-cluster-management.io/clusteradm/pkg/helpers/asset"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var cfg *rest.Config
-var clientSetMgmt *clientsetmgmt.Clientset
-var clientSetStrategy *clientsetstrategy.Clientset
+var clientSetMgmt *idpclientset.Clientset
+var clientSetStrategy *idpclientset.Clientset
 var k8sClient client.Client
 var testEnv *envtest.Environment
 var r AuthRealmReconciler
@@ -53,26 +57,44 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func(done Done) {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter)))
+	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
 	By("bootstrapping test environment")
 	err := os.Setenv(dexOperatorImageEnvName, "dex_operator_inage")
 	Expect(err).NotTo(HaveOccurred())
-	err = identitatemmgmtv1alpha1.AddToScheme(scheme.Scheme)
+	err = identitatemv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
-	err = identitatemstrategyv1alpha1.AddToScheme(scheme.Scheme)
+	err = identitatemv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).Should(BeNil())
 	err = identitatemdexserverv1lapha1.AddToScheme(scheme.Scheme)
 	Expect(err).Should(BeNil())
 	err = appsv1.AddToScheme(scheme.Scheme)
 	Expect(err).Should(BeNil())
+
+	readerIDP := idpconfig.GetScenarioResourcesReader()
+	strategyCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_strategies.yaml")
+	Expect(err).Should(BeNil())
+
+	authrealmCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
+	Expect(err).Should(BeNil())
+
+	readerDex := dexoperatorconfig.GetScenarioResourcesReader()
+	dexClientCRD, err := getCRD(readerDex, "crd/bases/auth.identitatem.io_dexclients.yaml")
+	Expect(err).Should(BeNil())
+
+	dexServerCRD, err := getCRD(readerDex, "crd/bases/auth.identitatem.io_dexservers.yaml")
+	Expect(err).Should(BeNil())
+
 	testEnv = &envtest.Environment{
 		Scheme: scheme.Scheme,
 		CRDs: []client.Object{
-			&appsv1.Deployment{},
+			strategyCRD,
+			authrealmCRD,
+			dexClientCRD,
+			dexServerCRD,
 		},
 		CRDDirectoryPaths: []string{
-			filepath.Join("..", "config", "crd", "bases"),
-			filepath.Join("..", "config", "crd", "external"),
+			filepath.Join("..", "test", "config", "crd", "external"),
 		},
 	}
 
@@ -80,11 +102,11 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	clientSetMgmt, err = clientsetmgmt.NewForConfig(cfg)
+	clientSetMgmt, err = idpclientset.NewForConfig(cfg)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(clientSetMgmt).ToNot(BeNil())
 
-	clientSetStrategy, err = clientsetstrategy.NewForConfig(cfg)
+	clientSetStrategy, err = idpclientset.NewForConfig(cfg)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(clientSetMgmt).ToNot(BeNil())
 
@@ -112,9 +134,16 @@ var _ = AfterSuite(func() {
 })
 
 var _ = Describe("Process AuthRealm: ", func() {
-	AuthRealmName := "test-authrealm"
-	AuthRealmNameSpace := "test"
-	CertificatesSecretRef := "test-certs"
+	AuthRealmName := "my-authrealm"
+	AuthRealmNameSpace := "my-authrealm-ns"
+	CertificatesSecretRef := "my-certs"
+	It("Check CRDs availability", func() {
+		By("Checking authrealms CRD", func() {
+			readerStrategy := idpconfig.GetScenarioResourcesReader()
+			_, err := getCRD(readerStrategy, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
+			Expect(err).Should(BeNil())
+		})
+	})
 	It("process a AuthRealm CR", func() {
 		By("creation test namespace", func() {
 			ns := &corev1.Namespace{
@@ -142,19 +171,25 @@ var _ = Describe("Process AuthRealm: ", func() {
 
 		})
 		By("creating a AuthRealm CR type dex", func() {
-			authRealm := &identitatemmgmtv1alpha1.AuthRealm{
+			authRealm := &identitatemv1alpha1.AuthRealm{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      AuthRealmName,
 					Namespace: AuthRealmNameSpace,
 				},
-				Spec: identitatemmgmtv1alpha1.AuthRealmSpec{
-					Type: identitatemmgmtv1alpha1.AuthProxyDex,
+				Spec: identitatemv1alpha1.AuthRealmSpec{
+					Type: identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
 					},
-					IdentityProviders: []identitatemmgmtv1alpha1.IdentityProvider{
+					IdentityProviders: []openshiftconfigv1.IdentityProvider{
 						{
-							GitHub: &openshiftconfigv1.GitHubIdentityProvider{},
+							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+									ClientSecret: openshiftconfigv1.SecretNameReference{
+										Name: AuthRealmName + "-github",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -257,4 +292,114 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
 		})
 	})
+	It("process AuthRealm CR with 2 identityProviders", func() {
+		By("creating a AuthRealm CR type dex", func() {
+			authRealm := &identitatemv1alpha1.AuthRealm{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      AuthRealmName + "-1",
+					Namespace: AuthRealmNameSpace,
+				},
+				Spec: identitatemv1alpha1.AuthRealmSpec{
+					Type: identitatemv1alpha1.AuthProxyDex,
+					CertificatesSecretRef: corev1.LocalObjectReference{
+						Name: CertificatesSecretRef,
+					},
+					IdentityProviders: []openshiftconfigv1.IdentityProvider{
+						{
+							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+									ClientSecret: openshiftconfigv1.SecretNameReference{
+										Name: AuthRealmName + "-github",
+									},
+								},
+							},
+						},
+						{
+							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+									ClientSecret: openshiftconfigv1.SecretNameReference{
+										Name: AuthRealmName + "-github",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			_, err := clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By("Run reconcile again", func() {
+			req := ctrl.Request{}
+			req.Name = AuthRealmName + "-1"
+			req.Namespace = AuthRealmNameSpace
+			_, err := r.Reconcile(context.TODO(), req)
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+	It("process AuthRealm CR without identityProviders", func() {
+		By("creating a AuthRealm CR type dex", func() {
+			authRealm := &identitatemv1alpha1.AuthRealm{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      AuthRealmName + "-2",
+					Namespace: AuthRealmNameSpace,
+				},
+				Spec: identitatemv1alpha1.AuthRealmSpec{
+					Type: identitatemv1alpha1.AuthProxyDex,
+					CertificatesSecretRef: corev1.LocalObjectReference{
+						Name: CertificatesSecretRef,
+					},
+					IdentityProviders: []openshiftconfigv1.IdentityProvider{},
+				},
+			}
+			_, err := clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By("Run reconcile again", func() {
+			req := ctrl.Request{}
+			req.Name = AuthRealmName + "-2"
+			req.Namespace = AuthRealmNameSpace
+			_, err := r.Reconcile(context.TODO(), req)
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+	It("process AuthRealm CR with identityProviders nil", func() {
+		By("creating a AuthRealm CR type dex", func() {
+			authRealm := &identitatemv1alpha1.AuthRealm{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      AuthRealmName + "-3",
+					Namespace: AuthRealmNameSpace,
+				},
+				Spec: identitatemv1alpha1.AuthRealmSpec{
+					Type: identitatemv1alpha1.AuthProxyDex,
+					CertificatesSecretRef: corev1.LocalObjectReference{
+						Name: CertificatesSecretRef,
+					},
+				},
+			}
+			_, err := clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By("Run reconcile again", func() {
+			req := ctrl.Request{}
+			req.Name = AuthRealmName + "-3"
+			req.Namespace = AuthRealmNameSpace
+			_, err := r.Reconcile(context.TODO(), req)
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+
 })
+
+func getCRD(reader *clusteradmasset.ScenarioResourcesReader, file string) (*apiextensionsv1.CustomResourceDefinition, error) {
+	b, err := reader.Asset(file)
+	if err != nil {
+		return nil, err
+	}
+	crd := &apiextensionsv1.CustomResourceDefinition{}
+	if err := yaml.Unmarshal(b, crd); err != nil {
+		return nil, err
+	}
+	return crd, nil
+	// apiClient.ApiextensionsV1().CustomResourceDefinitions().Get()
+}

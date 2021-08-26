@@ -28,18 +28,23 @@ check: check-copyright
 check-copyright:
 	@build/check-copyright.sh
 
-test: generate fmt vet manifests
-	go test ./... -coverprofile cover.out
-
+test: fmt vet manifests
+	@go test ./... -coverprofile cover.out ;\
+	COVERAGE=`go tool cover -func="cover.out" | grep "total:" | awk '{ print $$3 }' | sed 's/[][()><%]/ /g'` ;\
+	echo "-------------------------------------------------------------------------" ;\
+	echo "TOTAL COVERAGE IS $$COVERAGE%" ;\
+	echo "-------------------------------------------------------------------------" ;\
+	go tool cover -html "cover.out" -o ${PROJECT_DIR}/cover.html 
+	
 # Build manager binary
-manager: generate fmt vet
+manager: fmt vet
 	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
-run: generate fmt vet manifests
+run: fmt vet manifests
 	go run ./main.go
 
-run-coverage: generate fmt vet manifests
+run-coverage: fmt vet manifests
 	go test -covermode=atomic -coverpkg=github.com/identitatem/${PROJECT_NAME}/controllers/... -tags testrunmain -run "^TestRunMain$$" -coverprofile=cover.out .
 
 # Install CRDs into a cluster
@@ -65,8 +70,7 @@ undeploy:
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." 
 # Run go fmt against code
 fmt:
 	go fmt ./...
@@ -74,13 +78,6 @@ fmt:
 # Run go vet against code
 vet:
 	go vet ./...
-
-# Generate code
-generate: kubebuilder-tools controller-gen
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-
-generate-clients: generate
-	./hack/update-codegen.sh
 
 # Build the docker image
 docker-build: test
@@ -102,14 +99,14 @@ docker-push:
 # download controller-gen if necessary
 controller-gen:
 ifeq (, $(shell which controller-gen))
-	@{ \
+	@( \
 	set -e ;\
 	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$CONTROLLER_GEN_TMP_DIR ;\
 	go mod init tmp ;\
 	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.0 ;\
 	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-	}
+	)
 CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
@@ -117,17 +114,18 @@ endif
 
 kubebuilder-tools:
 ifeq (, $(shell which kubebuilder))
-	@{ \
+	@( \
 		set -ex ;\
 		KUBEBUILDER_TMP_DIR=$$(mktemp -d) ;\
 		cd $$KUBEBUILDER_TMP_DIR ;\
-		curl -L -o $$KUBEBUILDER_TMP_DIR/kubebuilder https://go.kubebuilder.io/dl/3.1.0/$$(go env GOOS)/$$(go env GOARCH) ;\
+		curl -L -o $$KUBEBUILDER_TMP_DIR/kubebuilder https://github.com/kubernetes-sigs/kubebuilder/releases/download/3.1.0/$$(go env GOOS)/$$(go env GOARCH) ;\
 		chmod +x $$KUBEBUILDER_TMP_DIR/kubebuilder && mv $$KUBEBUILDER_TMP_DIR/kubebuilder /usr/local/bin/ ;\
-	}
+	)
 endif
 
-add-external-crds:
-	@for FILE in "config/crd/external"; do kubectl apply -f $$FILE;done
+
+functional-test-crds:
+	@for FILE in "test/config/crd/external"; do kubectl apply -f $$FILE;done
 
 functional-test-full: docker-build-coverage
 	@build/run-functional-tests.sh $(IMG_COVERAGE)

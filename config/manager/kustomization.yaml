@@ -1,5 +1,7 @@
+# - manager.yaml
 resources:
-- manager.yaml
+- manager-coverage.yaml
+
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
