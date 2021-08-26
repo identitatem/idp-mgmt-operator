@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"os"
 
-	identitatemmgmtv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
+	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	idpconfig "github.com/identitatem/idp-client-api/config"
 	"github.com/identitatem/idp-mgmt-operator/deploy"
-	identitatemstrategyv1alpha1 "github.com/identitatem/idp-strategy-operator/api/identitatem/v1alpha1"
 	idpstrategyoperatorconfig "github.com/identitatem/idp-strategy-operator/config"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,19 +24,19 @@ const (
 	podNamespaceEnvName             string = "POD_NAMESPACE"
 )
 
-func (r *AuthRealmReconciler) createStrategy(t identitatemstrategyv1alpha1.StrategyType, authrealm *identitatemmgmtv1alpha1.AuthRealm) error {
-	strategy := &identitatemstrategyv1alpha1.Strategy{}
+func (r *AuthRealmReconciler) createStrategy(t identitatemv1alpha1.StrategyType, authrealm *identitatemv1alpha1.AuthRealm) error {
+	strategy := &identitatemv1alpha1.Strategy{}
 	name := GenerateStrategyName(t, authrealm)
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: authrealm.Namespace}, strategy); err != nil {
 		if !errors.IsNotFound(err) {
 			return err
 		}
-		strategy := &identitatemstrategyv1alpha1.Strategy{
+		strategy := &identitatemv1alpha1.Strategy{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: authrealm.Namespace,
 			},
-			Spec: identitatemstrategyv1alpha1.StrategySpec{
+			Spec: identitatemv1alpha1.StrategySpec{
 				Type: t,
 			},
 		}
@@ -50,7 +50,7 @@ func (r *AuthRealmReconciler) createStrategy(t identitatemstrategyv1alpha1.Strat
 	return nil
 }
 
-func GenerateStrategyName(t identitatemstrategyv1alpha1.StrategyType, authrealm *identitatemmgmtv1alpha1.AuthRealm) string {
+func GenerateStrategyName(t identitatemv1alpha1.StrategyType, authrealm *identitatemv1alpha1.AuthRealm) string {
 	return fmt.Sprintf("%s-%s", authrealm.Name, string(t))
 }
 
@@ -63,7 +63,7 @@ func (r *AuthRealmReconciler) installIDPStrategyCRDs() error {
 		WithTemplateFuncMap(FuncMap()).
 		Build()
 
-	readerIDPStrategyOperator := idpstrategyoperatorconfig.GetScenarioResourcesReader()
+	readerIDPStrategyOperator := idpconfig.GetScenarioResourcesReader()
 	files := []string{"crd/bases/identityconfig.identitatem.io_strategies.yaml"}
 
 	_, err := applier.ApplyDirectly(readerIDPStrategyOperator, nil, false, "", files...)

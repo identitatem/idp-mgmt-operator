@@ -9,7 +9,7 @@ import (
 
 	identitatemdexserverv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	dexoperatorconfig "github.com/identitatem/dex-operator/config"
-	identitatemmgmtv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
+	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/deploy"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -23,7 +23,7 @@ const (
 	dexOperatorImageEnvName string = "DEX_OPERATOR_IMAGE"
 )
 
-func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemmgmtv1alpha1.AuthRealm) error {
+func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthRealm) error {
 	r.Log.Info("syncDexCRs", "AuthRealm.Name", authRealm.Name, "AuthRealm.Namespace", authRealm.Namespace)
 	//TODO this test should maybe be in a webhook to avoid the creation of an invalid CR
 	if len(authRealm.Spec.IdentityProviders) != 1 {
@@ -42,7 +42,7 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemmgmtv1alpha1.Auth
 	return nil
 }
 
-func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemmgmtv1alpha1.AuthRealm) error {
+func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.AuthRealm) error {
 	r.Log.Info("installDexOperator", "Name", authRealm.Name, "Namespace", authRealm.Name)
 
 	applierBuilder := &clusteradmapply.ApplierBuilder{}
@@ -62,7 +62,7 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemmgmtv1alp
 
 	values := struct {
 		Image     string
-		AuthRealm *identitatemmgmtv1alpha1.AuthRealm
+		AuthRealm *identitatemv1alpha1.AuthRealm
 		Reader    *clusteradmasset.ScenarioResourcesReader
 		File      string
 		NewName   string
@@ -115,7 +115,7 @@ func (r *AuthRealmReconciler) installDexCRDs() error {
 	return nil
 }
 
-func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemmgmtv1alpha1.AuthRealm) error {
+func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.AuthRealm) error {
 	r.Log.Info("createDexServer", "Name", authRealm.Name, "Namespace", authRealm.Name)
 	dexServerExists := true
 	dexServer := &identitatemdexserverv1alpha1.DexServer{}
@@ -152,7 +152,7 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemmgmtv1alpha1
 	return nil
 }
 
-func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemmgmtv1alpha1.AuthRealm, dexServer *identitatemdexserverv1alpha1.DexServer) error {
+func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.AuthRealm, dexServer *identitatemdexserverv1alpha1.DexServer) error {
 	r.Log.Info("updateDexServer", "Name", authRealm.Name, "Namespace", authRealm.Name)
 	dexServer.Spec.Issuer = authRealm.Spec.Host
 	if len(authRealm.Spec.CertificatesSecretRef.Name) != 0 {
@@ -173,56 +173,54 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemmgmtv1alpha1
 	return nil
 }
 
-func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemmgmtv1alpha1.AuthRealm) (cs []identitatemdexserverv1alpha1.ConnectorSpec, err error) {
+func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1.AuthRealm) (cs []identitatemdexserverv1alpha1.ConnectorSpec, err error) {
 	r.Log.Info("createDexConnectors", "Name", authRealm.Name, "Namespace", authRealm.Name)
-	//TODO loop on identity providers
-	if len(authRealm.Spec.IdentityProviders) > 1 {
-		return nil, fmt.Errorf("more than 1 identityProvider in %s/%s", authRealm.Name, authRealm.Name)
-	}
-	idp := authRealm.Spec.IdentityProviders[0]
-	cs = make([]identitatemdexserverv1alpha1.ConnectorSpec, 0)
-	if idp.GitHub != nil {
-		c, err := r.createConnector(authRealm, "github", idp.GitHub.ClientSecret.Name)
-		if err != nil {
-			return nil, err
+
+	for _, idp := range authRealm.Spec.IdentityProviders {
+		cs = make([]identitatemdexserverv1alpha1.ConnectorSpec, 0)
+		if idp.GitHub != nil {
+			c, err := r.createConnector(authRealm, "github", idp.GitHub.ClientSecret.Name)
+			if err != nil {
+				return nil, err
+			}
+			cs = append(cs, *c)
 		}
-		cs = append(cs, *c)
-	}
-	if idp.Google != nil {
-		c, err := r.createConnector(authRealm, "google", idp.Google.ClientSecret.Name)
-		if err != nil {
-			return nil, err
+		if idp.Google != nil {
+			c, err := r.createConnector(authRealm, "google", idp.Google.ClientSecret.Name)
+			if err != nil {
+				return nil, err
+			}
+			cs = append(cs, *c)
 		}
-		cs = append(cs, *c)
-	}
-	if idp.HTPasswd != nil {
-		c, err := r.createConnector(authRealm, "htppasswd", "")
-		if err != nil {
-			return nil, err
+		if idp.HTPasswd != nil {
+			c, err := r.createConnector(authRealm, "htppasswd", "")
+			if err != nil {
+				return nil, err
+			}
+			cs = append(cs, *c)
 		}
-		cs = append(cs, *c)
-	}
-	if idp.LDAP != nil {
-		c, err := r.createConnector(authRealm, "ldap", idp.LDAP.BindPassword.Name)
-		if err != nil {
-			return nil, err
+		if idp.LDAP != nil {
+			c, err := r.createConnector(authRealm, "ldap", idp.LDAP.BindPassword.Name)
+			if err != nil {
+				return nil, err
+			}
+			cs = append(cs, *c)
 		}
-		cs = append(cs, *c)
-	}
-	if idp.OpenID != nil {
-		c, err := r.createConnector(authRealm, "oidc", idp.OpenID.ClientSecret.Name)
-		if err != nil {
-			return nil, err
+		if idp.OpenID != nil {
+			c, err := r.createConnector(authRealm, "oidc", idp.OpenID.ClientSecret.Name)
+			if err != nil {
+				return nil, err
+			}
+			cs = append(cs, *c)
 		}
-		cs = append(cs, *c)
-	}
-	if len(cs) == 0 {
-		return nil, fmt.Errorf("no identityProvider defined in %s/%s", authRealm.Name, authRealm.Name)
+		if len(cs) == 0 {
+			return nil, fmt.Errorf("no identityProvider defined in %s/%s", authRealm.Name, authRealm.Name)
+		}
 	}
 	return cs, err
 }
 
-func (r *AuthRealmReconciler) createConnector(authRealm *identitatemmgmtv1alpha1.AuthRealm,
+func (r *AuthRealmReconciler) createConnector(authRealm *identitatemv1alpha1.AuthRealm,
 	identityProviderType string, clientSecretName string) (c *identitatemdexserverv1alpha1.ConnectorSpec, err error) {
 
 	c = &identitatemdexserverv1alpha1.ConnectorSpec{
@@ -238,7 +236,7 @@ func (r *AuthRealmReconciler) createConnector(authRealm *identitatemmgmtv1alpha1
 	return c, nil
 }
 
-func (r *AuthRealmReconciler) deleteAuthRealmNamespace(authRealm *identitatemmgmtv1alpha1.AuthRealm) error {
+func (r *AuthRealmReconciler) deleteAuthRealmNamespace(authRealm *identitatemv1alpha1.AuthRealm) error {
 	ns := &corev1.Namespace{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: authRealm.Name}, ns); err != nil {
 		if errors.IsNotFound(err) {

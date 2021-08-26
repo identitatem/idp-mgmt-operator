@@ -28,7 +28,7 @@ check: check-copyright
 check-copyright:
 	@build/check-copyright.sh
 
-test: generate fmt vet manifests
+test: fmt vet manifests
 	@go test ./... -coverprofile cover.out ;\
 	COVERAGE=`go tool cover -func="cover.out" | grep "total:" | awk '{ print $$3 }' | sed 's/[][()><%]/ /g'` ;\
 	echo "-------------------------------------------------------------------------" ;\
@@ -37,14 +37,14 @@ test: generate fmt vet manifests
 	go tool cover -html "cover.out" -o ${PROJECT_DIR}/cover.html 
 	
 # Build manager binary
-manager: generate fmt vet
+manager: fmt vet
 	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
-run: generate fmt vet manifests
+run: fmt vet manifests
 	go run ./main.go
 
-run-coverage: generate fmt vet manifests
+run-coverage: fmt vet manifests
 	go test -covermode=atomic -coverpkg=github.com/identitatem/${PROJECT_NAME}/controllers/... -tags testrunmain -run "^TestRunMain$$" -coverprofile=cover.out .
 
 # Install CRDs into a cluster
@@ -70,8 +70,7 @@ undeploy:
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." 
 # Run go fmt against code
 fmt:
 	go fmt ./...
@@ -79,13 +78,6 @@ fmt:
 # Run go vet against code
 vet:
 	go vet ./...
-
-# Generate code
-generate: kubebuilder-tools controller-gen
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-
-generate-clients: generate
-	./hack/update-codegen.sh
 
 # Build the docker image
 docker-build: test

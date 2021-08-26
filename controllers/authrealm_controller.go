@@ -21,10 +21,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	identitatemdexserverv1lapha1 "github.com/identitatem/dex-operator/api/v1alpha1"
-	identitatemmgmtv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
-	identitatemstrategyv1alpha1 "github.com/identitatem/idp-strategy-operator/api/identitatem/v1alpha1"
+	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 
-	idpmgmtoperatorconfig "github.com/identitatem/idp-mgmt-operator/config"
+	idpoperatorconfig "github.com/identitatem/idp-client-api/config"
 	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 )
 
@@ -56,7 +55,7 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// your logic here
 	// Fetch the ManagedCluster instance
-	instance := &identitatemmgmtv1alpha1.AuthRealm{}
+	instance := &identitatemv1alpha1.AuthRealm{}
 
 	if err := r.Client.Get(
 		context.TODO(),
@@ -96,12 +95,12 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	//Synchronize Dex CR
 	switch {
-	case instance.Spec.Type == identitatemmgmtv1alpha1.AuthProxyDex ||
+	case instance.Spec.Type == identitatemv1alpha1.AuthProxyDex ||
 		instance.Spec.Type == "":
 		if err := r.syncDexCRs(instance); err != nil {
 			return ctrl.Result{}, err
 		}
-	case instance.Spec.Type == identitatemmgmtv1alpha1.AuthProxyRHSSO:
+	case instance.Spec.Type == identitatemv1alpha1.AuthProxyRHSSO:
 		if err := r.syncRHSSOCRs(instance); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -109,12 +108,12 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	//Create GRC strategy
-	if err := r.createStrategy(identitatemstrategyv1alpha1.GrcStrategyType, instance); err != nil {
+	if err := r.createStrategy(identitatemv1alpha1.GrcStrategyType, instance); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	//Create Backplane strategy
-	if err := r.createStrategy(identitatemstrategyv1alpha1.BackplaneStrategyType, instance); err != nil {
+	if err := r.createStrategy(identitatemv1alpha1.BackplaneStrategyType, instance); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -126,14 +125,14 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	applierBuilder := &clusteradmapply.ApplierBuilder{}
 	applier := applierBuilder.WithClient(r.KubeClient, r.APIExtensionClient, r.DynamicClient).Build()
 
-	readerIDPMgmtOperator := idpmgmtoperatorconfig.GetScenarioResourcesReader()
+	readerIDPMgmtOperator := idpoperatorconfig.GetScenarioResourcesReader()
 
 	file := "crd/bases/identityconfig.identitatem.io_authrealms.yaml"
 	if _, err := applier.ApplyDirectly(readerIDPMgmtOperator, nil, false, "", file); err != nil {
 		return err
 	}
 
-	if err := identitatemstrategyv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+	if err := identitatemv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		return err
 	}
 	if err := identitatemdexserverv1lapha1.AddToScheme(mgr.GetScheme()); err != nil {
@@ -152,8 +151,8 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&identitatemmgmtv1alpha1.AuthRealm{}).
-		Owns(&identitatemstrategyv1alpha1.Strategy{}).
+		For(&identitatemv1alpha1.AuthRealm{}).
+		Owns(&identitatemv1alpha1.Strategy{}).
 		Owns(&identitatemdexserverv1lapha1.DexServer{}).
 		Watches(&source.Kind{Type: &identitatemdexserverv1lapha1.DexClient{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
 			return []reconcile.Request{

@@ -31,12 +31,9 @@ import (
 
 	identitatemdexserverv1lapha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	dexoperatorconfig "github.com/identitatem/dex-operator/config"
-	clientsetmgmt "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned"
-	identitatemmgmtv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
-	idpmgmtoperatorconfig "github.com/identitatem/idp-mgmt-operator/config"
-	clientsetstrategy "github.com/identitatem/idp-strategy-operator/api/client/clientset/versioned"
-	identitatemstrategyv1alpha1 "github.com/identitatem/idp-strategy-operator/api/identitatem/v1alpha1"
-	idpstrategyoperatorconfig "github.com/identitatem/idp-strategy-operator/config"
+	idpclientset "github.com/identitatem/idp-client-api/api/client/clientset/versioned"
+	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	idpconfig "github.com/identitatem/idp-client-api/config"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	clusteradmasset "open-cluster-management.io/clusteradm/pkg/helpers/asset"
 )
@@ -45,8 +42,8 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var cfg *rest.Config
-var clientSetMgmt *clientsetmgmt.Clientset
-var clientSetStrategy *clientsetstrategy.Clientset
+var clientSetMgmt *idpclientset.Clientset
+var clientSetStrategy *idpclientset.Clientset
 var k8sClient client.Client
 var testEnv *envtest.Environment
 var r AuthRealmReconciler
@@ -65,17 +62,20 @@ var _ = BeforeSuite(func(done Done) {
 	By("bootstrapping test environment")
 	err := os.Setenv(dexOperatorImageEnvName, "dex_operator_inage")
 	Expect(err).NotTo(HaveOccurred())
-	err = identitatemmgmtv1alpha1.AddToScheme(scheme.Scheme)
+	err = identitatemv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
-	err = identitatemstrategyv1alpha1.AddToScheme(scheme.Scheme)
+	err = identitatemv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).Should(BeNil())
 	err = identitatemdexserverv1lapha1.AddToScheme(scheme.Scheme)
 	Expect(err).Should(BeNil())
 	err = appsv1.AddToScheme(scheme.Scheme)
 	Expect(err).Should(BeNil())
 
-	readerStrategy := idpstrategyoperatorconfig.GetScenarioResourcesReader()
-	strategyCRD, err := getCRD(readerStrategy, "crd/bases/identityconfig.identitatem.io_strategies.yaml")
+	readerIDP := idpconfig.GetScenarioResourcesReader()
+	strategyCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_strategies.yaml")
+	Expect(err).Should(BeNil())
+
+	authrealmCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
 	Expect(err).Should(BeNil())
 
 	readerDex := dexoperatorconfig.GetScenarioResourcesReader()
@@ -89,11 +89,11 @@ var _ = BeforeSuite(func(done Done) {
 		Scheme: scheme.Scheme,
 		CRDs: []client.Object{
 			strategyCRD,
+			authrealmCRD,
 			dexClientCRD,
 			dexServerCRD,
 		},
 		CRDDirectoryPaths: []string{
-			filepath.Join("..", "config", "crd", "bases"),
 			filepath.Join("..", "test", "config", "crd", "external"),
 		},
 	}
@@ -102,11 +102,11 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	clientSetMgmt, err = clientsetmgmt.NewForConfig(cfg)
+	clientSetMgmt, err = idpclientset.NewForConfig(cfg)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(clientSetMgmt).ToNot(BeNil())
 
-	clientSetStrategy, err = clientsetstrategy.NewForConfig(cfg)
+	clientSetStrategy, err = idpclientset.NewForConfig(cfg)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(clientSetMgmt).ToNot(BeNil())
 
@@ -139,7 +139,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 	CertificatesSecretRef := "my-certs"
 	It("Check CRDs availability", func() {
 		By("Checking authrealms CRD", func() {
-			readerStrategy := idpmgmtoperatorconfig.GetScenarioResourcesReader()
+			readerStrategy := idpconfig.GetScenarioResourcesReader()
 			_, err := getCRD(readerStrategy, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
 			Expect(err).Should(BeNil())
 		})
@@ -171,21 +171,23 @@ var _ = Describe("Process AuthRealm: ", func() {
 
 		})
 		By("creating a AuthRealm CR type dex", func() {
-			authRealm := &identitatemmgmtv1alpha1.AuthRealm{
+			authRealm := &identitatemv1alpha1.AuthRealm{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      AuthRealmName,
 					Namespace: AuthRealmNameSpace,
 				},
-				Spec: identitatemmgmtv1alpha1.AuthRealmSpec{
-					Type: identitatemmgmtv1alpha1.AuthProxyDex,
+				Spec: identitatemv1alpha1.AuthRealmSpec{
+					Type: identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
 					},
-					IdentityProviders: []identitatemmgmtv1alpha1.IdentityProvider{
+					IdentityProviders: []openshiftconfigv1.IdentityProvider{
 						{
-							GitHub: &openshiftconfigv1.GitHubIdentityProvider{
-								ClientSecret: openshiftconfigv1.SecretNameReference{
-									Name: AuthRealmName + "-github",
+							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+									ClientSecret: openshiftconfigv1.SecretNameReference{
+										Name: AuthRealmName + "-github",
+									},
 								},
 							},
 						},
@@ -292,28 +294,32 @@ var _ = Describe("Process AuthRealm: ", func() {
 	})
 	It("process AuthRealm CR with 2 identityProviders", func() {
 		By("creating a AuthRealm CR type dex", func() {
-			authRealm := &identitatemmgmtv1alpha1.AuthRealm{
+			authRealm := &identitatemv1alpha1.AuthRealm{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      AuthRealmName + "-1",
 					Namespace: AuthRealmNameSpace,
 				},
-				Spec: identitatemmgmtv1alpha1.AuthRealmSpec{
-					Type: identitatemmgmtv1alpha1.AuthProxyDex,
+				Spec: identitatemv1alpha1.AuthRealmSpec{
+					Type: identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
 					},
-					IdentityProviders: []identitatemmgmtv1alpha1.IdentityProvider{
+					IdentityProviders: []openshiftconfigv1.IdentityProvider{
 						{
-							GitHub: &openshiftconfigv1.GitHubIdentityProvider{
-								ClientSecret: openshiftconfigv1.SecretNameReference{
-									Name: AuthRealmName + "-github",
+							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+									ClientSecret: openshiftconfigv1.SecretNameReference{
+										Name: AuthRealmName + "-github",
+									},
 								},
 							},
 						},
 						{
-							GitHub: &openshiftconfigv1.GitHubIdentityProvider{
-								ClientSecret: openshiftconfigv1.SecretNameReference{
-									Name: AuthRealmName + "-github",
+							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+									ClientSecret: openshiftconfigv1.SecretNameReference{
+										Name: AuthRealmName + "-github",
+									},
 								},
 							},
 						},
@@ -333,17 +339,17 @@ var _ = Describe("Process AuthRealm: ", func() {
 	})
 	It("process AuthRealm CR without identityProviders", func() {
 		By("creating a AuthRealm CR type dex", func() {
-			authRealm := &identitatemmgmtv1alpha1.AuthRealm{
+			authRealm := &identitatemv1alpha1.AuthRealm{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      AuthRealmName + "-2",
 					Namespace: AuthRealmNameSpace,
 				},
-				Spec: identitatemmgmtv1alpha1.AuthRealmSpec{
-					Type: identitatemmgmtv1alpha1.AuthProxyDex,
+				Spec: identitatemv1alpha1.AuthRealmSpec{
+					Type: identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
 					},
-					IdentityProviders: []identitatemmgmtv1alpha1.IdentityProvider{},
+					IdentityProviders: []openshiftconfigv1.IdentityProvider{},
 				},
 			}
 			_, err := clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})
@@ -359,13 +365,13 @@ var _ = Describe("Process AuthRealm: ", func() {
 	})
 	It("process AuthRealm CR with identityProviders nil", func() {
 		By("creating a AuthRealm CR type dex", func() {
-			authRealm := &identitatemmgmtv1alpha1.AuthRealm{
+			authRealm := &identitatemv1alpha1.AuthRealm{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      AuthRealmName + "-3",
 					Namespace: AuthRealmNameSpace,
 				},
-				Spec: identitatemmgmtv1alpha1.AuthRealmSpec{
-					Type: identitatemmgmtv1alpha1.AuthProxyDex,
+				Spec: identitatemv1alpha1.AuthRealmSpec{
+					Type: identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
 					},

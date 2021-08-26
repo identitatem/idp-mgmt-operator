@@ -11,10 +11,8 @@ import (
 	"path/filepath"
 	"time"
 
-	identitatemmgmtclientset "github.com/identitatem/idp-mgmt-operator/api/client/clientset/versioned"
-	identitatemmgmtv1alpha1 "github.com/identitatem/idp-mgmt-operator/api/identitatem/v1alpha1"
-	identitatemstrategyclientset "github.com/identitatem/idp-strategy-operator/api/client/clientset/versioned"
-	identitatemstrategyv1alpha1 "github.com/identitatem/idp-strategy-operator/api/identitatem/v1alpha1"
+	idpclientset "github.com/identitatem/idp-client-api/api/client/clientset/versioned"
+	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
@@ -37,8 +35,8 @@ func init() {
 
 }
 
-var authClientSet *identitatemmgmtclientset.Clientset
-var strategyClientSet *identitatemstrategyclientset.Clientset
+var authClientSet *idpclientset.Clientset
+var strategyClientSet *idpclientset.Clientset
 
 var cfg *rest.Config
 var kubeClient *kubernetes.Clientset
@@ -60,10 +58,10 @@ var _ = Describe("AuthRealm", func() {
 		cfg, err := clientcmd.BuildConfigFromFlags("", kubeConfigFile)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(cfg).ToNot(BeNil())
-		authClientSet, err = identitatemmgmtclientset.NewForConfig(cfg)
+		authClientSet, err = idpclientset.NewForConfig(cfg)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(authClientSet).ToNot(BeNil())
-		strategyClientSet, err = identitatemstrategyclientset.NewForConfig(cfg)
+		strategyClientSet, err = idpclientset.NewForConfig(cfg)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(authClientSet).ToNot(BeNil())
 		kubeClient, err = kubernetes.NewForConfig(cfg)
@@ -99,19 +97,25 @@ var _ = Describe("AuthRealm", func() {
 			Expect(err).To(BeNil())
 		})
 		By("Create a AuthRealm", func() {
-			authRealm := identitatemmgmtv1alpha1.AuthRealm{
+			authRealm := identitatemv1alpha1.AuthRealm{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      AuthRealmName,
 					Namespace: AuthRealmNameSpace,
 				},
-				Spec: identitatemmgmtv1alpha1.AuthRealmSpec{
-					Type: identitatemmgmtv1alpha1.AuthProxyDex,
+				Spec: identitatemv1alpha1.AuthRealmSpec{
+					Type: identitatemv1alpha1.AuthProxyDex,
 					// CertificatesSecretRef: corev1.LocalObjectReference{
 					// 	Name: CertificatesSecretRef,
 					// },
-					IdentityProviders: []identitatemmgmtv1alpha1.IdentityProvider{
+					IdentityProviders: []openshiftconfigv1.IdentityProvider{
 						{
-							GitHub: &openshiftconfigv1.GitHubIdentityProvider{},
+							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+									ClientSecret: openshiftconfigv1.SecretNameReference{
+										Name: AuthRealmName + "-github",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -145,7 +149,7 @@ var _ = Describe("AuthRealm", func() {
 				_, err := strategyClientSet.
 					IdentityconfigV1alpha1().
 					Strategies(AuthRealmNameSpace).
-					Get(context.TODO(), AuthRealmName+"-"+string(identitatemstrategyv1alpha1.BackplaneStrategyType), metav1.GetOptions{})
+					Get(context.TODO(), AuthRealmName+"-"+string(identitatemv1alpha1.BackplaneStrategyType), metav1.GetOptions{})
 				if err != nil {
 					logf.Log.Info("Error while reading strategy", "Error", err)
 					return err
@@ -158,7 +162,7 @@ var _ = Describe("AuthRealm", func() {
 				_, err := strategyClientSet.
 					IdentityconfigV1alpha1().
 					Strategies(AuthRealmNameSpace).
-					Get(context.TODO(), AuthRealmName+"-"+string(identitatemstrategyv1alpha1.GrcStrategyType), metav1.GetOptions{})
+					Get(context.TODO(), AuthRealmName+"-"+string(identitatemv1alpha1.GrcStrategyType), metav1.GetOptions{})
 				if err != nil {
 					logf.Log.Info("Error while reading strategy", "Error", err)
 					return err
@@ -197,7 +201,7 @@ var _ = Describe("AuthRealm", func() {
 				_, err := strategyClientSet.
 					IdentityconfigV1alpha1().
 					Strategies(AuthRealmNameSpace).
-					Get(context.TODO(), AuthRealmName+"-"+string(identitatemstrategyv1alpha1.BackplaneStrategyType), metav1.GetOptions{})
+					Get(context.TODO(), AuthRealmName+"-"+string(identitatemv1alpha1.BackplaneStrategyType), metav1.GetOptions{})
 				return err
 			}, 60, 1).ShouldNot(BeNil())
 		})
@@ -206,7 +210,7 @@ var _ = Describe("AuthRealm", func() {
 				_, err := strategyClientSet.
 					IdentityconfigV1alpha1().
 					Strategies(AuthRealmNameSpace).
-					Get(context.TODO(), AuthRealmName+"-"+string(identitatemstrategyv1alpha1.GrcStrategyType), metav1.GetOptions{})
+					Get(context.TODO(), AuthRealmName+"-"+string(identitatemv1alpha1.GrcStrategyType), metav1.GetOptions{})
 				return err
 			}, 60, 1).ShouldNot(BeNil())
 		})
