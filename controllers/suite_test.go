@@ -183,10 +183,12 @@ var _ = Describe("Process AuthRealm: ", func() {
 					},
 					IdentityProviders: []openshiftconfigv1.IdentityProvider{
 						{
+							Name: "my-github",
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+								Type: openshiftconfigv1.IdentityProviderTypeGitHub,
 								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
 									ClientSecret: openshiftconfigv1.SecretNameReference{
-										Name: AuthRealmName + "-github",
+										Name: AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub),
 									},
 								},
 							},
@@ -212,10 +214,10 @@ var _ = Describe("Process AuthRealm: ", func() {
 			_, err := clientSetStrategy.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName+"-backplane", metav1.GetOptions{})
 			Expect(err).Should(BeNil())
 		})
-		By("Checking GRC Strategy", func() {
-			_, err := clientSetStrategy.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName+"-grc", metav1.GetOptions{})
-			Expect(err).Should(BeNil())
-		})
+		// By("Checking GRC Strategy", func() {
+		// 	_, err := clientSetStrategy.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName+"-grc", metav1.GetOptions{})
+		// 	Expect(err).Should(BeNil())
+		// })
 		By("Checking Dex Namespace", func() {
 			ns := &corev1.Namespace{}
 			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName}, ns)
@@ -232,17 +234,12 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(AuthRealmName))
-			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef).To(Equal(AuthRealmName + "-github"))
+			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal("github"))
 			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
 			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
 			//TODO CA missing in Web
 		})
-		// By("Checking DexClient", func() {
-		// 	dexClient := &identitatemdexserverv1lapha1.DexClient{}
-		// 	err = k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: AuthRealmName}, dexClient)
-		// 	Expect(err).Should(BeNil())
-		// })
 	})
 	It("process a AuthRealm CR again", func() {
 		By("Run reconcile again", func() {
@@ -258,7 +255,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(AuthRealmName))
-			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef).To(Equal(AuthRealmName + "-github"))
+			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal("github"))
 			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
 			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
@@ -286,7 +283,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(AuthRealmName))
-			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef).To(Equal(AuthRealmName + "-github"))
+			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal("github"))
 			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.newcrt"))
 			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
@@ -306,24 +303,30 @@ var _ = Describe("Process AuthRealm: ", func() {
 					},
 					IdentityProviders: []openshiftconfigv1.IdentityProvider{
 						{
+							Name: "my-github",
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+								Type: openshiftconfigv1.IdentityProviderTypeGitHub,
 								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
 									ClientSecret: openshiftconfigv1.SecretNameReference{
-										Name: AuthRealmName + "-github",
+										Name: AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub),
 									},
 								},
 							},
 						},
 						{
+							Name: "my-ldap",
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
-								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
-									ClientSecret: openshiftconfigv1.SecretNameReference{
-										Name: AuthRealmName + "-github",
+								Type: openshiftconfigv1.IdentityProviderTypeLDAP,
+								LDAP: &openshiftconfigv1.LDAPIdentityProvider{
+									BindPassword: openshiftconfigv1.SecretNameReference{
+										Name: AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeLDAP),
+									},
+									Attributes: openshiftconfigv1.LDAPAttributeMapping{
+										ID: []string{},
 									},
 								},
 							},
-						},
-					},
+						}},
 				},
 			}
 			_, err := clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})

@@ -27,4 +27,4 @@ jobs:
 
     - if:  ${{ failure() }}
       name: Logs after Tests Failed
-      run: KUBECONFIG=kind_kubeconfig.yaml kubectl logs  -n identitatem `KUBECONFIG=kind_kubeconfig.yaml kubectl get po -n identitatem -oname | grep idp-mgmt-operator`
+      run: KUBECONFIG=kind_kubeconfig.yaml kubectl logs  -n idp-mgmt-config `KUBECONFIG=kind_kubeconfig.yaml kubectl get po -n idp-mgmt-config -oname | grep idp-mgmt-operator`

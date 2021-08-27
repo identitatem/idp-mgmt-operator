@@ -11,6 +11,7 @@ import (
 	dexoperatorconfig "github.com/identitatem/dex-operator/config"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/deploy"
+	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -178,44 +179,25 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 
 	for _, idp := range authRealm.Spec.IdentityProviders {
 		cs = make([]identitatemdexserverv1alpha1.ConnectorSpec, 0)
-		if idp.GitHub != nil {
+		switch idp.Type {
+		case openshiftconfigv1.IdentityProviderTypeGitHub:
 			c, err := r.createConnector(authRealm, "github", idp.GitHub.ClientSecret.Name)
 			if err != nil {
 				return nil, err
 			}
 			cs = append(cs, *c)
-		}
-		if idp.Google != nil {
-			c, err := r.createConnector(authRealm, "google", idp.Google.ClientSecret.Name)
-			if err != nil {
-				return nil, err
-			}
-			cs = append(cs, *c)
-		}
-		if idp.HTPasswd != nil {
-			c, err := r.createConnector(authRealm, "htppasswd", "")
-			if err != nil {
-				return nil, err
-			}
-			cs = append(cs, *c)
-		}
-		if idp.LDAP != nil {
+		case openshiftconfigv1.IdentityProviderTypeLDAP:
 			c, err := r.createConnector(authRealm, "ldap", idp.LDAP.BindPassword.Name)
 			if err != nil {
 				return nil, err
 			}
 			cs = append(cs, *c)
+		default:
+			return nil, fmt.Errorf("unsupported provider type %s", idp.Type)
 		}
-		if idp.OpenID != nil {
-			c, err := r.createConnector(authRealm, "oidc", idp.OpenID.ClientSecret.Name)
-			if err != nil {
-				return nil, err
-			}
-			cs = append(cs, *c)
-		}
-		if len(cs) == 0 {
-			return nil, fmt.Errorf("no identityProvider defined in %s/%s", authRealm.Name, authRealm.Name)
-		}
+	}
+	if len(cs) == 0 {
+		return nil, fmt.Errorf("no identityProvider defined in %s/%s", authRealm.Name, authRealm.Name)
 	}
 	return cs, err
 }
