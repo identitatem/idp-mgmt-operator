@@ -214,10 +214,10 @@ var _ = Describe("Process AuthRealm: ", func() {
 			_, err := clientSetStrategy.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName+"-backplane", metav1.GetOptions{})
 			Expect(err).Should(BeNil())
 		})
-		By("Checking GRC Strategy", func() {
-			_, err := clientSetStrategy.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName+"-grc", metav1.GetOptions{})
-			Expect(err).Should(BeNil())
-		})
+		// By("Checking GRC Strategy", func() {
+		// 	_, err := clientSetStrategy.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName+"-grc", metav1.GetOptions{})
+		// 	Expect(err).Should(BeNil())
+		// })
 		By("Checking Dex Namespace", func() {
 			ns := &corev1.Namespace{}
 			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName}, ns)

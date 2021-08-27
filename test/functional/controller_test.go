@@ -110,9 +110,10 @@ var _ = Describe("AuthRealm", func() {
 					IdentityProviders: []openshiftconfigv1.IdentityProvider{
 						{
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+								Type: openshiftconfigv1.IdentityProviderTypeGitHub,
 								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
 									ClientSecret: openshiftconfigv1.SecretNameReference{
-										Name: AuthRealmName + "-github",
+										Name: AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub),
 									},
 								},
 							},
@@ -157,19 +158,19 @@ var _ = Describe("AuthRealm", func() {
 				return nil
 			}, 60, 1).Should(BeNil())
 		})
-		By("Checking the strategy grc creation", func() {
-			Eventually(func() error {
-				_, err := strategyClientSet.
-					IdentityconfigV1alpha1().
-					Strategies(AuthRealmNameSpace).
-					Get(context.TODO(), AuthRealmName+"-"+string(identitatemv1alpha1.GrcStrategyType), metav1.GetOptions{})
-				if err != nil {
-					logf.Log.Info("Error while reading strategy", "Error", err)
-					return err
-				}
-				return nil
-			}, 60, 1).Should(BeNil())
-		})
+		// By("Checking the strategy grc creation", func() {
+		// 	Eventually(func() error {
+		// 		_, err := strategyClientSet.
+		// 			IdentityconfigV1alpha1().
+		// 			Strategies(AuthRealmNameSpace).
+		// 			Get(context.TODO(), AuthRealmName+"-"+string(identitatemv1alpha1.GrcStrategyType), metav1.GetOptions{})
+		// 		if err != nil {
+		// 			logf.Log.Info("Error while reading strategy", "Error", err)
+		// 			return err
+		// 		}
+		// 		return nil
+		// 	}, 60, 1).Should(BeNil())
+		// })
 	})
 	//TODO check dexserver when update authrealm
 	It("Delete the authrealm", func() {
@@ -205,14 +206,14 @@ var _ = Describe("AuthRealm", func() {
 				return err
 			}, 60, 1).ShouldNot(BeNil())
 		})
-		By("Checking strategy GRC deleted", func() {
-			Eventually(func() error {
-				_, err := strategyClientSet.
-					IdentityconfigV1alpha1().
-					Strategies(AuthRealmNameSpace).
-					Get(context.TODO(), AuthRealmName+"-"+string(identitatemv1alpha1.GrcStrategyType), metav1.GetOptions{})
-				return err
-			}, 60, 1).ShouldNot(BeNil())
-		})
+		// By("Checking strategy GRC deleted", func() {
+		// 	Eventually(func() error {
+		// 		_, err := strategyClientSet.
+		// 			IdentityconfigV1alpha1().
+		// 			Strategies(AuthRealmNameSpace).
+		// 			Get(context.TODO(), AuthRealmName+"-"+string(identitatemv1alpha1.GrcStrategyType), metav1.GetOptions{})
+		// 		return err
+		// 	}, 60, 1).ShouldNot(BeNil())
+		// })
 	})
 })

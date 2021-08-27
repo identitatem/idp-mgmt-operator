@@ -593,8 +593,9 @@ github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365/go.mod h1:SK73t
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/identitatem/dex-operator v0.0.4-0.20210823143514-03bf1caa0cb1 h1:kyrYD9SFQe+BSRD84rh/oQ8a663NbJyZBVfkm8FhRF8=
 github.com/identitatem/dex-operator v0.0.4-0.20210823143514-03bf1caa0cb1/go.mod h1:Z37xv2KN5CsHycQOEUkJxANhVqY6x5D31dxE81+50kg=
-github.com/identitatem/idp-client-api v0.0.0-20210826124314-4781cac96f53 h1:KJJS+rzOHJllASj0/mFRp73wHeG1XsnHCsA8fkIj2nM=
 github.com/identitatem/idp-client-api v0.0.0-20210826124314-4781cac96f53/go.mod h1:w+IQrF6VckNFIR4BdFCj11HELl5NQe8/RE+G4TiQJ7k=
+github.com/identitatem/idp-client-api v0.0.0-20210827164743-3225e7e96ed6 h1:NB9LfR31OutB12H93xuxa335AvytU9av+PdSG52OyAE=
+github.com/identitatem/idp-client-api v0.0.0-20210827164743-3225e7e96ed6/go.mod h1:w+IQrF6VckNFIR4BdFCj11HELl5NQe8/RE+G4TiQJ7k=
 github.com/identitatem/idp-strategy-operator v0.0.0-20210826182111-43a2de07f7e0 h1:SH9z3sXfTp860hy6Bb51cszgcwytAiSQjjJT8qZrY0w=
 github.com/identitatem/idp-strategy-operator v0.0.0-20210826182111-43a2de07f7e0/go.mod h1:VYsOFbBQL8b9BoopDaGvfFCuaGwzbaMn9mJhFvoX6wo=
 github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=

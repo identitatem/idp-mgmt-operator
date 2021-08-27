@@ -100,17 +100,16 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if err := r.syncDexCRs(instance); err != nil {
 			return ctrl.Result{}, err
 		}
-	case instance.Spec.Type == identitatemv1alpha1.AuthProxyRHSSO:
-		if err := r.syncRHSSOCRs(instance); err != nil {
-			return ctrl.Result{}, err
-		}
-	default:
+		// case instance.Spec.Type == identitatemv1alpha1.AuthProxyRHSSO:
+		// 	if err := r.syncRHSSOCRs(instance); err != nil {
+		// 		return ctrl.Result{}, err
+		// 	}
 	}
 
 	//Create GRC strategy
-	if err := r.createStrategy(identitatemv1alpha1.GrcStrategyType, instance); err != nil {
-		return ctrl.Result{}, err
-	}
+	// if err := r.createStrategy(identitatemv1alpha1.GrcStrategyType, instance); err != nil {
+	// 	return ctrl.Result{}, err
+	// }
 
 	//Create Backplane strategy
 	if err := r.createStrategy(identitatemv1alpha1.BackplaneStrategyType, instance); err != nil {
