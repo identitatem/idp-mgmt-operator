@@ -1,6 +1,6 @@
 // Copyright Red Hat
 
-package controllers
+package authrealm
 
 import (
 	"context"
@@ -94,7 +94,7 @@ var _ = BeforeSuite(func(done Done) {
 			dexServerCRD,
 		},
 		CRDDirectoryPaths: []string{
-			filepath.Join("..", "test", "config", "crd", "external"),
+			filepath.Join("..", "..", "test", "config", "crd", "external"),
 		},
 	}
 
@@ -234,7 +234,8 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(AuthRealmName))
-			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
+			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
+			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Namespace).To(Equal(AuthRealmNameSpace))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal("github"))
 			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
 			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
@@ -255,7 +256,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(AuthRealmName))
-			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
+			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal("github"))
 			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
 			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
@@ -283,7 +284,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(AuthRealmName))
-			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
+			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal("github"))
 			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.newcrt"))
 			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))

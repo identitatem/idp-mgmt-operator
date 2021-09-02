@@ -591,8 +591,8 @@ github.com/huandu/xstrings v1.3.2 h1:L18LIDzqlW6xN2rEkpdV8+oL/IXWJ1APd+vsdYy4Wdw
 github.com/huandu/xstrings v1.3.2/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365/go.mod h1:SK73tn/9oHe+/Y0h39VT4UCxmurVJkR5NA7kMEAOgSE=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
-github.com/identitatem/dex-operator v0.0.4-0.20210823143514-03bf1caa0cb1 h1:kyrYD9SFQe+BSRD84rh/oQ8a663NbJyZBVfkm8FhRF8=
-github.com/identitatem/dex-operator v0.0.4-0.20210823143514-03bf1caa0cb1/go.mod h1:Z37xv2KN5CsHycQOEUkJxANhVqY6x5D31dxE81+50kg=
+github.com/identitatem/dex-operator v0.0.4-0.20210902181000-a7644cdfbfbe h1:X3O/qrQA2tCU7I9zLJjB/7oFFhcb7y7450Z/0s538eg=
+github.com/identitatem/dex-operator v0.0.4-0.20210902181000-a7644cdfbfbe/go.mod h1:F27EsiqVjRI3CZrEJKJMT1oNGys+aW4PTjfCS9jm8LQ=
 github.com/identitatem/idp-client-api v0.0.0-20210827164743-3225e7e96ed6 h1:NB9LfR31OutB12H93xuxa335AvytU9av+PdSG52OyAE=
 github.com/identitatem/idp-client-api v0.0.0-20210827164743-3225e7e96ed6/go.mod h1:w+IQrF6VckNFIR4BdFCj11HELl5NQe8/RE+G4TiQJ7k=
 github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
@@ -606,8 +606,6 @@ github.com/imdario/mergo v0.3.12/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH
 github.com/inconshreveable/mousetrap v1.0.0 h1:Z8tu5sraLXCXIcARxBp/8cbvlwVa7Z1NHg9XEKhtSvM=
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/influxdata/influxdb v1.7.7/go.mod h1:qZna6X/4elxqT3yI9iZYdZrWWdeFOOprn86kgg4+IzY=
-github.com/itdove/idp-strategy-operator v0.0.0-20210902110620-d0649a1d1a37 h1:Nvuco50eA2byFIXzEWzZ3YmNsmCwkX2XVaoVAtmreEQ=
-github.com/itdove/idp-strategy-operator v0.0.0-20210902110620-d0649a1d1a37/go.mod h1:HSyw2AlUTyPf9CrC84bSrNkubMaRc8ZZZQHdz7hwvxA=
 github.com/jackc/fake v0.0.0-20150926172116-812a484cc733/go.mod h1:WrMFNQdiFJ80sQsxDoMokWK1W5TQtxBFNpzWTD84ibQ=
 github.com/jackc/pgx v3.2.0+incompatible/go.mod h1:0ZGrqGqkRlliWnWB4zKnWtjbSWbGkVEFm4TeybAXq+I=
 github.com/jessevdk/go-flags v0.0.0-20180331124232-1c38ed7ad0cc/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
@@ -809,7 +807,6 @@ github.com/opencontainers/runc v0.0.0-20190115041553-12f6a991201f/go.mod h1:qT5X
 github.com/opencontainers/runc v0.1.1/go.mod h1:qT5XzbpPznkRYVz/mWwUaVBUv2rmF59PVA73FjuZG0U=
 github.com/opencontainers/runtime-spec v0.1.2-0.20190507144316-5b71a03e2700/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
 github.com/opencontainers/runtime-tools v0.0.0-20181011054405-1d69bd0f9c39/go.mod h1:r3f7wjNzSs2extwzU3Y+6pKfobzPh+kKFJ3ofN+3nfs=
-github.com/openshift/api v0.0.0-20210521075222-e273a339932a/go.mod h1:izBmoXbUu3z5kUa4FjZhvekTsyzIWiOoaIgJiZBBMQs=
 github.com/openshift/api v0.0.0-20210817132244-67c28690af52 h1:8sBREEoXgSeRXg9tDJAidbF3oe7GIl9wtPDczgoVO0c=
 github.com/openshift/api v0.0.0-20210817132244-67c28690af52/go.mod h1:x81TFA31x1OMT9SYWukQqJ/KbmeveRN6fo+XeGRK8g0=
 github.com/openshift/build-machinery-go v0.0.0-20200424080330-082bf86082cc/go.mod h1:1CkcsT3aVebzRBzVTSbiKSkJMsC/CASqxesfqEMfJEc=
@@ -1298,7 +1295,6 @@ golang.org/x/sys v0.0.0-20200923182605-d9f96fdee20d/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210112080510-489259a85091/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210225134936-a50acf3fe073/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210330210617-4fbd30eecc44/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
@@ -1394,7 +1390,6 @@ golang.org/x/tools v0.0.0-20200616133436-c1934b75d054/go.mod h1:EkVYQZoAsY45+roY
 golang.org/x/tools v0.0.0-20200619180055-7c47624df98f/go.mod h1:EkVYQZoAsY45+roYkvgYkIh4xh/qjgUK9TdY2XT94GE=
 golang.org/x/tools v0.0.0-20201224043029-2b0845dc783e/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.0.0-20210106214847-113979e3529a/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
-golang.org/x/tools v0.1.0/go.mod h1:xkSsbof2nBLbhDlRMhhhyNLN/zl3eTqcnHD5viDpcZ0=
 golang.org/x/tools v0.1.2 h1:kRBLX7v7Af8W7Gdbbc908OJcdgtK8bOz9Uaj8/F1ACA=
 golang.org/x/tools v0.1.2/go.mod h1:o0xws9oXOQQZyjljx8fwUC0k7L1pTE6eaCbjGeHmOkk=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
@@ -1636,6 +1631,7 @@ k8s.io/utils v0.0.0-20210707171843-4b05e18ac7d9/go.mod h1:jPW/WVKK9YHAvNhRxK0md/
 k8s.io/utils v0.0.0-20210722164352-7f3ee0f31471 h1:DnzUXII7sVg1FJ/4JX6YDRJfLNAC7idRatPwe07suiI=
 k8s.io/utils v0.0.0-20210722164352-7f3ee0f31471/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
 open-cluster-management.io/api v0.0.0-20210519100835-bb9d4652f920/go.mod h1:8Im7usNXWSCztNnujKnh0rC5DpnEDhXIyVI2rJrpgLo=
+open-cluster-management.io/api v0.0.0-20210902053421-22c45bd6c7a1 h1:0+iIEw3BTEqrp0hxh7TMHHaPa+bwXLLVJ7466uypfJU=
 open-cluster-management.io/api v0.0.0-20210902053421-22c45bd6c7a1/go.mod h1:9qiA5h/8kvPQnJEOlAPHVjRO9a1jCmDhGzvgMBvXEaE=
 open-cluster-management.io/clusteradm v0.1.0-alpha.5 h1:X6YY3fvT/hXFclgb/SDVkqah327iL9Wb/U4HKBXlTko=
 open-cluster-management.io/clusteradm v0.1.0-alpha.5/go.mod h1:mTlXVyeEwfYDacEzZ5RoZNvl+ZLRRlYTpY7C0Hik2Ro=

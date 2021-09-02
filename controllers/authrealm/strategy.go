@@ -1,6 +1,6 @@
 // Copyright Red Hat
 
-package controllers
+package authrealm
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	idpconfig "github.com/identitatem/idp-client-api/config"
+	idpstrategyoperatorconfig "github.com/identitatem/idp-mgmt-operator/config"
 	"github.com/identitatem/idp-mgmt-operator/deploy"
-	idpstrategyoperatorconfig "github.com/identitatem/idp-strategy-operator/config"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"

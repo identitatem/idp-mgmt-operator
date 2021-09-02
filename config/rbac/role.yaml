@@ -11,6 +11,19 @@ rules:
   resources:
   - namespaces
   - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - secrets
   - serviceaccounts
   verbs:
   - create
@@ -47,7 +60,84 @@ rules:
   - auth.identitatem.io
   resources:
   - dexclients
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - auth.identitatem.io
+  resources:
+  - dexclients
   - dexservers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  - placementdecisions
+  - placements
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - placementdecisions
+  - placements
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - placements
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - infrastructures
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - identityconfig.identitatem.io
+  resources:
+  - authrealms
+  - clusteroauths
+  - strategies
   verbs:
   - create
   - delete
@@ -70,6 +160,20 @@ rules:
   - update
   - watch
 - apiGroups:
+  - identityconfig.identitatem.io
+  resources:
+  - strategies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - identityconfig.identitatem.io
+  resources:
+  - strategies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings
@@ -90,6 +194,18 @@ rules:
   - create
   - delete
   - escalate
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - work.open-cluster-management.io
+  resources:
+  - manifestworks
+  verbs:
+  - create
+  - delete
   - get
   - list
   - patch

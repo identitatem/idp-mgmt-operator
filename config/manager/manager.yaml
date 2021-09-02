@@ -36,7 +36,7 @@ spec:
           value: "quay.io/identitatem/dex-operator:latest"
         - name: IDP_STRATEGY_OPERATOR_IMAGE
           value: "quay.io/identitatem/idp-strategy-operator@sha256:1d288c144035ca5426814d8105db0c17df5391c015158b01cf2680af0faed3a6"
-        image: quay.io/identitatem/idp-mgmt-operator@sha256:3a6542e692a72fb93cc63a5465b968981229a4c0aeb18b1241d4cd2fce8a8f96
+        image: quay.io/identitatem/idp-mgmt-operator@sha256:d14e49240d5eca8cfc77dabd36eb030e1ebf29d0c701ba0ee7d55cfe04720343
         name: manager
         imagePullPolicy: Always
         resources:
