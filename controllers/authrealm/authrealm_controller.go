@@ -126,8 +126,9 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	readerIDPMgmtOperator := idpoperatorconfig.GetScenarioResourcesReader()
 
-	file := "crd/bases/identityconfig.identitatem.io_authrealms.yaml"
-	if _, err := applier.ApplyDirectly(readerIDPMgmtOperator, nil, false, "", file); err != nil {
+	files := []string{"crd/bases/identityconfig.identitatem.io_authrealms.yaml",
+		"crd/bases/identityconfig.identitatem.io_strategies.yaml"}
+	if _, err := applier.ApplyDirectly(readerIDPMgmtOperator, nil, false, "", files...); err != nil {
 		return err
 	}
 
@@ -140,13 +141,7 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := appsv1.AddToScheme(mgr.GetScheme()); err != nil {
 		return err
 	}
-	if err := r.installIDPStrategyCRDs(); err != nil {
-		return err
-	}
 	if err := r.installDexCRDs(); err != nil {
-		return err
-	}
-	if err := r.installIDPStrategyOperator(); err != nil {
 		return err
 	}
 	return ctrl.NewControllerManagedBy(mgr).
