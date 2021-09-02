@@ -62,8 +62,8 @@ deploy: manifests
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy-coverage: manifests
-	cd config/manager && kustomize edit set image controller=${IMG_COVERAGE}
-	kustomize build config/default | kubectl apply -f -
+	cd config/manager-coverage && kustomize edit set image controller=${IMG_COVERAGE}
+	kustomize build config/default-coverage | kubectl apply -f -
 
 undeploy:
 	kubectl delete --wait=true -k config/default

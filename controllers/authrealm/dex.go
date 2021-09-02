@@ -1,6 +1,6 @@
 // Copyright Red Hat
 
-package controllers
+package authrealm
 
 import (
 	"context"
@@ -210,8 +210,11 @@ func (r *AuthRealmReconciler) createConnector(authRealm *identitatemv1alpha1.Aut
 		Name: authRealm.Name,
 		Id:   authRealm.Name,
 		Config: identitatemdexserverv1alpha1.ConfigSpec{
-			ClientID:        authRealm.Name,
-			ClientSecretRef: clientSecretName,
+			ClientID: authRealm.Name,
+			ClientSecretRef: corev1.ObjectReference{
+				Name:      clientSecretName,
+				Namespace: authRealm.Namespace,
+			},
 		},
 	}
 

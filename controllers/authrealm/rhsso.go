@@ -1,6 +1,6 @@
 // Copyright Red Hat
 
-package controllers
+package authrealm
 
 import identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 

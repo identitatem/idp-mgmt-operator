@@ -1,6 +1,6 @@
 // Copyright Red Hat
 
-package controllers
+package authrealm
 
 import (
 	"context"
