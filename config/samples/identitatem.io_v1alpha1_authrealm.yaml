@@ -1,6 +1,26 @@
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: my-authrealm
+---
 apiVersion: identityconfig.identitatem.io/v1alpha1
 kind: AuthRealm
 metadata:
   name: authrealm-sample
-  namespace: default
+  namespace: my-authrealm
 spec:
+  type: dex
+  placementRef:
+    name: placement-sample
+  identityProviders:
+    - name: my-idp-github
+      mappingMethod: claim
+      type: GitHub
+      github: 
+        clientID: me
+        clientSecret:
+          name: authrealm-sample-client-secret
+      
