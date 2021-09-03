@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/ghodss/yaml"
 
@@ -96,6 +97,10 @@ var _ = BeforeSuite(func(done Done) {
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "..", "test", "config", "crd", "external"),
 		},
+		ErrorIfCRDPathMissing:    true,
+		AttachControlPlaneOutput: true,
+		ControlPlaneStartTimeout: 1 * time.Minute,
+		ControlPlaneStopTimeout:  1 * time.Minute,
 	}
 
 	cfg, err = testEnv.Start()

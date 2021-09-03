@@ -112,15 +112,20 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	r.Log.Info("Running Reconcile for PlacementDecision.", "Name: ", instance.GetName(), " Namespace:", instance.GetNamespace())
 
+	strategy, err := GetStrategyFromPlacementDecision(r.Client, instance)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			r.Log.Error(err, "Error while getting the strategy")
+			return reconcile.Result{}, err
+		}
+		r.Log.Info("PlacementDecision not linked to a strategy", "PlacementDecision", instance.Name, "Error:", err)
+		//No further processing
+		return reconcile.Result{}, nil
+	}
+
 	//Add finalizer
 	controllerutil.AddFinalizer(instance, placementDecisionFinalizer)
 	if err := r.Client.Update(context.TODO(), instance); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	strategy, err := GetStrategyFromPlacementDecision(r.Client, instance)
-	if err != nil {
-		r.Log.Error(err, "Error while getting the strategy")
 		return reconcile.Result{}, err
 	}
 

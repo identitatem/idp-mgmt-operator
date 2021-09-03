@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/ghodss/yaml"
 
@@ -72,7 +73,10 @@ var _ = BeforeSuite(func() {
 			//DV added this line and copyed the authrealms CRD
 			filepath.Join("..", "..", "test", "config", "crd", "external"),
 		},
-		ErrorIfCRDPathMissing: true,
+		ErrorIfCRDPathMissing:    true,
+		AttachControlPlaneOutput: true,
+		ControlPlaneStartTimeout: 1 * time.Minute,
+		ControlPlaneStopTimeout:  1 * time.Minute,
 	}
 	err = identitatemv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
@@ -362,7 +366,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 			//mw, err := clientSetWork.WorkV1().ManifestWorks(ClusterName).Get(context.TODO(), "idp-backplane", metav1.GetOptions{})
 			Expect(err).To(BeNil())
 			// should find manifest for OAuth and manifest for Secret
-			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(3))
+			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(5))
 		})
 
 	})
