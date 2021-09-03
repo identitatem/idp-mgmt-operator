@@ -145,7 +145,7 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 				Namespace: decision.ClusterName,
 			},
 			Data: map[string][]byte{
-				"clientSecret": []byte(helpers.RandStringRunes(32)),
+				"clientSecret": []byte(helpers.RandomString(32, helpers.RandomTypePassword)),
 			},
 		}
 		if err := r.Create(context.TODO(), clientSecret); err != nil {
