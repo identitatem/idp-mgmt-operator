@@ -90,10 +90,10 @@ func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authrealm *identitat
 					return err
 				}
 				//Delete Manifestwork
-				r.Log.Info("delete manifestwork", "namespace", dexClient.GetLabels()["cluster"], "name", "idp-backplane")
+				r.Log.Info("delete manifestwork", "namespace", dexClient.GetLabels()["cluster"], "name", helpers.ManifestWorkName())
 				manifestwork := &workv1.ManifestWork{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "idp-backplane",
+						Name:      helpers.ManifestWorkName(),
 						Namespace: dexClient.GetLabels()["cluster"],
 					},
 				}
@@ -162,14 +162,14 @@ func (r *PlacementDecisionReconciler) createDexClient(authrealm *identitatemv1al
 	r.Log.Info("create dexClient for", "cluster", decision.ClusterName, "identityProvider", idp.Name)
 	dexClientExists := true
 	dexClient := &identitatemdexv1alpha1.DexClient{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: fmt.Sprintf("%s-%s", decision.ClusterName, idp.Name), Namespace: authrealm.Name}, dexClient); err != nil {
+	if err := r.Client.Get(context.TODO(), helpers.DexClientObjectKey(authrealm, decision, idp), dexClient); err != nil {
 		if !errors.IsNotFound(err) {
 			return err
 		}
 		dexClientExists = false
 		dexClient = &identitatemdexv1alpha1.DexClient{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s", decision.ClusterName, idp.Name),
+				Name:      helpers.DexClientName(decision, idp),
 				Namespace: authrealm.Name,
 				Labels: map[string]string{
 					"cluster": decision.ClusterName,

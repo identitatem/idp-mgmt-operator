@@ -26,7 +26,7 @@ import (
 	dexoperatorv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	idpoperatorconfig "github.com/identitatem/idp-client-api/config"
-	"github.com/identitatem/idp-mgmt-operator/controllers/helpers"
+	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
@@ -231,10 +231,11 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 	for _, decision := range placementDecision.Status.Decisions {
 		for _, idp := range authrealm.Spec.IdentityProviders {
 			//Delete DexClient
-			r.Log.Info("delete dexclient", "namespace", authrealm.Name, "name", fmt.Sprintf("%s-%s", decision.ClusterName, idp.Name))
+			dexClientName := helpers.DexClientName(decision, idp)
+			r.Log.Info("delete dexclient", "namespace", authrealm.Name, "name", dexClientName)
 			dexClient := &dexoperatorv1alpha1.DexClient{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf("%s-%s", decision.ClusterName, idp.Name),
+					Name:      dexClientName,
 					Namespace: authrealm.Name,
 				},
 			}
@@ -253,7 +254,7 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 				return err
 			}
 			//Delete Manifestwork
-			manifestworkName := fmt.Sprintf("idp-%s", strategy.Spec.Type)
+			manifestworkName := helpers.ManifestWorkName()
 			r.Log.Info("delete manifestwork", "namespace", decision.ClusterName, "name", manifestworkName)
 			manifestwork := &workv1.ManifestWork{
 				ObjectMeta: metav1.ObjectMeta{

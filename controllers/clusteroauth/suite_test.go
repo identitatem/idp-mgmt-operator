@@ -29,6 +29,7 @@ import (
 	idpclientset "github.com/identitatem/idp-client-api/api/client/clientset/versioned"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	idpconfig "github.com/identitatem/idp-client-api/config"
+	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	clientsetcluster "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	clientsetwork "open-cluster-management.io/api/client/work/clientset/versioned"
@@ -237,7 +238,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		By("Checking manifestwork", func() {
 			mw := &workv1.ManifestWork{}
-			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: "idp-backplane", Namespace: ClusterName}, mw)
+			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, mw)
 			//var mw *workv1.ManifestWork
 			//mw, err := clientSetWork.WorkV1().ManifestWorks(ClusterName).Get(context.TODO(), "idp-backplane", metav1.GetOptions{})
 			Expect(err).To(BeNil())
@@ -362,7 +363,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		By("Checking manifestwork", func() {
 			mw := &workv1.ManifestWork{}
-			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: "idp-backplane", Namespace: ClusterName}, mw)
+			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, mw)
 			//var mw *workv1.ManifestWork
 			//mw, err := clientSetWork.WorkV1().ManifestWorks(ClusterName).Get(context.TODO(), "idp-backplane", metav1.GetOptions{})
 			Expect(err).To(BeNil())

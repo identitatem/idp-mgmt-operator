@@ -43,7 +43,7 @@ import (
 	// clusteradmhelpers "open-cluster-management.io/clusteradm/pkg/helpers"
 	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 
-	"github.com/identitatem/idp-mgmt-operator/controllers/helpers"
+	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 )
 
 // StrategyReconciler reconciles a Strategy object
