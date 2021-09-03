@@ -181,15 +181,20 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				//add secret to manifest
 
 				//TODO TEMP PATCH
-				newSecret := &corev1.Secret{}
-				if len(secret.TypeMeta.Kind) == 0 {
-					newSecret.TypeMeta.Kind = "Secret"
-
+				newSecret := &corev1.Secret{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: corev1.SchemeGroupVersion.String(),
+						Kind:       "Secret",
+					},
 				}
-				if len(secret.TypeMeta.APIVersion) == 0 {
-					newSecret.TypeMeta.APIVersion = corev1.SchemeGroupVersion.String()
+				// if len(secret.TypeMeta.Kind) == 0 {
+				// 	newSecret.TypeMeta.Kind = "Secret"
 
-				}
+				// }
+				// if len(secret.TypeMeta.APIVersion) == 0 {
+				// 	newSecret.TypeMeta.APIVersion = corev1.SchemeGroupVersion.String()
+
+				// }
 
 				newSecret.Data = secret.Data
 				newSecret.Type = secret.Type
