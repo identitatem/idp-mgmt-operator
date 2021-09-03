@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/ghodss/yaml"
 	"github.com/go-logr/logr"
 	"github.com/identitatem/idp-client-api/api/client/clientset/versioned/scheme"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
@@ -41,6 +42,7 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	idpconfig "github.com/identitatem/idp-client-api/config"
+	idpmgmtconfig "github.com/identitatem/idp-mgmt-operator/config"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 
 	//+kubebuilder:scaffold:imports
@@ -122,6 +124,23 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			},
 		},
 	}
+
+	//Add Aggregated role
+	aggregatedRoleYaml, err := idpmgmtconfig.GetScenarioResourcesReader().Asset("rbac/role-aggregated-clusterrole.yaml")
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	aggregatedRoleJson, err := yaml.YAMLToJSON(aggregatedRoleYaml)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	manifestAggregated := manifestworkv1.Manifest{
+		RawExtension: runtime.RawExtension{Raw: aggregatedRoleJson},
+	}
+
+	manifestWork.Spec.Workload.Manifests = append(manifestWork.Spec.Workload.Manifests, manifestAggregated)
 
 	// Get a list of all clusterOAuth
 	clusterOAuths := &identitatemv1alpha1.ClusterOAuthList{}

@@ -1,0 +1,10 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: open-cluster-management:klusterlet-addon-admin-aggregate-clusterrole
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+rules:
+- apiGroups: ["agent.open-cluster-management.io"]
+  resources: ["applicationmanagers","certpolicycontrollers","iampolicycontrollers","policycontrollers","searchcollectors","workmanagers"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
