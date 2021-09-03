@@ -23,26 +23,26 @@ spec:
         control-plane: controller-manager
     spec:
       containers:
-      - args:
-        - --
-        - --enable-leader-election
-        - -v 5
-        env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace          
-        - name: DEX_OPERATOR_IMAGE
-          value: "quay.io/identitatem/dex-operator:latest"
-        image: quay.io/identitatem/idp-mgmt-operator@sha256:f13d0e986746488a5033e16a4dc0e5a0be8e2f3024f72b680cf8709308fd6fd9
-        name: manager
-        imagePullPolicy: Always
-        resources:
-          limits:
-            cpu: 300m
-            memory: 500Mi
-          requests:
-            cpu: 300m
-            memory: 500Mi
+        - args:
+            - --
+            - --enable-leader-election
+            - -v 5
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEX_OPERATOR_IMAGE
+              value: "quay.io/identitatem/dex-operator:latest"
+          image: quay.io/identitatem/idp-mgmt-operator:latest
+          name: manager
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: 300m
+              memory: 500Mi
+            requests:
+              cpu: 300m
+              memory: 500Mi
       serviceAccountName: idp-mgmt-operator-controller-manager
       terminationGracePeriodSeconds: 10

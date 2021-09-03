@@ -18,7 +18,7 @@ func (r *StrategyReconciler) grcPlacementStrategy(strategy *identitatemv1alpha1.
 			RequiredClusterSelector: clusterv1alpha1.ClusterSelector{
 				LabelSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cloudservices": string(strategy.Spec.Type),
+						"feature.open-cluster-management.io/addon-policy-controller": "available",
 					},
 				},
 			},
