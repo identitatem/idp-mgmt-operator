@@ -186,6 +186,10 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 						APIVersion: corev1.SchemeGroupVersion.String(),
 						Kind:       "Secret",
 					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      secret.Name,
+						Namespace: secret.Namespace,
+					},
 				}
 				// if len(secret.TypeMeta.Kind) == 0 {
 				// 	newSecret.TypeMeta.Kind = "Secret"
