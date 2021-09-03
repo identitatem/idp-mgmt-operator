@@ -14,6 +14,7 @@ import (
 	identitatemdexv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
+	workv1 "open-cluster-management.io/api/work/v1"
 
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 
@@ -86,6 +87,17 @@ func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authrealm *identitat
 					}
 				}
 				if err := r.Client.Delete(context.TODO(), clusterOAuth); err != nil && !errors.IsNotFound(err) {
+					return err
+				}
+				//Delete Manifestwork
+				r.Log.Info("delete manifestwork", "namespace", dexClient.GetLabels()["cluster"], "name", "idp-backplane")
+				manifestwork := &workv1.ManifestWork{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "idp-backplane",
+						Namespace: dexClient.GetLabels()["cluster"],
+					},
+				}
+				if err := r.Delete(context.TODO(), manifestwork); err != nil && !errors.IsNotFound(err) {
 					return err
 				}
 			}

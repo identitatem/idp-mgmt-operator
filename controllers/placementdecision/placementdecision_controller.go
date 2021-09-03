@@ -52,10 +52,6 @@ const (
 	placementDecisionBackplaneFinalizer string = "placelementdecision.identitatem.io/cleanup-backplane"
 )
 
-const (
-	manifestworkName string = "oauth"
-)
-
 // +kubebuilder:rbac:groups="",resources={namespaces,secrets},verbs=get;list;watch;create;update;patch;delete
 
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies},verbs=get;list;watch;create;update;patch;delete
@@ -257,6 +253,7 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 				return err
 			}
 			//Delete Manifestwork
+			manifestworkName := fmt.Sprintf("idp-%s", strategy.Spec.Type)
 			r.Log.Info("delete manifestwork", "namespace", decision.ClusterName, "name", manifestworkName)
 			manifestwork := &workv1.ManifestWork{
 				ObjectMeta: metav1.ObjectMeta{

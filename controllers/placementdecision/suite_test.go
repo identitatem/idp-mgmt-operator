@@ -146,7 +146,7 @@ var _ = BeforeSuite(func(done Done) {
 			},
 			Spec: openshiftconfigv1.InfrastructureSpec{},
 			Status: openshiftconfigv1.InfrastructureStatus{
-				APIServerURL: "http://127.0.0.1:6443",
+				APIServerURL: "http://api.my.company.com:6443",
 			},
 		}
 		err := k8sClient.Create(context.TODO(), infraConfig)
