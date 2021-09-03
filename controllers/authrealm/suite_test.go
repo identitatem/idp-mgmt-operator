@@ -71,6 +71,8 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).Should(BeNil())
 	err = appsv1.AddToScheme(scheme.Scheme)
 	Expect(err).Should(BeNil())
+	err = openshiftconfigv1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
 
 	readerIDP := idpconfig.GetScenarioResourcesReader()
 	strategyCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_strategies.yaml")
@@ -128,6 +130,20 @@ var _ = BeforeSuite(func(done Done) {
 		Log:                logf.Log,
 		Scheme:             scheme.Scheme,
 	}
+
+	By("Creating infra", func() {
+		infraConfig := &openshiftconfigv1.Infrastructure{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "cluster",
+			},
+			Spec: openshiftconfigv1.InfrastructureSpec{},
+			Status: openshiftconfigv1.InfrastructureStatus{
+				APIServerURL: "http://127.0.0.1:6443",
+			},
+		}
+		err := k8sClient.Create(context.TODO(), infraConfig)
+		Expect(err).NotTo(HaveOccurred())
+	})
 
 	close(done)
 }, 60)

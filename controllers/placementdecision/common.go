@@ -5,30 +5,23 @@ package placementdecision
 import (
 	"context"
 	"fmt"
-	"net"
-	"net/url"
-	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
-
 	identitatemdexv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
-
+	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
+
+	openshiftconfigv1 "github.com/openshift/api/config/v1"
 
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 )
 
-func (r *PlacementDecisionReconciler) syncDexClients(authrealm *identitatemv1alpha1.AuthRealm, placementDecision *clusterv1alpha1.PlacementDecision) error {
-
-	dexClients := &identitatemdexv1alpha1.DexClientList{}
-	if err := r.Client.List(context.TODO(), dexClients, &client.ListOptions{Namespace: authrealm.Name}); err != nil {
-		return err
-	}
+func (r *PlacementDecisionReconciler) syncDexClients(authrealm *identitatemv1alpha1.AuthRealm,
+	placementDecision *clusterv1alpha1.PlacementDecision) error {
 
 	placementDecisions := &clusterv1alpha1.PlacementDecisionList{}
 	if err := r.Client.List(context.TODO(), placementDecisions, client.MatchingLabels{
@@ -37,15 +30,38 @@ func (r *PlacementDecisionReconciler) syncDexClients(authrealm *identitatemv1alp
 		return err
 	}
 
+	if err := r.deleteObsoleteConfigs(authrealm, placementDecisions); err != nil {
+		return err
+	}
+
+	if err := r.createConfigs(authrealm, placementDecisions); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authrealm *identitatemv1alpha1.AuthRealm,
+	placementDecisions *clusterv1alpha1.PlacementDecisionList) error {
+	r.Log.Info("delete obsolete config for Authrealm", "Namespace", authrealm.Namespace, "Name", authrealm.Name)
+	dexClients := &identitatemdexv1alpha1.DexClientList{}
+	if err := r.Client.List(context.TODO(), dexClients, &client.ListOptions{Namespace: authrealm.Name}); err != nil {
+		return err
+	}
+
 	for i, dexClient := range dexClients.Items {
+		r.Log.Info("for dexClient", "Namespace", dexClient.Namespace, "Name", dexClient.Name)
 		for _, idp := range authrealm.Spec.IdentityProviders {
+			r.Log.Info("for IDP", "Name", idp.Name)
 			if !inPlacementDecision(dexClient.GetLabels()["cluster"], placementDecisions) &&
 				dexClient.GetLabels()["idp"] == idp.Name {
 				//Delete the dexClient
-				if err := r.Client.Delete(context.TODO(), &dexClients.Items[i]); err != nil {
+				r.Log.Info("delete dexclient", "Name", idp.Name)
+				if err := r.Client.Delete(context.TODO(), &dexClients.Items[i]); err != nil && !errors.IsNotFound(err) {
 					return err
 				}
 				//Delete the clientSecret
+				r.Log.Info("delete clientSecret", "Namespace", dexClient.GetLabels()["cluster"], "Name", idp.Name)
 				clientSecret := &corev1.Secret{}
 				if err := r.Get(context.TODO(), client.ObjectKey{
 					Name:      idp.Name,
@@ -55,85 +71,176 @@ func (r *PlacementDecisionReconciler) syncDexClients(authrealm *identitatemv1alp
 						return err
 					}
 				}
-				if err := r.Client.Delete(context.TODO(), clientSecret); err != nil {
+				if err := r.Client.Delete(context.TODO(), clientSecret); err != nil && !errors.IsNotFound(err) {
+					return err
+				}
+				//Delete clusterOAuth
+				r.Log.Info("delete clientSecret", "Namespace", dexClient.GetLabels()["cluster"], "Name", idp.Name)
+				clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
+				if err := r.Get(context.TODO(), client.ObjectKey{
+					Name:      idp.Name,
+					Namespace: dexClient.GetLabels()["cluster"]},
+					clusterOAuth); err != nil {
+					if !errors.IsNotFound(err) {
+						return err
+					}
+				}
+				if err := r.Client.Delete(context.TODO(), clusterOAuth); err != nil && !errors.IsNotFound(err) {
 					return err
 				}
 			}
 		}
 	}
+	return nil
+}
+
+func (r *PlacementDecisionReconciler) createConfigs(authrealm *identitatemv1alpha1.AuthRealm,
+	placementDecisions *clusterv1alpha1.PlacementDecisionList) error {
 	for _, placementDecision := range placementDecisions.Items {
 		for _, decision := range placementDecision.Status.Decisions {
 			for _, idp := range authrealm.Spec.IdentityProviders {
 				//Create Secret
-				clusterName := decision.ClusterName
-				clientSecret := &corev1.Secret{}
-				if err := r.Get(context.TODO(), client.ObjectKey{Name: idp.Name, Namespace: clusterName}, clientSecret); err != nil {
-					if !errors.IsNotFound(err) {
-						return err
-					}
-					clientSecret = &corev1.Secret{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      idp.Name,
-							Namespace: clusterName,
-						},
-						Data: map[string][]byte{
-							"client-id":     []byte(clusterName),
-							"client-secret": []byte(helpers.RandStringRunes(32)),
-						},
-					}
-					if err := r.Create(context.TODO(), clientSecret); err != nil {
-						return err
-					}
+				clientSecret, err := r.createClientSecret(decision, idp)
+				if err != nil {
+					return err
 				}
 				//Create dexClient
-				dexClientExists := true
-				dexClient := &identitatemdexv1alpha1.DexClient{}
-				if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: fmt.Sprintf("%s-%s", clusterName, idp.Name), Namespace: authrealm.Name}, dexClient); err != nil {
-					if !errors.IsNotFound(err) {
-						return err
-					}
-					dexClientExists = false
-					dexClient = &identitatemdexv1alpha1.DexClient{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      fmt.Sprintf("%s-%s", clusterName, idp.Name),
-							Namespace: authrealm.Name,
-							Labels: map[string]string{
-								"cluster": clusterName,
-								"idp":     idp.Name,
-							},
-						},
-					}
-				}
-
-				dexClient.Spec.ClientID = string(clientSecret.Data["client-id"])
-				dexClient.Spec.ClientSecret = string(clientSecret.Data["client-secret"])
-
-				apiServerURL, err := helpers.GetKubeAPIServerAddress(r.Client)
-				if err != nil {
+				if err := r.createDexClient(authrealm, decision, idp, clientSecret); err != nil {
 					return err
 				}
-				u, err := url.Parse(apiServerURL)
-				if err != nil {
+				//Create ClusterOAuth
+				if err := r.createClusterOAuth(authrealm, decision, idp, clientSecret); err != nil {
 					return err
-				}
-
-				host, _, err := net.SplitHostPort(u.Host)
-				if err != nil {
-					return err
-				}
-
-				host = strings.Replace(host, "api", "apps", 1)
-
-				redirectURI := fmt.Sprintf("%s://%s/oauth2callback/idpserver", u.Scheme, host)
-				dexClient.Spec.RedirectURIs = []string{redirectURI}
-				switch dexClientExists {
-				case true:
-					return r.Client.Update(context.TODO(), dexClient)
-				case false:
-					return r.Client.Create(context.Background(), dexClient)
 				}
 			}
 		}
+	}
+	return nil
+}
+
+func (r *PlacementDecisionReconciler) createClientSecret(
+	decision clusterv1alpha1.ClusterDecision,
+	idp openshiftconfigv1.IdentityProvider) (*corev1.Secret, error) {
+	r.Log.Info("create clientSecret for", "cluster", decision.ClusterName, "identityProvider", idp.Name)
+	clientSecret := &corev1.Secret{}
+	if err := r.Get(context.TODO(), client.ObjectKey{Name: idp.Name, Namespace: decision.ClusterName}, clientSecret); err != nil {
+		if !errors.IsNotFound(err) {
+			return nil, err
+		}
+		clientSecret = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      idp.Name,
+				Namespace: decision.ClusterName,
+			},
+			Data: map[string][]byte{
+				"clientSecret": []byte(helpers.RandStringRunes(32)),
+			},
+		}
+		if err := r.Create(context.TODO(), clientSecret); err != nil {
+			return nil, err
+		}
+	}
+	return clientSecret, nil
+}
+
+func (r *PlacementDecisionReconciler) createDexClient(authrealm *identitatemv1alpha1.AuthRealm,
+	decision clusterv1alpha1.ClusterDecision,
+	idp openshiftconfigv1.IdentityProvider,
+	clientSecret *corev1.Secret) error {
+	r.Log.Info("create dexClient for", "cluster", decision.ClusterName, "identityProvider", idp.Name)
+	dexClientExists := true
+	dexClient := &identitatemdexv1alpha1.DexClient{}
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: fmt.Sprintf("%s-%s", decision.ClusterName, idp.Name), Namespace: authrealm.Name}, dexClient); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
+		dexClientExists = false
+		dexClient = &identitatemdexv1alpha1.DexClient{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%s-%s", decision.ClusterName, idp.Name),
+				Namespace: authrealm.Name,
+				Labels: map[string]string{
+					"cluster": decision.ClusterName,
+					"idp":     idp.Name,
+				},
+			},
+		}
+	}
+
+	dexClient.Spec.ClientID = decision.ClusterName
+	dexClient.Spec.ClientSecret = string(clientSecret.Data["clientSecret"])
+
+	urlScheme, host, err := helpers.GetAppsURL(r.Client)
+	if err != nil {
+		return err
+	}
+	redirectURI := fmt.Sprintf("%s://%s/oauth2callback/idpserver", urlScheme, host)
+	dexClient.Spec.RedirectURIs = []string{redirectURI}
+	switch dexClientExists {
+	case true:
+		return r.Client.Update(context.TODO(), dexClient)
+	case false:
+		return r.Client.Create(context.Background(), dexClient)
+	}
+	return nil
+}
+
+func (r *PlacementDecisionReconciler) createClusterOAuth(authrealm *identitatemv1alpha1.AuthRealm,
+	decision clusterv1alpha1.ClusterDecision,
+	idp openshiftconfigv1.IdentityProvider,
+	clientSecret *corev1.Secret) error {
+	r.Log.Info("create clusterOAuth for", "cluster", decision.ClusterName, "identityProvider", idp.Name)
+	clusterOAuthExists := true
+	clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: idp.Name, Namespace: decision.ClusterName}, clusterOAuth); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
+		clusterOAuthExists = false
+		clusterOAuth = &identitatemv1alpha1.ClusterOAuth{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      idp.Name,
+				Namespace: decision.ClusterName,
+			},
+			Spec: identitatemv1alpha1.ClusterOAuthSpec{
+				OAuth: &openshiftconfigv1.OAuth{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      idp.Name,
+						Namespace: decision.ClusterName,
+					},
+					Spec: openshiftconfigv1.OAuthSpec{
+						IdentityProviders: make([]openshiftconfigv1.IdentityProvider, 1),
+					},
+				},
+			},
+		}
+	}
+
+	uScheme, host, err := helpers.GetAppsURL(r.Client)
+	if err != nil {
+		return err
+	}
+
+	clusterOAuth.Spec.OAuth.Spec.IdentityProviders[0] = openshiftconfigv1.IdentityProvider{
+		Name:          idp.Name,
+		MappingMethod: idp.MappingMethod,
+		IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+			Type: openshiftconfigv1.IdentityProviderTypeOpenID,
+			OpenID: &openshiftconfigv1.OpenIDIdentityProvider{
+				ClientID: decision.ClusterName,
+				ClientSecret: openshiftconfigv1.SecretNameReference{
+					Name: clientSecret.Name,
+				},
+				Issuer: fmt.Sprintf("%s://%s-%s.%s", uScheme, authrealm.Name, authrealm.Name, host),
+			},
+		},
+	}
+
+	switch clusterOAuthExists {
+	case true:
+		return r.Client.Update(context.TODO(), clusterOAuth)
+	case false:
+		return r.Client.Create(context.Background(), clusterOAuth)
 	}
 	return nil
 }

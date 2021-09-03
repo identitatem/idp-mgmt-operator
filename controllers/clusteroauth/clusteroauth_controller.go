@@ -78,7 +78,7 @@ var log = logf.Log.WithName("utils")
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
-	_ = r.Log.WithValues("clusteroauth", req.NamespacedName)
+	_ = r.Log.WithValues("namespace", req.NamespacedName, "name", req.Name)
 
 	// your logic here
 	// Fetch the ClusterOAuth instance

@@ -59,7 +59,7 @@ func TestAPIs(t *testing.T) {
 		[]Reporter{printer.NewlineReporter{}})
 }
 
-var _ = BeforeSuite(func() {
+var _ = BeforeSuite(func(done Done) {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	readerIDP := idpconfig.GetScenarioResourcesReader()
@@ -67,6 +67,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).Should(BeNil())
 
 	authrealmCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
+	Expect(err).Should(BeNil())
+
+	clusterOAuthCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_clusteroauths.yaml")
 	Expect(err).Should(BeNil())
 
 	readerDex := dexoperatorconfig.GetScenarioResourcesReader()
@@ -81,6 +84,7 @@ var _ = BeforeSuite(func() {
 		CRDs: []client.Object{
 			strategyCRD,
 			authrealmCRD,
+			clusterOAuthCRD,
 			dexClientCRD,
 			dexServerCRD,
 		},
@@ -148,7 +152,7 @@ var _ = BeforeSuite(func() {
 		err := k8sClient.Create(context.TODO(), infraConfig)
 		Expect(err).NotTo(HaveOccurred())
 	})
-
+	close(done)
 }, 60)
 
 var _ = AfterSuite(func() {
@@ -337,14 +341,16 @@ var _ = Describe("Process Strategy backplane: ", func() {
 			dexClient := &dexv1alpha1.DexClient{}
 			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: AuthRealmName}, dexClient)
 			Expect(err).To(BeNil())
-			Expect(dexClient.Spec.ClientID).To(Equal(string(clientSecret.Data["client-id"])))
-			Expect(dexClient.Spec.ClientSecret).To(Equal(string(clientSecret.Data["client-secret"])))
+			Expect(dexClient.Spec.ClientID).To(Equal(ClusterName))
+			Expect(dexClient.Spec.ClientSecret).To(Equal(string(clientSecret.Data["clientSecret"])))
 		})
-		// By("Checking manifestwork", func() {
-		// 	_, err := clientSetWork.WorkV1().ManifestWorks(ClusterName).Get(context.TODO(), BackplaneManifestWorkName, metav1.GetOptions{})
-		// 	Expect(err).To(BeNil())
-		// 	// Expect(len(mw.Spec.Workload.Manifests)).To(Equal(1))
-		// })
+		By(fmt.Sprintf("Checking ClusterOAuth %s", dexClientName), func() {
+			clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: MyIDPName, Namespace: ClusterName}, clusterOAuth)
+			Expect(err).To(BeNil())
+			Expect(clusterOAuth.Spec.OAuth.Spec.IdentityProviders[0].OpenID.ClientID).To(Equal(ClusterName))
+			Expect(clusterOAuth.Spec.OAuth.Spec.IdentityProviders[0].OpenID.ClientSecret.Name).To(Equal(clientSecret.Name))
+		})
 	})
 	It("Process the deletion of a placementDecision", func() {
 

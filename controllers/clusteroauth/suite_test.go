@@ -57,7 +57,7 @@ func TestAPIs(t *testing.T) {
 		[]Reporter{printer.NewlineReporter{}})
 }
 
-var _ = BeforeSuite(func() {
+var _ = BeforeSuite(func(done Done) {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	readerIDP := idpconfig.GetScenarioResourcesReader()
@@ -133,6 +133,7 @@ var _ = BeforeSuite(func() {
 		err := k8sClient.Create(context.TODO(), infraConfig)
 		Expect(err).NotTo(HaveOccurred())
 	})
+	close(done)
 
 }, 60)
 
