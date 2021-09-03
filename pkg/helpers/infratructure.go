@@ -36,7 +36,7 @@ func GetKubeAPIServerAddress(client client.Client) (string, error) {
 	return infraConfig.Status.APIServerURL, nil
 }
 
-func GetAppsURL(c client.Client) (string, string, error) {
+func GetAppsURL(c client.Client, withPort bool) (string, string, error) {
 	apiServerURL, err := GetKubeAPIServerAddress(c)
 	if err != nil {
 		return "", "", err
@@ -52,7 +52,7 @@ func GetAppsURL(c client.Client) (string, string, error) {
 	}
 
 	host = strings.Replace(host, "api", "apps", 1)
-	if len(port) != 0 {
+	if withPort && len(port) != 0 {
 		host = fmt.Sprintf("%s:%s", host, port)
 	}
 	return u.Scheme, host, nil

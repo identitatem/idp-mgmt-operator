@@ -156,7 +156,7 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 
 func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.AuthRealm, dexServer *identitatemdexserverv1alpha1.DexServer) error {
 	r.Log.Info("updateDexServer", "Name", authRealm.Name, "Namespace", authRealm.Name)
-	uScheme, host, err := helpers.GetAppsURL(r.Client)
+	uScheme, host, err := helpers.GetAppsURL(r.Client, false)
 	if err != nil {
 		return err
 	}

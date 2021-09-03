@@ -170,7 +170,7 @@ func (r *PlacementDecisionReconciler) createDexClient(authrealm *identitatemv1al
 	dexClient.Spec.ClientID = decision.ClusterName
 	dexClient.Spec.ClientSecret = string(clientSecret.Data["clientSecret"])
 
-	urlScheme, host, err := helpers.GetAppsURL(r.Client)
+	urlScheme, host, err := helpers.GetAppsURL(r.Client, false)
 	if err != nil {
 		return err
 	}
@@ -216,7 +216,7 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authrealm *identitatemv
 		}
 	}
 
-	uScheme, host, err := helpers.GetAppsURL(r.Client)
+	uScheme, host, err := helpers.GetAppsURL(r.Client, false)
 	if err != nil {
 		return err
 	}
