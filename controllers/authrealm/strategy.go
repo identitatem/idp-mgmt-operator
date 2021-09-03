@@ -4,23 +4,18 @@ package authrealm
 
 import (
 	"context"
-	"fmt"
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-const (
-	idpStrategyOperatorImageEnvName string = "IDP_STRATEGY_OPERATOR_IMAGE"
-	podNamespaceEnvName             string = "POD_NAMESPACE"
-)
-
 func (r *AuthRealmReconciler) createStrategy(t identitatemv1alpha1.StrategyType, authrealm *identitatemv1alpha1.AuthRealm) error {
 	strategy := &identitatemv1alpha1.Strategy{}
-	name := GenerateStrategyName(t, authrealm)
+	name := helpers.StrategyName(authrealm, t)
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: authrealm.Namespace}, strategy); err != nil {
 		if !errors.IsNotFound(err) {
 			return err
@@ -42,8 +37,4 @@ func (r *AuthRealmReconciler) createStrategy(t identitatemv1alpha1.StrategyType,
 		}
 	}
 	return nil
-}
-
-func GenerateStrategyName(t identitatemv1alpha1.StrategyType, authrealm *identitatemv1alpha1.AuthRealm) string {
-	return fmt.Sprintf("%s-%s", authrealm.Name, string(t))
 }

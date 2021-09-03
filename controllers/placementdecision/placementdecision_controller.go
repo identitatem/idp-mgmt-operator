@@ -25,7 +25,9 @@ import (
 	"github.com/go-logr/logr"
 	dexoperatorv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
-	"github.com/identitatem/idp-mgmt-operator/controllers/helpers"
+	idpoperatorconfig "github.com/identitatem/idp-client-api/config"
+	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
+	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
@@ -48,10 +50,6 @@ type PlacementDecisionReconciler struct {
 const (
 	placementDecisionFinalizer          string = "placelementdecision.identitatem.io/cleanup"
 	placementDecisionBackplaneFinalizer string = "placelementdecision.identitatem.io/cleanup-backplane"
-)
-
-const (
-	manifestworkName string = "oauth"
 )
 
 // +kubebuilder:rbac:groups="",resources={namespaces,secrets},verbs=get;list;watch;create;update;patch;delete
@@ -77,7 +75,7 @@ const (
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
-	_ = r.Log.WithValues("placementDecision", req.NamespacedName)
+	_ = r.Log.WithValues("namespace", req.NamespacedName, "name", req.Name)
 
 	// your logic here
 	// Fetch the ManagedCluster instance
@@ -98,11 +96,25 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, err
 	}
 
+	r.Log.Info("running Reconcile for PlacementDecision")
+
+	strategy, err := GetStrategyFromPlacementDecision(r.Client, instance)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			r.Log.Error(err, "Error while getting the strategy")
+			return reconcile.Result{}, err
+		}
+		r.Log.Info("PlacementDecision not linked to a strategy", "Error:", err)
+		//No further processing
+		return reconcile.Result{}, nil
+	}
+
 	//if deletetimestamp then delete dex namespace
 	if instance.DeletionTimestamp != nil {
 		if err := r.deletePlacementDecision(instance); err != nil {
 			return reconcile.Result{}, err
 		}
+		r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", placementDecisionFinalizer)
 		controllerutil.RemoveFinalizer(instance, placementDecisionFinalizer)
 		if err := r.Client.Update(context.TODO(), instance); err != nil {
 			return ctrl.Result{}, err
@@ -110,21 +122,15 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, nil
 	}
 
-	r.Log.Info("Running Reconcile for PlacementDecision.", "Name: ", instance.GetName(), " Namespace:", instance.GetNamespace())
-
 	//Add finalizer
+	r.Log.Info("add PlacementDecision finalizer", "Finalizer:", placementDecisionFinalizer)
 	controllerutil.AddFinalizer(instance, placementDecisionFinalizer)
 	if err := r.Client.Update(context.TODO(), instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	strategy, err := GetStrategyFromPlacementDecision(r.Client, instance)
-	if err != nil {
-		r.Log.Error(err, "Error while getting the strategy")
-		return reconcile.Result{}, err
-	}
-
 	//Search the placement corresponding to the placementDecision
+	r.Log.Info("search Placement", " Namespace:", instance.GetNamespace(), "Finalizer:", placementDecisionFinalizer, "Name: ", instance.GetLabels()[clusterv1alpha1.PlacementLabel])
 	placement := &clusterv1alpha1.Placement{}
 	err = r.Get(context.TODO(),
 		client.ObjectKey{
@@ -136,11 +142,13 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	//Add finalizer to the placement, it will be removed once the ns is deleted
+	r.Log.Info("add PlacementDecision finalizer on placement", " Namespace:", placement.GetNamespace(), "Name: ", placement.GetName(), "Finalizer:", placementDecisionBackplaneFinalizer)
 	if err := r.AddPlacementDecisionFinalizer(strategy, placement); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	//Add finalizer to the strategy, it will be removed once the ns is deleted
+	r.Log.Info("add PlacementDecision finalizer on strategy", " Namespace:", strategy.GetNamespace(), "Name: ", strategy.GetName(), "Finalizer:", placementDecisionBackplaneFinalizer)
 	if err := r.AddPlacementDecisionFinalizer(strategy, strategy); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -151,6 +159,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	//Add finalizer to the authrealm, it will be removed once the ns is deleted
+	r.Log.Info("add PlacementDecision finalizer on authrealm", " Namespace:", authrealm.GetNamespace(), "Name: ", authrealm.GetName(), "Finalizer:", placementDecisionBackplaneFinalizer)
 	if err := r.AddPlacementDecisionFinalizer(strategy, authrealm); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -158,6 +167,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	switch strategy.Spec.Type {
 	case identitatemv1alpha1.BackplaneStrategyType:
 		//check if dex server installed
+		r.Log.Info("check if dex server namespace exists", "Namespace:", authrealm.GetName())
 		ns := &corev1.Namespace{}
 		if err := r.Get(context.TODO(), client.ObjectKey{Name: authrealm.Name}, ns); err != nil {
 			return reconcile.Result{Requeue: true, RequeueAfter: 10 * time.Second}, err
@@ -206,6 +216,7 @@ func (r *PlacementDecisionReconciler) RemovePlacementDecisionFinalizer(strategy 
 }
 
 func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) error {
+	r.Log.Info("delete PlacementDecision")
 	strategy, err := GetStrategyFromPlacementDecision(r.Client, placementDecision)
 	if err != nil {
 		r.Log.Error(err, "Error while getting the strategy")
@@ -220,10 +231,11 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 	for _, decision := range placementDecision.Status.Decisions {
 		for _, idp := range authrealm.Spec.IdentityProviders {
 			//Delete DexClient
-			r.Log.Info("Delete dexclient", "name", fmt.Sprintf("%s-%s", decision.ClusterName, idp.Name), "namespace", authrealm.Name)
+			dexClientName := helpers.DexClientName(decision, idp)
+			r.Log.Info("delete dexclient", "namespace", authrealm.Name, "name", dexClientName)
 			dexClient := &dexoperatorv1alpha1.DexClient{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf("%s-%s", decision.ClusterName, idp.Name),
+					Name:      dexClientName,
 					Namespace: authrealm.Name,
 				},
 			}
@@ -231,7 +243,7 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 				return err
 			}
 			//Delete ClientSecret
-			r.Log.Info("Delete clientSecret", "name", idp.Name, "namespace", decision.ClusterName)
+			r.Log.Info("delete clientSecret", "namespace", decision.ClusterName, "name", idp.Name)
 			clientSecret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      idp.Name,
@@ -242,7 +254,8 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 				return err
 			}
 			//Delete Manifestwork
-			r.Log.Info("Delete manifestwork", "name", manifestworkName, "namespace", decision.ClusterName)
+			manifestworkName := helpers.ManifestWorkName()
+			r.Log.Info("delete manifestwork", "namespace", decision.ClusterName, "name", manifestworkName)
 			manifestwork := &workv1.ManifestWork{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      manifestworkName,
@@ -291,6 +304,17 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 // SetupWithManager sets up the controller with the Manager.
 func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
+	//Install CRD
+	applierBuilder := &clusteradmapply.ApplierBuilder{}
+	applier := applierBuilder.WithClient(r.KubeClient, r.APIExtensionClient, r.DynamicClient).Build()
+
+	readerIDPMgmtOperator := idpoperatorconfig.GetScenarioResourcesReader()
+
+	files := []string{"crd/bases/identityconfig.identitatem.io_clusteroauths.yaml"}
+	if _, err := applier.ApplyDirectly(readerIDPMgmtOperator, nil, false, "", files...); err != nil {
+		return err
+	}
+
 	if err := dexoperatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		return err
 	}
@@ -317,5 +341,6 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&clusterv1alpha1.PlacementDecision{}).
+		//TODO Watch clientSecret to regenerate dexclient/clusterOAuth
 		Complete(r)
 }

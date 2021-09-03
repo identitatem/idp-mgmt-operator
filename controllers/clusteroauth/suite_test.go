@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/ghodss/yaml"
 
@@ -28,6 +29,7 @@ import (
 	idpclientset "github.com/identitatem/idp-client-api/api/client/clientset/versioned"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	idpconfig "github.com/identitatem/idp-client-api/config"
+	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	clientsetcluster "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	clientsetwork "open-cluster-management.io/api/client/work/clientset/versioned"
@@ -56,7 +58,7 @@ func TestAPIs(t *testing.T) {
 		[]Reporter{printer.NewlineReporter{}})
 }
 
-var _ = BeforeSuite(func() {
+var _ = BeforeSuite(func(done Done) {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	readerIDP := idpconfig.GetScenarioResourcesReader()
@@ -72,7 +74,10 @@ var _ = BeforeSuite(func() {
 			//DV added this line and copyed the authrealms CRD
 			filepath.Join("..", "..", "test", "config", "crd", "external"),
 		},
-		ErrorIfCRDPathMissing: true,
+		ErrorIfCRDPathMissing:    true,
+		AttachControlPlaneOutput: true,
+		ControlPlaneStartTimeout: 1 * time.Minute,
+		ControlPlaneStopTimeout:  1 * time.Minute,
 	}
 	err = identitatemv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
@@ -123,12 +128,13 @@ var _ = BeforeSuite(func() {
 			},
 			Spec: openshiftconfigv1.InfrastructureSpec{},
 			Status: openshiftconfigv1.InfrastructureStatus{
-				APIServerURL: "http://127.0.0.1:6443",
+				APIServerURL: "http://api.my.company.com:6443",
 			},
 		}
 		err := k8sClient.Create(context.TODO(), infraConfig)
 		Expect(err).NotTo(HaveOccurred())
 	})
+	close(done)
 
 }, 60)
 
@@ -232,7 +238,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		By("Checking manifestwork", func() {
 			mw := &workv1.ManifestWork{}
-			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: "idp-backplane", Namespace: ClusterName}, mw)
+			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, mw)
 			//var mw *workv1.ManifestWork
 			//mw, err := clientSetWork.WorkV1().ManifestWorks(ClusterName).Get(context.TODO(), "idp-backplane", metav1.GetOptions{})
 			Expect(err).To(BeNil())
@@ -357,7 +363,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		By("Checking manifestwork", func() {
 			mw := &workv1.ManifestWork{}
-			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: "idp-backplane", Namespace: ClusterName}, mw)
+			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, mw)
 			//var mw *workv1.ManifestWork
 			//mw, err := clientSetWork.WorkV1().ManifestWorks(ClusterName).Get(context.TODO(), "idp-backplane", metav1.GetOptions{})
 			Expect(err).To(BeNil())

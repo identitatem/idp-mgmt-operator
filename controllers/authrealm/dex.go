@@ -11,6 +11,7 @@ import (
 	dexoperatorconfig "github.com/identitatem/dex-operator/config"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/deploy"
+	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -52,8 +53,8 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 		WithTemplateFuncMap(FuncMap()).
 		Build()
 
-	dexOperatorInage := os.Getenv(dexOperatorImageEnvName)
-	if len(dexOperatorInage) == 0 {
+	dexOperatorImage := os.Getenv(dexOperatorImageEnvName)
+	if len(dexOperatorImage) == 0 {
 		return fmt.Errorf("EnvVar %s not provided", dexOperatorImageEnvName)
 	}
 
@@ -68,7 +69,7 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 		File      string
 		NewName   string
 	}{
-		Image:     dexOperatorInage,
+		Image:     dexOperatorImage,
 		AuthRealm: authRealm,
 		Reader:    readerDexOperator,
 		File:      "rbac/role.yaml",
@@ -155,7 +156,11 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 
 func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.AuthRealm, dexServer *identitatemdexserverv1alpha1.DexServer) error {
 	r.Log.Info("updateDexServer", "Name", authRealm.Name, "Namespace", authRealm.Name)
-	dexServer.Spec.Issuer = authRealm.Spec.Host
+	uScheme, host, err := helpers.GetAppsURL(r.Client, false)
+	if err != nil {
+		return err
+	}
+	dexServer.Spec.Issuer = fmt.Sprintf("%s://%s-%s.%s", uScheme, dexServer.Name, dexServer.Namespace, host)
 	if len(authRealm.Spec.CertificatesSecretRef.Name) != 0 {
 		certSecret := &corev1.Secret{}
 		if err := r.Client.Get(context.TODO(),

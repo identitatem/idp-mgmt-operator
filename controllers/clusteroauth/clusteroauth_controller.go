@@ -28,6 +28,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/identitatem/idp-client-api/api/client/clientset/versioned/scheme"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 
 	// identitatemdexserverv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemdexv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
@@ -78,7 +79,7 @@ var log = logf.Log.WithName("utils")
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
-	_ = r.Log.WithValues("clusteroauth", req.NamespacedName)
+	_ = r.Log.WithValues("namespace", req.NamespacedName, "name", req.Name)
 
 	// your logic here
 	// Fetch the ClusterOAuth instance
@@ -112,7 +113,7 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	// Create empty manifest work
 	manifestWork := &manifestworkv1.ManifestWork{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "idp-backplane",
+			Name:      helpers.ManifestWorkName(),
 			Namespace: instance.GetNamespace(),
 		},
 		Spec: manifestworkv1.ManifestWorkSpec{
@@ -132,8 +133,7 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		},
 
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "idp-backplane-oauth",
-			Namespace: instance.GetNamespace(),
+			Name: "cluster",
 		},
 
 		Spec: openshiftconfigv1.OAuthSpec{},
