@@ -181,16 +181,20 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				//add secret to manifest
 
 				//TODO TEMP PATCH
+				newSecret := &corev1.Secret{}
 				if len(secret.TypeMeta.Kind) == 0 {
-					secret.TypeMeta.Kind = "Secret"
+					newSecret.TypeMeta.Kind = "Secret"
 
 				}
 				if len(secret.TypeMeta.APIVersion) == 0 {
-					secret.TypeMeta.APIVersion = corev1.SchemeGroupVersion.String()
+					newSecret.TypeMeta.APIVersion = corev1.SchemeGroupVersion.String()
 
 				}
 
-				data, err := json.Marshal(secret)
+				newSecret.Data = secret.Data
+				newSecret.Type = secret.Type
+
+				data, err := json.Marshal(newSecret)
 				if err != nil {
 					return reconcile.Result{}, err
 				}

@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: config.openshift.io:identitatem-admin-aggregated-clusterrole
+  name: identitatem.io:clusteroauth-admin-aggregated-clusterrole
   labels:
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
 rules:
