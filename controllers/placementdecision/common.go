@@ -78,7 +78,7 @@ func (r *PlacementDecisionReconciler) syncDexClients(authrealm *identitatemv1alp
 						},
 						Data: map[string][]byte{
 							"client-id":     []byte(clusterName),
-							"client-secret": []byte(helpers.RandStringRunes(32)),
+							"client-secret": []byte(helpers.RandomString(32, helpers.RandomTypePassword)),
 						},
 					}
 					if err := r.Create(context.TODO(), clientSecret); err != nil {

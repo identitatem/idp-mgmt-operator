@@ -3,24 +3,37 @@
 package helpers
 
 import (
-	"math/rand"
-	"time"
+	"crypto/rand"
 )
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
+type RandomType string
 
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_?!&@")
+const (
+	RandomTypeNumber   RandomType = "number"
+	RandomTypeAlpha    RandomType = "alpha"
+	RandomTypeAlphaNum RandomType = "alphanum"
+	RandomTypePassword RandomType = "password"
+)
 
-func RandStringRunes(n int) string {
-	return randStringRunes(n, letterRunes)
-}
+func RandomString(strSize int, randType RandomType) string {
 
-func randStringRunes(n int, runes []rune) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = runes[rand.Intn(len(runes))]
+	var dictionary string
+
+	switch randType {
+	case RandomTypePassword:
+		dictionary = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_?!&@"
+	case RandomTypeAlphaNum:
+		dictionary = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	case RandomTypeAlpha:
+		dictionary = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	case RandomTypeNumber:
+		dictionary = "0123456789"
 	}
-	return string(b)
+
+	var bytes = make([]byte, strSize)
+	rand.Read(bytes)
+	for k, v := range bytes {
+		bytes[k] = dictionary[v%byte(len(dictionary))]
+	}
+	return string(bytes)
 }
