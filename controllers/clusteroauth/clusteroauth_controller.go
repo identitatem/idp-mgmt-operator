@@ -187,8 +187,7 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 						Kind:       "Secret",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      secret.Name,
-						Namespace: secret.Namespace,
+						Name: secret.Name,
 					},
 				}
 				// if len(secret.TypeMeta.Kind) == 0 {

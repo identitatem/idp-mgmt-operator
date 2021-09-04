@@ -186,13 +186,13 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 		cs = make([]identitatemdexserverv1alpha1.ConnectorSpec, 0)
 		switch idp.Type {
 		case openshiftconfigv1.IdentityProviderTypeGitHub:
-			c, err := r.createConnector(authRealm, "github", idp.GitHub.ClientSecret.Name)
+			c, err := r.createConnector(authRealm, identitatemdexserverv1alpha1.ConnectorTypeGitHub, idp.GitHub.ClientSecret.Name)
 			if err != nil {
 				return nil, err
 			}
 			cs = append(cs, *c)
 		case openshiftconfigv1.IdentityProviderTypeLDAP:
-			c, err := r.createConnector(authRealm, "ldap", idp.LDAP.BindPassword.Name)
+			c, err := r.createConnector(authRealm, identitatemdexserverv1alpha1.ConnectorTypeLDAP, idp.LDAP.BindPassword.Name)
 			if err != nil {
 				return nil, err
 			}
@@ -208,7 +208,7 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 }
 
 func (r *AuthRealmReconciler) createConnector(authRealm *identitatemv1alpha1.AuthRealm,
-	identityProviderType string, clientSecretName string) (c *identitatemdexserverv1alpha1.ConnectorSpec, err error) {
+	identityProviderType identitatemdexserverv1alpha1.ConnectorType, clientSecretName string) (c *identitatemdexserverv1alpha1.ConnectorSpec, err error) {
 
 	c = &identitatemdexserverv1alpha1.ConnectorSpec{
 		Type: identityProviderType,
