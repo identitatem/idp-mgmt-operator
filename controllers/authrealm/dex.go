@@ -77,7 +77,7 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 		File:          "rbac/role.yaml",
 		NewName:       "dex-operator-manager-role",
 		FileLeader:    "rbac/leader_election_role.yaml",
-		NewNameLeader: "leader-election-role",
+		NewNameLeader: "dex-operator-leader-election-role",
 	}
 
 	files := []string{
@@ -85,6 +85,8 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 		"dex-operator/service_account.yaml",
 		"dex-operator/role.yaml",
 		"dex-operator/role_binding.yaml",
+		"dex-operator/leader_election_role.yaml",
+		"dex-operator/leader_election_role_binding.yaml",
 	}
 
 	_, err := applier.ApplyDirectly(readerDeploy, values, false, "", files...)
