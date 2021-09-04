@@ -63,17 +63,21 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 	readerDexOperator := dexoperatorconfig.GetScenarioResourcesReader()
 
 	values := struct {
-		Image     string
-		AuthRealm *identitatemv1alpha1.AuthRealm
-		Reader    *clusteradmasset.ScenarioResourcesReader
-		File      string
-		NewName   string
+		Image         string
+		AuthRealm     *identitatemv1alpha1.AuthRealm
+		Reader        *clusteradmasset.ScenarioResourcesReader
+		File          string
+		NewName       string
+		FileLeader    string
+		NewNameLeader string
 	}{
-		Image:     dexOperatorImage,
-		AuthRealm: authRealm,
-		Reader:    readerDexOperator,
-		File:      "rbac/role.yaml",
-		NewName:   "dex-operator-manager-role",
+		Image:         dexOperatorImage,
+		AuthRealm:     authRealm,
+		Reader:        readerDexOperator,
+		File:          "rbac/role.yaml",
+		NewName:       "dex-operator-manager-role",
+		FileLeader:    "rbac/leader_election_role.yaml",
+		NewNameLeader: "leader-election-role",
 	}
 
 	files := []string{
