@@ -8,6 +8,7 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: dex-operator-leader-election-role
+  namespace: "{{ .AuthRealm.Name }}"
 subjects:
 - kind: ServiceAccount
   name: dex-operator-manager
