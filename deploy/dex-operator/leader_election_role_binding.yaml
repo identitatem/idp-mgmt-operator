@@ -13,4 +13,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: dex-operator-manager
-  namespace: system
+  namespace: "{{ .AuthRealm.Name }}"
