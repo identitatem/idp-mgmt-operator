@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	dexOperatorImageEnvName string = "DEX_OPERATOR_IMAGE"
+	dexOperatorImageEnvName string = "RELATED_IMAGE_DEX_OPERATOR"
 )
 
 func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthRealm) error {

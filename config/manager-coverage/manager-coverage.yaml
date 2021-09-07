@@ -30,11 +30,7 @@ spec:
         - --enable-leader-election
         - -v 5
         env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace          
-        - name: DEX_OPERATOR_IMAGE
+        - name: RELATED_IMAGE_DEX_OPERATOR
           value: "quay.io/identitatem/dex-operator:latest"
         image: controller:latest
         name: manager
