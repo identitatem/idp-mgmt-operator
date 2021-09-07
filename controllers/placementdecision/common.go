@@ -176,6 +176,9 @@ func (r *PlacementDecisionReconciler) createDexClient(authrealm *identitatemv1al
 					"idp":     idp.Name,
 				},
 			},
+			Spec: identitatemdexv1alpha1.DexClientSpec{
+				Public: false,
+			},
 		}
 	}
 
