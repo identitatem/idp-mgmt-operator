@@ -257,7 +257,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(AuthRealmName))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Namespace).To(Equal(AuthRealmNameSpace))
-			Expect(dexServer.Spec.Connectors[0].Type).To(Equal("github"))
+			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
 			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
 			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
 			//TODO CA missing in Web
@@ -278,7 +278,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(AuthRealmName))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
-			Expect(dexServer.Spec.Connectors[0].Type).To(Equal("github"))
+			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
 			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
 			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
 		})
