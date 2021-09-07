@@ -34,7 +34,7 @@ spec:
               fieldPath: metadata.namespace          
         - name: DEX_OPERATOR_IMAGE
           value: "quay.io/identitatem/dex-operator:latest"
-        image: quay.io/identitatem/idp-mgmt-operator@sha256:a6ab15bc688acb1894d965f6b3f5ca68d944a77d40958a1e64a771fd784f1177
+        image: quay.io/identitatem/idp-mgmt-operator:latest
         name: manager
         imagePullPolicy: Always
         resources:
