@@ -86,12 +86,12 @@ echo "install cluster"
 make functional-test-crds
 make deploy-coverage
 echo "Wait deployment stabilize"
-sleep 10
+sleep 15
 echo "Launch functional-test"
 make functional-test
 # exit 1
-echo "Wait 10 sec to let coverage to flush"
-sleep 10
+echo "Wait 15 sec to let coverage to flush"
+sleep 15
 
 echo "remove deployment"
 make undeploy

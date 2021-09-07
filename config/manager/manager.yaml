@@ -31,7 +31,7 @@ spec:
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
-              fieldPath: metadata.namespace          
+              fieldPath: metadata.namespace
         - name: DEX_OPERATOR_IMAGE
           value: "quay.io/identitatem/dex-operator:latest"
         image: quay.io/identitatem/idp-mgmt-operator:latest
