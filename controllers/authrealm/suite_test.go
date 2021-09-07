@@ -17,6 +17,7 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,7 +36,9 @@ import (
 	idpclientset "github.com/identitatem/idp-client-api/api/client/clientset/versioned"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	idpconfig "github.com/identitatem/idp-client-api/config"
+	"github.com/identitatem/idp-mgmt-operator/deploy"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
+	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 	clusteradmasset "open-cluster-management.io/clusteradm/pkg/helpers/asset"
 )
 
@@ -154,6 +157,39 @@ var _ = AfterSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 })
 
+var _ = Describe("Process deployment: ", func() {
+	It("Check if roles are correctly created", func() {
+		readerDeploy := deploy.GetScenarioResourcesReader()
+		readerDexOperator := dexoperatorconfig.GetScenarioResourcesReader()
+		applierBuilder := &clusteradmapply.ApplierBuilder{}
+		applier := applierBuilder.
+			WithClient(r.KubeClient, r.APIExtensionClient, r.DynamicClient).
+			WithTemplateFuncMap(FuncMap()).
+			Build()
+		files := []string{"dex-operator/leader_election_role.yaml", "dex-operator/role.yaml"}
+		values := struct {
+			AuthRealm     *identitatemv1alpha1.AuthRealm
+			Reader        *clusteradmasset.ScenarioResourcesReader
+			File          string
+			NewName       string
+			FileLeader    string
+			NewNameLeader string
+		}{
+			AuthRealm:     &identitatemv1alpha1.AuthRealm{ObjectMeta: metav1.ObjectMeta{Name: "my-authrealm"}},
+			Reader:        readerDexOperator,
+			File:          "rbac/role.yaml",
+			NewName:       "dex-operator-manager-role",
+			FileLeader:    "rbac/leader_election_role.yaml",
+			NewNameLeader: "dex-operator-leader-election-role",
+		}
+		output, err := applier.ApplyDirectly(readerDeploy, values, true, "", files...)
+		Expect(err).To(BeNil())
+		role := &rbacv1.Role{}
+		Expect(yaml.Unmarshal([]byte(output[0]), role)).To(BeNil())
+		Expect(role.Name).To(Equal(values.NewNameLeader))
+		Expect(role.Namespace).To(Equal(values.AuthRealm.Name))
+	})
+})
 var _ = Describe("Process AuthRealm: ", func() {
 	AuthRealmName := "my-authrealm"
 	AuthRealmNameSpace := "my-authrealm-ns"
@@ -257,7 +293,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(AuthRealmName))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Namespace).To(Equal(AuthRealmNameSpace))
-			Expect(dexServer.Spec.Connectors[0].Type).To(Equal("github"))
+			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
 			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
 			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
 			//TODO CA missing in Web
@@ -278,7 +314,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(AuthRealmName))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
-			Expect(dexServer.Spec.Connectors[0].Type).To(Equal("github"))
+			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
 			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
 			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
 		})

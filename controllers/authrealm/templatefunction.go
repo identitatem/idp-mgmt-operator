@@ -30,7 +30,7 @@ var genericMap = map[string]interface{}{
 	"replaceObjectName": replaceObjectName,
 }
 
-func replaceObjectName(reader *clusteradmasset.ScenarioResourcesReader, file string, newName string) (string, error) {
+func replaceObjectName(reader *clusteradmasset.ScenarioResourcesReader, file string, newName, newNamespace string) (string, error) {
 	b, err := reader.Asset(file)
 	if err != nil {
 		return "", err
@@ -41,6 +41,9 @@ func replaceObjectName(reader *clusteradmasset.ScenarioResourcesReader, file str
 	}
 	metadata := obj.Object["metadata"].(map[string]interface{})
 	metadata["name"] = newName
+	if len(newNamespace) != 0 {
+		metadata["namespace"] = newNamespace
+	}
 	m, err := yaml.Marshal(obj)
 	if err != nil {
 		klog.Error(err)
