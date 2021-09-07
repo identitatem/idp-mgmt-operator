@@ -76,7 +76,7 @@ func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authrealm *identitat
 					return err
 				}
 				//Delete clusterOAuth
-				r.Log.Info("delete clientSecret", "Namespace", dexClient.GetLabels()["cluster"], "Name", idp.Name)
+				r.Log.Info("delete clusterOAuth", "Namespace", dexClient.GetLabels()["cluster"], "Name", idp.Name)
 				clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
 				if err := r.Get(context.TODO(), client.ObjectKey{
 					Name:      idp.Name,

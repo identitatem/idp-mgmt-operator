@@ -253,6 +253,17 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 			if err := r.Delete(context.TODO(), clientSecret); err != nil && !errors.IsNotFound(err) {
 				return err
 			}
+			//Delete clusterOAuth
+			r.Log.Info("delete clusterOAuth", "Namespace", dexClient.GetLabels()["cluster"], "Name", idp.Name)
+			clusterOAuth := &identitatemv1alpha1.ClusterOAuth{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      idp.Name,
+					Namespace: decision.ClusterName,
+				},
+			}
+			if err := r.Client.Delete(context.TODO(), clusterOAuth); err != nil && !errors.IsNotFound(err) {
+				return err
+			}
 			//Delete Manifestwork
 			manifestworkName := helpers.ManifestWorkName()
 			r.Log.Info("delete manifestwork", "namespace", decision.ClusterName, "name", manifestworkName)

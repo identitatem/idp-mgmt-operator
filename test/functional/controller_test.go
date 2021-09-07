@@ -402,6 +402,32 @@ var _ = Describe("Strategy", func() {
 				return fmt.Errorf("clientSecret %s still exist", MyIDPName)
 			}, 30, 1).Should(BeNil())
 		})
+		By(fmt.Sprintf("Checking clusteroauth deletion %s", MyIDPName), func() {
+			Eventually(func() error {
+				clientSecret := &identitatemv1alpha1.ClusterOAuth{}
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: MyIDPName, Namespace: ClusterName}, clientSecret)
+				if err != nil {
+					if !errors.IsNotFound(err) {
+						return err
+					}
+					return nil
+				}
+				return fmt.Errorf("clusteroauth %s still exist", MyIDPName)
+			}, 30, 1).Should(BeNil())
+		})
+		By(fmt.Sprintf("Checking manifestwork deletion %s", "idp-oauth"), func() {
+			Eventually(func() error {
+				clientSecret := &identitatemv1alpha1.ClusterOAuth{}
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: "idp-oauth", Namespace: ClusterName}, clientSecret)
+				if err != nil {
+					if !errors.IsNotFound(err) {
+						return err
+					}
+					return nil
+				}
+				return fmt.Errorf("manifestwork %s still exist", MyIDPName)
+			}, 30, 1).Should(BeNil())
+		})
 		By(fmt.Sprintf("Checking DexClient deletion %s", dexClientName), func() {
 			Eventually(func() error {
 				dexClient := &dexv1alpha1.DexClient{}
