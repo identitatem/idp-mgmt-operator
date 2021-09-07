@@ -243,7 +243,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 			//mw, err := clientSetWork.WorkV1().ManifestWorks(ClusterName).Get(context.TODO(), "idp-backplane", metav1.GetOptions{})
 			Expect(err).To(BeNil())
 			// should find manifest for OAuth and manifest for Secret
-			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(2))
+			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(3))
 			//manifest := mw.Spec.Workload.Manifests[0]
 		})
 
@@ -370,8 +370,8 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 			// should find manifest for OAuth 1 and manifest for Secret 1
 			// AND
-			// should find manifest for OAuth 2 and manifest for Secret 2 and Secret 3
-			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(5))
+			// should find manifest for OAuth 2 and manifest for Secret 2 and Secret 3 and an aggregated role
+			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(6))
 		})
 
 	})
