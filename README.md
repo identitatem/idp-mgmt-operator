@@ -26,8 +26,8 @@ and then delete the example with `kubectl delete -f test/config/example/github-a
 This example creates a placement with a matchlabel `authdeployment: east` and so you have to add that label in the managedcluster you want to be managed by the authrealm AND add a label `cluster.open-cluster-management.io/clusterset: cluster-sample` in it.
 
 ```yaml
-authdeployment: east
-cluster.open-cluster-management.io/clusterset: cluster-sample
+    authdeployment: east
+    cluster.open-cluster-management.io/clusterset: cluster-sample
 ```
 
 # Undeploy the operator
