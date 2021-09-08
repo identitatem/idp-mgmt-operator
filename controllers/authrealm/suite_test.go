@@ -193,6 +193,7 @@ var _ = Describe("Process deployment: ", func() {
 var _ = Describe("Process AuthRealm: ", func() {
 	AuthRealmName := "my-authrealm"
 	AuthRealmNameSpace := "my-authrealm-ns"
+	MyGithubAppClientID := "my-github-app-client-id"
 	CertificatesSecretRef := "my-certs"
 	It("Check CRDs availability", func() {
 		By("Checking authrealms CRD", func() {
@@ -244,6 +245,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 								Type: openshiftconfigv1.IdentityProviderTypeGitHub,
 								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+									ClientID: MyGithubAppClientID,
 									ClientSecret: openshiftconfigv1.SecretNameReference{
 										Name: AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub),
 									},
@@ -290,7 +292,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: AuthRealmName}, dexServer)
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
-			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(AuthRealmName))
+			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(MyGithubAppClientID))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Namespace).To(Equal(AuthRealmNameSpace))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
@@ -312,7 +314,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: AuthRealmName}, dexServer)
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
-			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(AuthRealmName))
+			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(MyGithubAppClientID))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
 			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
@@ -340,7 +342,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: AuthRealmName}, dexServer)
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
-			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(AuthRealmName))
+			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(MyGithubAppClientID))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
 			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.newcrt"))

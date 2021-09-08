@@ -185,6 +185,7 @@ var _ = Describe("Strategy", func() {
 	PlacementStrategyName := StrategyName
 	ClusterName := "my-cluster"
 	MyIDPName := "my-idp"
+	MyGithubAppClientID := "my-github-app-client-id"
 
 	It("process a Strategy", func() {
 		By(fmt.Sprintf("creation of User namespace %s", AuthRealmNameSpace), func() {
@@ -243,7 +244,7 @@ var _ = Describe("Strategy", func() {
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 								Type: openshiftconfigv1.IdentityProviderTypeGitHub,
 								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
-									ClientID: "me",
+									ClientID: MyGithubAppClientID,
 								},
 							},
 						},
