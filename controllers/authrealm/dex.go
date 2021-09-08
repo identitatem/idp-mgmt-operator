@@ -177,7 +177,7 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 		dexServer.Spec.Web.TlsCert = string(certSecret.Data["tls.crt"])
 		dexServer.Spec.Web.TlsKey = string(certSecret.Data["tls.key"])
 	}
-	cs, err := r.createDexConnectors(authRealm)
+	cs, err := r.createDexConnectors(authRealm, dexServer)
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,8 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 	return nil
 }
 
-func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1.AuthRealm) (cs []identitatemdexserverv1alpha1.ConnectorSpec, err error) {
+func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1.AuthRealm,
+	dexServer *identitatemdexserverv1alpha1.DexServer) (cs []identitatemdexserverv1alpha1.ConnectorSpec, err error) {
 	r.Log.Info("createDexConnectors", "Name", authRealm.Name, "Namespace", authRealm.Name)
 
 	for _, idp := range authRealm.Spec.IdentityProviders {
@@ -196,6 +197,7 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			if err != nil {
 				return nil, err
 			}
+			c.Config.RedirectURI = dexServer.Spec.Issuer + "/callback"
 			cs = append(cs, *c)
 		case openshiftconfigv1.IdentityProviderTypeLDAP:
 			c, err := r.createConnector(authRealm, identitatemdexserverv1alpha1.ConnectorTypeLDAP, idp.LDAP.BindPassword.Name)
