@@ -27,7 +27,7 @@ This example creates a placement with a matchlabel `authdeployment: east` and so
 
 ```yaml
     authdeployment: east
-    cluster.open-cluster-management.io/clusterset: cluster-sample
+    cluster.open-cluster-management.io/clusterset: clusterset-sample
 ```
 
 # Undeploy the operator
