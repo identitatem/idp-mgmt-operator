@@ -250,7 +250,7 @@ func (r *AuthRealmReconciler) createConnector(authRealm *identitatemv1alpha1.Aut
 
 func (r *AuthRealmReconciler) deleteAuthRealmNamespace(authRealm *identitatemv1alpha1.AuthRealm) error {
 	ns := &corev1.Namespace{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: authRealm.Name}, ns); err != nil {
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authRealm)}, ns); err != nil {
 		if errors.IsNotFound(err) {
 			return nil
 		}

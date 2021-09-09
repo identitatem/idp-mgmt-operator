@@ -30,7 +30,7 @@ spec:
         env:
         - name: RELATED_IMAGE_DEX_OPERATOR
           value: "quay.io/identitatem/dex-operator:latest"
-        image: quay.io/identitatem/idp-mgmt-operator@sha256:ed70b84a0979c3a5c82ad0a3809ef71b81c36a1ac084e1816acbe48b8e593325
+        image: quay.io/identitatem/idp-mgmt-operator@sha256:c226d9b3be4e918f20e9dae9227856b9689b8a7488002ed188c67b3da37d3002
         name: manager
         imagePullPolicy: Always
         resources:
