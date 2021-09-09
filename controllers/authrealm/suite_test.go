@@ -4,6 +4,7 @@ package authrealm
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -168,31 +169,35 @@ var _ = Describe("Process deployment: ", func() {
 			Build()
 		files := []string{"dex-operator/leader_election_role.yaml", "dex-operator/role.yaml"}
 		values := struct {
-			AuthRealm     *identitatemv1alpha1.AuthRealm
-			Reader        *clusteradmasset.ScenarioResourcesReader
-			File          string
-			NewName       string
-			FileLeader    string
-			NewNameLeader string
+			AuthRealm          *identitatemv1alpha1.AuthRealm
+			Reader             *clusteradmasset.ScenarioResourcesReader
+			File               string
+			NewName            string
+			FileLeader         string
+			NewNameLeader      string
+			NewNamespaceLeader string
 		}{
-			AuthRealm:     &identitatemv1alpha1.AuthRealm{ObjectMeta: metav1.ObjectMeta{Name: "my-authrealm"}},
-			Reader:        readerDexOperator,
-			File:          "rbac/role.yaml",
-			NewName:       "dex-operator-manager-role",
-			FileLeader:    "rbac/leader_election_role.yaml",
-			NewNameLeader: "dex-operator-leader-election-role",
+			AuthRealm:          &identitatemv1alpha1.AuthRealm{ObjectMeta: metav1.ObjectMeta{Name: "my-authrealm"}},
+			Reader:             readerDexOperator,
+			File:               "rbac/role.yaml",
+			NewName:            "dex-operator-manager-role",
+			FileLeader:         "rbac/leader_election_role.yaml",
+			NewNameLeader:      "dex-operator-leader-election-role",
+			NewNamespaceLeader: "hello",
 		}
 		output, err := applier.ApplyDirectly(readerDeploy, values, true, "", files...)
 		Expect(err).To(BeNil())
 		role := &rbacv1.Role{}
 		Expect(yaml.Unmarshal([]byte(output[0]), role)).To(BeNil())
 		Expect(role.Name).To(Equal(values.NewNameLeader))
-		Expect(role.Namespace).To(Equal(values.AuthRealm.Name))
+		Expect(role.Namespace).To(Equal(values.NewNamespaceLeader))
 	})
 })
 var _ = Describe("Process AuthRealm: ", func() {
 	AuthRealmName := "my-authrealm"
 	AuthRealmNameSpace := "my-authrealm-ns"
+	dexServerName := "dex-server"
+	dexServerNamespace := fmt.Sprintf("%s-%s", AuthRealmNameSpace, AuthRealmName)
 	MyGithubAppClientID := "my-github-app-client-id"
 	CertificatesSecretRef := "my-certs"
 	It("Check CRDs availability", func() {
@@ -279,22 +284,22 @@ var _ = Describe("Process AuthRealm: ", func() {
 		// })
 		By("Checking Dex Namespace", func() {
 			ns := &corev1.Namespace{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName}, ns)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexServerNamespace}, ns)
 			Expect(err).Should(BeNil())
 		})
 		By("Checking Dex Deployment", func() {
 			ns := &appsv1.Deployment{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: "dex-operator", Namespace: AuthRealmName}, ns)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: "dex-operator", Namespace: dexServerNamespace}, ns)
 			Expect(err).Should(BeNil())
 		})
 		By("Checking DexServer", func() {
 			dexServer := &identitatemdexserverv1lapha1.DexServer{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: AuthRealmName}, dexServer)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexServerName, Namespace: dexServerNamespace}, dexServer)
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(MyGithubAppClientID))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
-			Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Namespace).To(Equal(AuthRealmNameSpace))
+			// Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Namespace).To(Equal(dexServerName))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
 			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
 			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
@@ -311,7 +316,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 		})
 		By("Checking DexServer", func() {
 			dexServer := &identitatemdexserverv1lapha1.DexServer{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: AuthRealmName}, dexServer)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexServerName, Namespace: dexServerNamespace}, dexServer)
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(MyGithubAppClientID))
@@ -339,7 +344,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 		})
 		By("Checking DexServer", func() {
 			dexServer := &identitatemdexserverv1lapha1.DexServer{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: AuthRealmName}, dexServer)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexServerName, Namespace: dexServerNamespace}, dexServer)
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(MyGithubAppClientID))

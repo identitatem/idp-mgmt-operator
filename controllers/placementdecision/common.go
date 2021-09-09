@@ -170,7 +170,7 @@ func (r *PlacementDecisionReconciler) createDexClient(authrealm *identitatemv1al
 		dexClient = &identitatemdexv1alpha1.DexClient{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      helpers.DexClientName(decision, idp),
-				Namespace: authrealm.Name,
+				Namespace: helpers.DexServerNamespace(authrealm),
 				Labels: map[string]string{
 					"cluster": decision.ClusterName,
 					"idp":     idp.Name,

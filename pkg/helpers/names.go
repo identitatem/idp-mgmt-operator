@@ -13,17 +13,26 @@ import (
 
 const (
 	manifestWorkName string = "idp-oauth"
+	dexServerName    string = "dex-server"
 )
 
 func ManifestWorkName() string {
 	return manifestWorkName
 }
 
+func DexServerName() string {
+	return dexServerName
+}
+
+func DexServerNamespace(authrealm *identitatemv1alpha1.AuthRealm) string {
+	return fmt.Sprintf("%s-%s", authrealm.Namespace, authrealm.Name)
+}
+
 func DexClientName(
 	decision clusterv1alpha1.ClusterDecision,
 	idp openshiftconfigv1.IdentityProvider,
 ) string {
-	return fmt.Sprintf("%s-%s", decision.ClusterName, idp.Name)
+	return decision.ClusterName
 }
 
 func DexClientObjectKey(
@@ -33,7 +42,7 @@ func DexClientObjectKey(
 ) client.ObjectKey {
 	return client.ObjectKey{
 		Name:      DexClientName(decision, idp),
-		Namespace: authrealm.Name,
+		Namespace: DexServerNamespace(authrealm),
 	}
 }
 

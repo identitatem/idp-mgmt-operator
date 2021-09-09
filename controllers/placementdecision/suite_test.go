@@ -184,7 +184,7 @@ var _ = Describe("Process Strategy backplane: ", func() {
 		By(fmt.Sprintf("creation of Dex namespace %s", AuthRealmName), func() {
 			ns := &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: AuthRealmName,
+					Name: AuthRealmNameSpace + "-" + AuthRealmName,
 				},
 			}
 			err := k8sClient.Create(context.TODO(), ns)
@@ -331,7 +331,7 @@ var _ = Describe("Process Strategy backplane: ", func() {
 			_, err := r.Reconcile(context.TODO(), req)
 			Expect(err).To(BeNil())
 		})
-		dexClientName := fmt.Sprintf("%s-%s", ClusterName, MyIDPName)
+		dexClientName := ClusterName
 		clientSecret := &corev1.Secret{}
 		By(fmt.Sprintf("Checking client secret %s", MyIDPName), func() {
 			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: MyIDPName, Namespace: ClusterName}, clientSecret)
@@ -339,7 +339,7 @@ var _ = Describe("Process Strategy backplane: ", func() {
 		})
 		By(fmt.Sprintf("Checking DexClient %s", dexClientName), func() {
 			dexClient := &dexv1alpha1.DexClient{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: AuthRealmName}, dexClient)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: AuthRealmNameSpace + "-" + AuthRealmName}, dexClient)
 			Expect(err).To(BeNil())
 			Expect(dexClient.Spec.ClientID).To(Equal(ClusterName))
 			Expect(dexClient.Spec.ClientSecret).To(Equal(string(clientSecret.Data["clientSecret"])))

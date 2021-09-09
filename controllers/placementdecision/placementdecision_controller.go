@@ -167,9 +167,9 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	switch strategy.Spec.Type {
 	case identitatemv1alpha1.BackplaneStrategyType:
 		//check if dex server installed
-		r.Log.Info("check if dex server namespace exists", "Namespace:", authrealm.GetName())
+		r.Log.Info("check if dex server namespace exists", "Namespace:", helpers.DexServerNamespace(authrealm))
 		ns := &corev1.Namespace{}
-		if err := r.Get(context.TODO(), client.ObjectKey{Name: authrealm.Name}, ns); err != nil {
+		if err := r.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authrealm)}, ns); err != nil {
 			return reconcile.Result{Requeue: true, RequeueAfter: 10 * time.Second}, err
 		}
 
