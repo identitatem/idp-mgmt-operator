@@ -31,7 +31,7 @@ func DexServerName() string {
 }
 
 func DexServerNamespace(authrealm *identitatemv1alpha1.AuthRealm) string {
-	return fmt.Sprintf("%s-%s", dexServerNamespacePrefix, authrealm.Spec.RouteSubdomain)
+	return fmt.Sprintf("%s-%s", dexServerNamespacePrefix, authrealm.Spec.RouteSubDomain)
 }
 
 func DexClientName(

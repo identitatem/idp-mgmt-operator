@@ -180,7 +180,7 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 	if err != nil {
 		return err
 	}
-	dexServer.Spec.Issuer = fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Spec.RouteSubdomain, host)
+	dexServer.Spec.Issuer = fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Spec.RouteSubDomain, host)
 	if len(authRealm.Spec.CertificatesSecretRef.Name) != 0 {
 		certSecret := &corev1.Secret{}
 		if err := r.Client.Get(context.TODO(),

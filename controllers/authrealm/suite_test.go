@@ -240,7 +240,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.AuthRealmSpec{
-					RouteSubdomain: RouteSubDomain,
+					RouteSubDomain: RouteSubDomain,
 					Type:           identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
@@ -375,7 +375,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.AuthRealmSpec{
-					RouteSubdomain: RouteSubDomain,
+					RouteSubDomain: RouteSubDomain,
 					Type:           identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
@@ -427,7 +427,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.AuthRealmSpec{
-					RouteSubdomain: RouteSubDomain,
+					RouteSubDomain: RouteSubDomain,
 					Type:           identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
@@ -454,7 +454,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.AuthRealmSpec{
-					RouteSubdomain: RouteSubDomain,
+					RouteSubDomain: RouteSubDomain,
 					Type:           identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
