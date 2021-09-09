@@ -40,7 +40,6 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 	if err := r.createDexServer(authRealm); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -64,7 +63,6 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 
 	values := struct {
 		Image              string
-		AuthRealm          *identitatemv1alpha1.AuthRealm
 		Reader             *clusteradmasset.ScenarioResourcesReader
 		File               string
 		NewName            string
@@ -73,13 +71,12 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 		NewNamespaceLeader string
 	}{
 		Image:              dexOperatorImage,
-		AuthRealm:          authRealm,
 		Reader:             readerDexOperator,
 		File:               "rbac/role.yaml",
 		NewName:            "dex-operator-manager-role",
 		FileLeader:         "rbac/leader_election_role.yaml",
 		NewNameLeader:      "dex-operator-leader-election-role",
-		NewNamespaceLeader: helpers.DexServerNamespace(authRealm),
+		NewNamespaceLeader: helpers.DexOperatorNamespace(),
 	}
 
 	files := []string{
@@ -104,7 +101,7 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 	return nil
 }
 
-func (r *AuthRealmReconciler) installDexCRDs() error {
+func (r *AuthRealmReconciler) installDexOperatorCRDs() error {
 	r.Log.Info("installDexCRDs")
 
 	applierBuilder := &clusteradmapply.ApplierBuilder{}
@@ -127,6 +124,21 @@ func (r *AuthRealmReconciler) installDexCRDs() error {
 
 func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.AuthRealm) error {
 	r.Log.Info("createDexServer", "Name", helpers.DexServerName(), "Namespace", helpers.DexServerNamespace(authRealm))
+	//Create namespace if not exists
+	dexServerNamespace := &corev1.Namespace{}
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authRealm)}, dexServerNamespace); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
+		dexServerNamespace := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: helpers.DexServerNamespace(authRealm),
+			},
+		}
+		if err := r.Client.Create(context.TODO(), dexServerNamespace); err != nil {
+			return err
+		}
+	}
 	dexServerExists := true
 	dexServer := &identitatemdexserverv1alpha1.DexServer{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer); err != nil {
@@ -168,7 +180,7 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 	if err != nil {
 		return err
 	}
-	dexServer.Spec.Issuer = fmt.Sprintf("%s://%s-%s.%s", uScheme, dexServer.Namespace, dexServer.Name, host)
+	dexServer.Spec.Issuer = fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Spec.Prefix, host)
 	if len(authRealm.Spec.CertificatesSecretRef.Name) != 0 {
 		certSecret := &corev1.Secret{}
 		if err := r.Client.Get(context.TODO(),

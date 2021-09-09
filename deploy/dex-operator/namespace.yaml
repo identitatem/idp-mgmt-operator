@@ -3,4 +3,4 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: "{{ .AuthRealm.Namespace }}-{{ .AuthRealm.Name }}"
+  name: idp-mgmt-dex

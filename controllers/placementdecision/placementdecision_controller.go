@@ -5,7 +5,6 @@ package placementdecision
 import (
 	"context"
 	"fmt"
-	"time"
 
 	ocinfrav1 "github.com/openshift/api/config/v1"
 	// corev1 "k8s.io/api/core/v1"
@@ -167,11 +166,11 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	switch strategy.Spec.Type {
 	case identitatemv1alpha1.BackplaneStrategyType:
 		//check if dex server installed
-		r.Log.Info("check if dex server namespace exists", "Namespace:", helpers.DexServerNamespace(authrealm))
-		ns := &corev1.Namespace{}
-		if err := r.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authrealm)}, ns); err != nil {
-			return reconcile.Result{Requeue: true, RequeueAfter: 10 * time.Second}, err
-		}
+		// r.Log.Info("check if dex server namespace exists", "Namespace:", helpers.DexServerNamespace(authrealm))
+		// ns := &corev1.Namespace{}
+		// if err := r.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authrealm)}, ns); err != nil {
+		// 	return reconcile.Result{Requeue: true, RequeueAfter: 10 * time.Second}, err
+		// }
 
 		if err := r.backplaneStrategy(authrealm, instance); err != nil {
 			return reconcile.Result{}, err

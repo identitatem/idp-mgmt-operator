@@ -1,3 +1,3 @@
 # Copyright Red Hat
 
-{{ replaceObjectName .Reader .FileLeader .NewNameLeader .NewNamespaceLeader }}
+{{ replaceObjectNameNamespace .Reader .FileLeader .NewNameLeader .NewNamespaceLeader }}

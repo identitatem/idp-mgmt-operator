@@ -46,7 +46,7 @@ func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authrealm *identitat
 	placementDecisions *clusterv1alpha1.PlacementDecisionList) error {
 	r.Log.Info("delete obsolete config for Authrealm", "Namespace", authrealm.Namespace, "Name", authrealm.Name)
 	dexClients := &identitatemdexv1alpha1.DexClientList{}
-	if err := r.Client.List(context.TODO(), dexClients, &client.ListOptions{Namespace: authrealm.Name}); err != nil {
+	if err := r.Client.List(context.TODO(), dexClients, &client.ListOptions{Namespace: helpers.DexServerNamespace(authrealm)}); err != nil {
 		return err
 	}
 

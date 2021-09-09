@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dex-operator
-  namespace: "{{ .AuthRealm.Namespace }}-{{ .AuthRealm.Name }}"
+  namespace: "idp-mgmt-dex"
   labels:
     control-plane: dex-operator
 spec:
