@@ -227,9 +227,8 @@ func (r *AuthRealmReconciler) createConnector(authRealm *identitatemv1alpha1.Aut
 		Config: identitatemdexserverv1alpha1.ConfigSpec{
 			ClientID: clientID,
 			ClientSecretRef: corev1.ObjectReference{
-				Name: clientSecretName,
-				//Waiting bug to be solve https://github.com/identitatem/dex-operator/blob/2ec2efc5c1069c8157308fee88d1acd35afef70c/controllers/dexserver_controller.go#L241
-				// Namespace: authRealm.Namespace,
+				Name:      clientSecretName,
+				Namespace: authRealm.Namespace,
 			},
 		},
 	}
