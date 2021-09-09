@@ -33,6 +33,7 @@ func init() {
 var _ = Describe("AuthRealm", func() {
 	AuthRealmName := "my-authrealm-1"
 	AuthRealmNameSpace := "my-authrealm-ns-1"
+	dexServerNamespace := fmt.Sprintf("%s-%s", AuthRealmNameSpace, AuthRealmName)
 	It("process a AuthRealm CR", func() {
 		By("checking CRD", func() {
 			Eventually(func() error {
@@ -94,7 +95,7 @@ var _ = Describe("AuthRealm", func() {
 		})
 		By("Checking the dex-operator deployment creation", func() {
 			Eventually(func() error {
-				_, err := kubeClient.AppsV1().Deployments(AuthRealmName).
+				_, err := kubeClient.AppsV1().Deployments(dexServerNamespace).
 					Get(context.TODO(), "dex-operator", metav1.GetOptions{})
 				if err != nil {
 					logf.Log.Info("Error while reading deployments", "Error", err)
@@ -180,11 +181,13 @@ var _ = Describe("AuthRealm", func() {
 var _ = Describe("Strategy", func() {
 	AuthRealmName := "my-authrealm"
 	AuthRealmNameSpace := "my-authrealmns"
+	dexServerNamespace := fmt.Sprintf("%s-%s", AuthRealmNameSpace, AuthRealmName)
 	CertificatesSecretRef := "my-certs"
 	StrategyName := AuthRealmName + "-backplane"
 	PlacementStrategyName := StrategyName
 	ClusterName := "my-cluster"
 	MyIDPName := "my-idp"
+	MyGithubAppClientID := "my-github-app-client-id"
 
 	It("process a Strategy", func() {
 		By(fmt.Sprintf("creation of User namespace %s", AuthRealmNameSpace), func() {
@@ -243,7 +246,7 @@ var _ = Describe("Strategy", func() {
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 								Type: openshiftconfigv1.IdentityProviderTypeGitHub,
 								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
-									ClientID: "me",
+									ClientID: MyGithubAppClientID,
 								},
 							},
 						},
@@ -296,7 +299,9 @@ var _ = Describe("Strategy", func() {
 				var err error
 				strategy, err := identitatemClientSet.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), StrategyName, metav1.GetOptions{})
 				Expect(err).To(BeNil())
-				Expect(strategy.Spec.PlacementRef.Name).Should(Equal(PlacementStrategyName))
+				Eventually(func() string {
+					return strategy.Spec.PlacementRef.Name
+				}, 30, 1).Should(Equal(PlacementStrategyName))
 			})
 			By("Checking placement strategy", func() {
 				_, err := clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).
@@ -356,7 +361,6 @@ var _ = Describe("Strategy", func() {
 			}, 30, 1).Should(BeNil())
 		})
 
-		dexClientName := fmt.Sprintf("%s-%s", ClusterName, MyIDPName)
 		By(fmt.Sprintf("Checking client secret %s", MyIDPName), func() {
 			Eventually(func() error {
 				clientSecret := &corev1.Secret{}
@@ -371,15 +375,15 @@ var _ = Describe("Strategy", func() {
 				return nil
 			}, 30, 1).Should(BeNil())
 		})
-		By(fmt.Sprintf("Checking DexClient %s", dexClientName), func() {
+		By(fmt.Sprintf("Checking DexClient %s", ClusterName), func() {
 			Eventually(func() error {
 				dexClient := &dexv1alpha1.DexClient{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: AuthRealmName}, dexClient)
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: ClusterName, Namespace: dexServerNamespace}, dexClient)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err
 					}
-					logf.Log.Info("DexClient", "Name", dexClientName, "Namespace", AuthRealmName)
+					logf.Log.Info("DexClient", "Name", ClusterName, "Namespace", dexServerNamespace)
 					return err
 				}
 				return nil
@@ -428,21 +432,21 @@ var _ = Describe("Strategy", func() {
 				return fmt.Errorf("manifestwork %s still exist", MyIDPName)
 			}, 30, 1).Should(BeNil())
 		})
-		By(fmt.Sprintf("Checking DexClient deletion %s", dexClientName), func() {
+		By(fmt.Sprintf("Checking DexClient deletion %s", ClusterName), func() {
 			Eventually(func() error {
 				dexClient := &dexv1alpha1.DexClient{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: AuthRealmName}, dexClient)
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: ClusterName, Namespace: AuthRealmName}, dexClient)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err
 					}
 					return nil
 				}
-				return fmt.Errorf("DexClient %s still exist", dexClientName)
+				return fmt.Errorf("DexClient %s still exist", ClusterName)
 
 			}, 30, 1).Should(BeNil())
 		})
-		By(fmt.Sprintf("Checking PlacementDecision deletion %s", dexClientName), func() {
+		By(fmt.Sprintf("Checking PlacementDecision deletion %s", StrategyName), func() {
 			Eventually(func() error {
 				_, err := clientSetCluster.ClusterV1alpha1().PlacementDecisions(AuthRealmNameSpace).Get(context.TODO(), StrategyName, metav1.GetOptions{})
 				if err != nil {

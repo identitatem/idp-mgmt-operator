@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dex-operator
-  namespace: {{ .AuthRealm.Name }}
+  namespace: "{{ .AuthRealm.Namespace }}-{{ .AuthRealm.Name }}"
   labels:
     control-plane: dex-operator
 spec:
