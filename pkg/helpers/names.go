@@ -12,12 +12,18 @@ import (
 )
 
 const (
-	manifestWorkName string = "idp-oauth"
-	dexServerName    string = "dex-server"
+	manifestWorkName         string = "idp-oauth"
+	dexServerName            string = "dex-server"
+	dexOperatorNamespace     string = "idp-mgmt-dex"
+	dexServerNamespacePrefix string = "idp-mgmt"
 )
 
 func ManifestWorkName() string {
 	return manifestWorkName
+}
+
+func DexOperatorNamespace() string {
+	return dexOperatorNamespace
 }
 
 func DexServerName() string {
@@ -25,7 +31,7 @@ func DexServerName() string {
 }
 
 func DexServerNamespace(authrealm *identitatemv1alpha1.AuthRealm) string {
-	return fmt.Sprintf("%s-%s", authrealm.Namespace, authrealm.Name)
+	return fmt.Sprintf("%s-%s", dexServerNamespacePrefix, authrealm.Spec.RouteSubDomain)
 }
 
 func DexClientName(

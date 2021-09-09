@@ -10,6 +10,7 @@ import (
 
 	dexv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
@@ -33,7 +34,7 @@ func init() {
 var _ = Describe("AuthRealm", func() {
 	AuthRealmName := "my-authrealm-1"
 	AuthRealmNameSpace := "my-authrealm-ns-1"
-	dexServerNamespace := fmt.Sprintf("%s-%s", AuthRealmNameSpace, AuthRealmName)
+	RouteSubDomain := "myroute"
 	It("process a AuthRealm CR", func() {
 		By("checking CRD", func() {
 			Eventually(func() error {
@@ -62,7 +63,8 @@ var _ = Describe("AuthRealm", func() {
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.AuthRealmSpec{
-					Type: identitatemv1alpha1.AuthProxyDex,
+					RouteSubDomain: RouteSubDomain,
+					Type:           identitatemv1alpha1.AuthProxyDex,
 					// CertificatesSecretRef: corev1.LocalObjectReference{
 					// 	Name: CertificatesSecretRef,
 					// },
@@ -95,7 +97,7 @@ var _ = Describe("AuthRealm", func() {
 		})
 		By("Checking the dex-operator deployment creation", func() {
 			Eventually(func() error {
-				_, err := kubeClient.AppsV1().Deployments(dexServerNamespace).
+				_, err := kubeClient.AppsV1().Deployments(helpers.DexOperatorNamespace()).
 					Get(context.TODO(), "dex-operator", metav1.GetOptions{})
 				if err != nil {
 					logf.Log.Info("Error while reading deployments", "Error", err)
@@ -181,14 +183,14 @@ var _ = Describe("AuthRealm", func() {
 var _ = Describe("Strategy", func() {
 	AuthRealmName := "my-authrealm"
 	AuthRealmNameSpace := "my-authrealmns"
-	dexServerNamespace := fmt.Sprintf("%s-%s", AuthRealmNameSpace, AuthRealmName)
 	CertificatesSecretRef := "my-certs"
 	StrategyName := AuthRealmName + "-backplane"
 	PlacementStrategyName := StrategyName
 	ClusterName := "my-cluster"
 	MyIDPName := "my-idp"
 	MyGithubAppClientID := "my-github-app-client-id"
-
+	RouteSubDomain := "myroute"
+	var authRealm *identitatemv1alpha1.AuthRealm
 	It("process a Strategy", func() {
 		By(fmt.Sprintf("creation of User namespace %s", AuthRealmNameSpace), func() {
 			ns := &corev1.Namespace{
@@ -226,7 +228,6 @@ var _ = Describe("Strategy", func() {
 			Expect(err).To(BeNil())
 
 		})
-		var authRealm *identitatemv1alpha1.AuthRealm
 		By("creating a AuthRealm CR", func() {
 			var err error
 			authRealm = &identitatemv1alpha1.AuthRealm{
@@ -235,7 +236,8 @@ var _ = Describe("Strategy", func() {
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.AuthRealmSpec{
-					Type: identitatemv1alpha1.AuthProxyDex,
+					RouteSubDomain: RouteSubDomain,
+					Type:           identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
 					},
@@ -378,12 +380,12 @@ var _ = Describe("Strategy", func() {
 		By(fmt.Sprintf("Checking DexClient %s", ClusterName), func() {
 			Eventually(func() error {
 				dexClient := &dexv1alpha1.DexClient{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: ClusterName, Namespace: dexServerNamespace}, dexClient)
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: ClusterName, Namespace: helpers.DexServerNamespace(authRealm)}, dexClient)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err
 					}
-					logf.Log.Info("DexClient", "Name", ClusterName, "Namespace", dexServerNamespace)
+					logf.Log.Info("DexClient", "Name", ClusterName, "Namespace", helpers.DexServerNamespace(authRealm))
 					return err
 				}
 				return nil

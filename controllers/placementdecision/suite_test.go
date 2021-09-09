@@ -31,6 +31,7 @@ import (
 	idpclientset "github.com/identitatem/idp-client-api/api/client/clientset/versioned"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	idpconfig "github.com/identitatem/idp-client-api/config"
+	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	clientsetcluster "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	clientsetwork "open-cluster-management.io/api/client/work/clientset/versioned"
@@ -170,7 +171,7 @@ var _ = Describe("Process Strategy backplane: ", func() {
 	PlacementName := AuthRealmName
 	ClusterName := "my-cluster"
 	MyIDPName := "my-idp"
-
+	RouteSubDomain := "myroute"
 	It("Process the creation of a placementDecision", func() {
 		By(fmt.Sprintf("creation of User namespace %s", AuthRealmNameSpace), func() {
 			ns := &corev1.Namespace{
@@ -181,10 +182,10 @@ var _ = Describe("Process Strategy backplane: ", func() {
 			err := k8sClient.Create(context.TODO(), ns)
 			Expect(err).To(BeNil())
 		})
-		By(fmt.Sprintf("creation of Dex namespace %s", AuthRealmName), func() {
+		By(fmt.Sprintf("creation of Dex Operator namespace %s", AuthRealmName), func() {
 			ns := &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: AuthRealmNameSpace + "-" + AuthRealmName,
+					Name: helpers.DexOperatorNamespace(),
 				},
 			}
 			err := k8sClient.Create(context.TODO(), ns)
@@ -226,7 +227,8 @@ var _ = Describe("Process Strategy backplane: ", func() {
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.AuthRealmSpec{
-					Type: identitatemv1alpha1.AuthProxyDex,
+					RouteSubDomain: RouteSubDomain,
+					Type:           identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
 					},
@@ -249,6 +251,15 @@ var _ = Describe("Process Strategy backplane: ", func() {
 			}
 			//DV reassign  to authRealm to get the extra info that kube set (ie:uuid as needed to set ownerref)
 			authRealm, err = clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By(fmt.Sprintf("creation of Dex server namespace %s", AuthRealmName), func() {
+			ns := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: helpers.DexServerNamespace(authRealm),
+				},
+			}
+			err := k8sClient.Create(context.TODO(), ns)
 			Expect(err).To(BeNil())
 		})
 		var strategy *identitatemv1alpha1.Strategy
@@ -339,7 +350,7 @@ var _ = Describe("Process Strategy backplane: ", func() {
 		})
 		By(fmt.Sprintf("Checking DexClient %s", dexClientName), func() {
 			dexClient := &dexv1alpha1.DexClient{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: AuthRealmNameSpace + "-" + AuthRealmName}, dexClient)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: helpers.DexServerNamespace(authRealm)}, dexClient)
 			Expect(err).To(BeNil())
 			Expect(dexClient.Spec.ClientID).To(Equal(ClusterName))
 			Expect(dexClient.Spec.ClientSecret).To(Equal(string(clientSecret.Data["clientSecret"])))

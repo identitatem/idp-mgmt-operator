@@ -4,7 +4,6 @@ package authrealm
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -38,6 +37,7 @@ import (
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	idpconfig "github.com/identitatem/idp-client-api/config"
 	"github.com/identitatem/idp-mgmt-operator/deploy"
+	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 	clusteradmasset "open-cluster-management.io/clusteradm/pkg/helpers/asset"
@@ -196,8 +196,7 @@ var _ = Describe("Process deployment: ", func() {
 var _ = Describe("Process AuthRealm: ", func() {
 	AuthRealmName := "my-authrealm"
 	AuthRealmNameSpace := "my-authrealm-ns"
-	dexServerName := "dex-server"
-	dexServerNamespace := fmt.Sprintf("%s-%s", AuthRealmNameSpace, AuthRealmName)
+	RouteSubDomain := "myroute"
 	MyGithubAppClientID := "my-github-app-client-id"
 	CertificatesSecretRef := "my-certs"
 	It("Check CRDs availability", func() {
@@ -233,14 +232,16 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(err).To(BeNil())
 
 		})
+		var authRealm *identitatemv1alpha1.AuthRealm
 		By("creating a AuthRealm CR type dex", func() {
-			authRealm := &identitatemv1alpha1.AuthRealm{
+			authRealm = &identitatemv1alpha1.AuthRealm{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      AuthRealmName,
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.AuthRealmSpec{
-					Type: identitatemv1alpha1.AuthProxyDex,
+					RouteSubDomain: RouteSubDomain,
+					Type:           identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
 					},
@@ -282,19 +283,19 @@ var _ = Describe("Process AuthRealm: ", func() {
 		// 	_, err := clientSetStrategy.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName+"-grc", metav1.GetOptions{})
 		// 	Expect(err).Should(BeNil())
 		// })
-		By("Checking Dex Namespace", func() {
+		By("Checking Dex Operator Namespace", func() {
 			ns := &corev1.Namespace{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexServerNamespace}, ns)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexOperatorNamespace()}, ns)
 			Expect(err).Should(BeNil())
 		})
 		By("Checking Dex Deployment", func() {
 			ns := &appsv1.Deployment{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: "dex-operator", Namespace: dexServerNamespace}, ns)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: "dex-operator", Namespace: helpers.DexOperatorNamespace()}, ns)
 			Expect(err).Should(BeNil())
 		})
 		By("Checking DexServer", func() {
 			dexServer := &identitatemdexserverv1lapha1.DexServer{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexServerName, Namespace: dexServerNamespace}, dexServer)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer)
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(MyGithubAppClientID))
@@ -307,6 +308,12 @@ var _ = Describe("Process AuthRealm: ", func() {
 		})
 	})
 	It("process a AuthRealm CR again", func() {
+		var authRealm *identitatemv1alpha1.AuthRealm
+		By("Retrieving the Authrealm", func() {
+			var err error
+			authRealm, err = clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
+			Expect(err).Should(BeNil())
+		})
 		By("Run reconcile again", func() {
 			req := ctrl.Request{}
 			req.Name = AuthRealmName
@@ -316,7 +323,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 		})
 		By("Checking DexServer", func() {
 			dexServer := &identitatemdexserverv1lapha1.DexServer{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexServerName, Namespace: dexServerNamespace}, dexServer)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer)
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(MyGithubAppClientID))
@@ -327,6 +334,12 @@ var _ = Describe("Process AuthRealm: ", func() {
 		})
 	})
 	It("process an updated AuthRealm CR", func() {
+		var authRealm *identitatemv1alpha1.AuthRealm
+		By("Retrieving the Authrealm", func() {
+			var err error
+			authRealm, err = clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
+			Expect(err).Should(BeNil())
+		})
 		By("Changing the cert", func() {
 			secret := &corev1.Secret{}
 			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: CertificatesSecretRef, Namespace: AuthRealmNameSpace}, secret)
@@ -344,7 +357,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 		})
 		By("Checking DexServer", func() {
 			dexServer := &identitatemdexserverv1lapha1.DexServer{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: dexServerName, Namespace: dexServerNamespace}, dexServer)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer)
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].Config.ClientID).To(Equal(MyGithubAppClientID))
@@ -362,7 +375,8 @@ var _ = Describe("Process AuthRealm: ", func() {
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.AuthRealmSpec{
-					Type: identitatemv1alpha1.AuthProxyDex,
+					RouteSubDomain: RouteSubDomain,
+					Type:           identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
 					},
@@ -413,7 +427,8 @@ var _ = Describe("Process AuthRealm: ", func() {
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.AuthRealmSpec{
-					Type: identitatemv1alpha1.AuthProxyDex,
+					RouteSubDomain: RouteSubDomain,
+					Type:           identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
 					},
@@ -439,7 +454,8 @@ var _ = Describe("Process AuthRealm: ", func() {
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.AuthRealmSpec{
-					Type: identitatemv1alpha1.AuthProxyDex,
+					RouteSubDomain: RouteSubDomain,
+					Type:           identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
 					},

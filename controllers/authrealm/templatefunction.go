@@ -27,10 +27,10 @@ func GenericFuncMap() map[string]interface{} {
 }
 
 var genericMap = map[string]interface{}{
-	"replaceObjectName": replaceObjectName,
+	"replaceObjectNameNamespace": replaceObjectNameNamespace,
 }
 
-func replaceObjectName(reader *clusteradmasset.ScenarioResourcesReader, file string, newName, newNamespace string) (string, error) {
+func replaceObjectNameNamespace(reader *clusteradmasset.ScenarioResourcesReader, file string, newName, newNamespace string) (string, error) {
 	b, err := reader.Asset(file)
 	if err != nil {
 		return "", err
