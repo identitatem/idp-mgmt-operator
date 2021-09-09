@@ -235,7 +235,7 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 			dexClient := &dexoperatorv1alpha1.DexClient{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      dexClientName,
-					Namespace: authrealm.Name,
+					Namespace: helpers.DexServerNamespace(authrealm),
 				},
 			}
 			if err := r.Delete(context.TODO(), dexClient); err != nil && !errors.IsNotFound(err) {

@@ -63,8 +63,8 @@ var _ = Describe("AuthRealm", func() {
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.AuthRealmSpec{
-					Prefix: RouteSubDomain,
-					Type:   identitatemv1alpha1.AuthProxyDex,
+					RouteSubdomain: RouteSubDomain,
+					Type:           identitatemv1alpha1.AuthProxyDex,
 					// CertificatesSecretRef: corev1.LocalObjectReference{
 					// 	Name: CertificatesSecretRef,
 					// },
@@ -236,8 +236,8 @@ var _ = Describe("Strategy", func() {
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.AuthRealmSpec{
-					Prefix: RouteSubDomain,
-					Type:   identitatemv1alpha1.AuthProxyDex,
+					RouteSubdomain: RouteSubDomain,
+					Type:           identitatemv1alpha1.AuthProxyDex,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
 					},
