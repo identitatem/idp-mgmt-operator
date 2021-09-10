@@ -8,10 +8,9 @@ import (
 
 	ocinfrav1 "github.com/openshift/api/config/v1"
 	// corev1 "k8s.io/api/core/v1"
-	corev1 "k8s.io/api/core/v1"
+
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
@@ -220,52 +219,9 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 
 	for _, decision := range placementDecision.Status.Decisions {
 		for _, idp := range authrealm.Spec.IdentityProviders {
-			//Delete DexClient
-			dexClientName := helpers.DexClientName(decision, idp)
-			r.Log.Info("delete dexclient", "namespace", authrealm.Name, "name", dexClientName)
-			dexClient := &dexoperatorv1alpha1.DexClient{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      dexClientName,
-					Namespace: helpers.DexServerNamespace(authrealm),
-				},
-			}
-			if err := r.Delete(context.TODO(), dexClient); err != nil && !errors.IsNotFound(err) {
+			if err := r.deleteConfig(authrealm, helpers.DexClientName(decision, idp), decision.ClusterName, idp); err != nil {
 				return err
 			}
-			//Delete ClientSecret
-			r.Log.Info("delete clientSecret", "namespace", decision.ClusterName, "name", idp.Name)
-			clientSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      idp.Name,
-					Namespace: decision.ClusterName,
-				},
-			}
-			if err := r.Delete(context.TODO(), clientSecret); err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			//Delete clusterOAuth
-			r.Log.Info("delete clusterOAuth", "Namespace", dexClient.GetLabels()["cluster"], "Name", idp.Name)
-			clusterOAuth := &identitatemv1alpha1.ClusterOAuth{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      idp.Name,
-					Namespace: decision.ClusterName,
-				},
-			}
-			if err := r.Client.Delete(context.TODO(), clusterOAuth); err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			//Delete Manifestwork
-			// manifestworkName := helpers.ManifestWorkName()
-			// r.Log.Info("delete manifestwork", "namespace", decision.ClusterName, "name", manifestworkName)
-			// manifestwork := &workv1.ManifestWork{
-			// 	ObjectMeta: metav1.ObjectMeta{
-			// 		Name:      manifestworkName,
-			// 		Namespace: decision.ClusterName,
-			// 	},
-			// }
-			// if err := r.Delete(context.TODO(), manifestwork); err != nil && !errors.IsNotFound(err) {
-			// 	return err
-			// }
 		}
 	}
 	placementDecisions := &clusterv1alpha1.PlacementDecisionList{}

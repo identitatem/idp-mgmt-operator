@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	dexoperatorv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemdexv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
@@ -49,56 +50,15 @@ func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authrealm *identitat
 		return err
 	}
 
-	for i, dexClient := range dexClients.Items {
+	for _, dexClient := range dexClients.Items {
 		r.Log.Info("for dexClient", "Namespace", dexClient.Namespace, "Name", dexClient.Name)
 		for _, idp := range authrealm.Spec.IdentityProviders {
 			r.Log.Info("for IDP", "Name", idp.Name)
 			if !inPlacementDecision(dexClient.GetLabels()["cluster"], placementDecisions) &&
 				dexClient.GetLabels()["idp"] == idp.Name {
-				//Delete the dexClient
-				r.Log.Info("delete dexclient", "Name", idp.Name)
-				if err := r.Client.Delete(context.TODO(), &dexClients.Items[i]); err != nil && !errors.IsNotFound(err) {
+				if err := r.deleteConfig(authrealm, dexClient.Name, dexClient.GetLabels()["cluster"], idp); err != nil {
 					return err
 				}
-				//Delete the clientSecret
-				r.Log.Info("delete clientSecret", "Namespace", dexClient.GetLabels()["cluster"], "Name", idp.Name)
-				clientSecret := &corev1.Secret{}
-				if err := r.Get(context.TODO(), client.ObjectKey{
-					Name:      idp.Name,
-					Namespace: dexClient.GetLabels()["cluster"]},
-					clientSecret); err != nil {
-					if !errors.IsNotFound(err) {
-						return err
-					}
-				}
-				if err := r.Client.Delete(context.TODO(), clientSecret); err != nil && !errors.IsNotFound(err) {
-					return err
-				}
-				//Delete clusterOAuth
-				r.Log.Info("delete clusterOAuth", "Namespace", dexClient.GetLabels()["cluster"], "Name", idp.Name)
-				clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
-				if err := r.Get(context.TODO(), client.ObjectKey{
-					Name:      idp.Name,
-					Namespace: dexClient.GetLabels()["cluster"]},
-					clusterOAuth); err != nil {
-					if !errors.IsNotFound(err) {
-						return err
-					}
-				}
-				if err := r.Client.Delete(context.TODO(), clusterOAuth); err != nil && !errors.IsNotFound(err) {
-					return err
-				}
-				//Delete Manifestwork
-				// r.Log.Info("delete manifestwork", "namespace", dexClient.GetLabels()["cluster"], "name", helpers.ManifestWorkName())
-				// manifestwork := &workv1.ManifestWork{
-				// 	ObjectMeta: metav1.ObjectMeta{
-				// 		Name:      helpers.ManifestWorkName(),
-				// 		Namespace: dexClient.GetLabels()["cluster"],
-				// 	},
-				// }
-				// if err := r.Delete(context.TODO(), manifestwork); err != nil && !errors.IsNotFound(err) {
-				// 	return err
-				// }
 			}
 		}
 	}
@@ -170,6 +130,36 @@ func (r *PlacementDecisionReconciler) createDexClient(authrealm *identitatemv1al
 		return r.Client.Update(context.TODO(), dexClient)
 	case false:
 		return r.Client.Create(context.Background(), dexClient)
+	}
+	return nil
+}
+
+func (r *PlacementDecisionReconciler) deleteConfig(authrealm *identitatemv1alpha1.AuthRealm,
+	dexClientName, clusterName string,
+	idp openshiftconfigv1.IdentityProvider) error {
+	//Delete DexClient
+	r.Log.Info("delete dexclient", "namespace", authrealm.Name, "name", dexClientName)
+	dexClient := &dexoperatorv1alpha1.DexClient{}
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: helpers.DexServerNamespace(authrealm)}, dexClient); err == nil {
+		if err := r.Delete(context.TODO(), dexClient); err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+	}
+	//Delete ClientSecret
+	r.Log.Info("delete clientSecret", "namespace", clusterName, "name", idp.Name)
+	clientSecret := &corev1.Secret{}
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: idp.Name, Namespace: clusterName}, clientSecret); err == nil {
+		if err := r.Delete(context.TODO(), clientSecret); err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+	}
+	//Delete clusterOAuth
+	r.Log.Info("delete clusterOAuth", "Namespace", dexClient.GetLabels()["cluster"], "Name", idp.Name)
+	clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: idp.Name, Namespace: clusterName}, clusterOAuth); err == nil {
+		if err := r.Delete(context.TODO(), clusterOAuth); err != nil && !errors.IsNotFound(err) {
+			return err
+		}
 	}
 	return nil
 }
