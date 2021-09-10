@@ -5,9 +5,19 @@ SHELL := /bin/bash
 export PROJECT_DIR            = $(shell 'pwd')
 export PROJECT_NAME			  = $(shell basename ${PROJECT_DIR})
 
+# set docker image tag to branch name or "latest" if "master" or "main" branch
+GIT_BRANCH = $(shell git rev-parse --abbrev-ref HEAD)
+IMG_TAG = ${GIT_BRANCH}
+ifeq ("main",${IMG_TAG})
+IMG_TAG = latest
+endif
+ifeq ("master",${IMG_TAG})
+IMG_TAG = latest
+endif
+
 # Image URL to use all building/pushing image targets
-IMG ?= ${PROJECT_NAME}:latest
-IMG_COVERAGE ?= ${PROJECT_NAME}-coverage:latest
+IMG ?= ${PROJECT_NAME}:${IMG_TAG}
+IMG_COVERAGE ?= ${PROJECT_NAME}-coverage:${IMG_TAG}
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:crdVersions=v1"
 
