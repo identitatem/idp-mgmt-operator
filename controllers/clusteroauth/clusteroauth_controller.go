@@ -23,6 +23,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/ghodss/yaml"
@@ -48,7 +49,6 @@ import (
 	//+kubebuilder:scaffold:imports
 
 	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // ClusterOAuthReconciler reconciles a Strategy object
@@ -60,8 +60,6 @@ type ClusterOAuthReconciler struct {
 	Log                logr.Logger
 	Scheme             *runtime.Scheme
 }
-
-var log = logf.Log.WithName("utils")
 
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies,clusteroauths},verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources=strategies/status,verbs=get;update;patch
@@ -111,6 +109,18 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	//         GRC manifestwork
 	//switch instance.Spec.Type {
 	//case identitatemv1alpha1.BackplaneStrategyType:
+
+	if instance.DeletionTimestamp != nil {
+		if err := r.deleteManifestWork(instance); err != nil {
+			return reconcile.Result{}, err
+		}
+		r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", helpers.ClusterOAuthFinalizer)
+		controllerutil.RemoveFinalizer(instance, helpers.ClusterOAuthFinalizer)
+		if err := r.Client.Update(context.TODO(), instance); err != nil {
+			return ctrl.Result{}, err
+		}
+		return reconcile.Result{}, nil
+	}
 
 	// Create empty manifest work
 	manifestWork := &manifestworkv1.ManifestWork{
@@ -191,14 +201,6 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 						Namespace: "openshift-config",
 					},
 				}
-				// if len(secret.TypeMeta.Kind) == 0 {
-				// 	newSecret.TypeMeta.Kind = "Secret"
-
-				// }
-				// if len(secret.TypeMeta.APIVersion) == 0 {
-				// 	newSecret.TypeMeta.APIVersion = corev1.SchemeGroupVersion.String()
-
-				// }
 
 				newSecret.Data = secret.Data
 				newSecret.Type = secret.Type
@@ -234,7 +236,7 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	// create manifest work for managed cluster
 	// (borrowed from https://github.com/open-cluster-management/endpoint-operator/blob/master/pkg/utils/utils.go)
-	if err := CreateOrUpdateManifestWork(manifestWork, r.Client, manifestWork, r.Scheme); err != nil {
+	if err := r.CreateOrUpdateManifestWork(manifestWork, r.Client, manifestWork, r.Scheme); err != nil {
 		r.Log.Error(err, "Failed to create manifest work for component")
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
@@ -249,7 +251,7 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 }
 
 // compareManifestWorks returns true if 2 manifestworks' specs are the same
-func compareManifestWorks(mw1 *manifestworkv1.ManifestWork, mw2 *manifestworkv1.ManifestWork) bool {
+func (r *ClusterOAuthReconciler) compareManifestWorks(mw1 *manifestworkv1.ManifestWork, mw2 *manifestworkv1.ManifestWork) bool {
 	if mw1 == nil && mw2 == nil {
 		return true
 	}
@@ -266,7 +268,7 @@ func compareManifestWorks(mw1 *manifestworkv1.ManifestWork, mw2 *manifestworkv1.
 			if used[j] {
 				continue
 			}
-			if compareManifests(&m1.RawExtension, &m2.RawExtension) {
+			if r.compareManifests(&m1.RawExtension, &m2.RawExtension) {
 				hasMatch = true
 				used[j] = true
 				break
@@ -280,15 +282,15 @@ func compareManifestWorks(mw1 *manifestworkv1.ManifestWork, mw2 *manifestworkv1.
 }
 
 // convertRawExtensiontoUnstructured converts a rawExtension to a unstructured object
-func convertRawExtensiontoUnstructured(r *runtime.RawExtension) (*unstructured.Unstructured, error) {
+func (r *ClusterOAuthReconciler) convertRawExtensiontoUnstructured(rawExt *runtime.RawExtension) (*unstructured.Unstructured, error) {
 	if r == nil {
 		return nil, fmt.Errorf("fail to convert rawExtension")
 	}
 	var obj runtime.Object
 	var scope conversion.Scope
-	err := runtime.Convert_runtime_RawExtension_To_runtime_Object(r, &obj, scope)
+	err := runtime.Convert_runtime_RawExtension_To_runtime_Object(rawExt, &obj, scope)
 	if err != nil {
-		log.Error(err, "failed to convert rawExtension to runtime.Object", "rawExtension", r)
+		r.Log.Error(err, "failed to convert rawExtension to runtime.Object", "rawExtension", r)
 		return nil, err
 	}
 	if obj == nil {
@@ -296,7 +298,7 @@ func convertRawExtensiontoUnstructured(r *runtime.RawExtension) (*unstructured.U
 	}
 	innerObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
 	if err != nil {
-		log.Error(err, "failed to convert runtime.Objectt to Unstructured", "runtime.Object", &obj)
+		r.Log.Error(err, "failed to convert runtime.Objectt to Unstructured", "runtime.Object", &obj)
 		return nil, err
 	}
 	u := unstructured.Unstructured{Object: innerObj}
@@ -316,12 +318,12 @@ var rootAttributes = []string{
 
 // compareManifests compares if 2 manifests are the same, it only checks value we care
 // (name/namespace/kind/group/spec/data)
-func compareManifests(r1, r2 *runtime.RawExtension) bool {
-	u1, err := convertRawExtensiontoUnstructured(r1)
+func (r *ClusterOAuthReconciler) compareManifests(r1, r2 *runtime.RawExtension) bool {
+	u1, err := r.convertRawExtensiontoUnstructured(r1)
 	if err != nil {
 		return false
 	}
-	u2, err := convertRawExtensiontoUnstructured(r2)
+	u2, err := r.convertRawExtensiontoUnstructured(r2)
 	if err != nil {
 		return false
 	}
@@ -350,7 +352,7 @@ func compareManifests(r1, r2 *runtime.RawExtension) bool {
 }
 
 // CreateOrUpdateManifestWork creates a new ManifestWork or update an existing ManifestWork
-func CreateOrUpdateManifestWork(
+func (r *ClusterOAuthReconciler) CreateOrUpdateManifestWork(
 	manifestwork *manifestworkv1.ManifestWork,
 	client client.Client,
 	owner metav1.Object,
@@ -365,21 +367,17 @@ func CreateOrUpdateManifestWork(
 	)
 	if err == nil {
 		// Check if update is require
-		if !compareManifestWorks(&oldManifestwork, manifestwork) {
+		if !r.compareManifestWorks(&oldManifestwork, manifestwork) {
 			oldManifestwork.Spec.Workload.Manifests = manifestwork.Spec.Workload.Manifests
 			if err := client.Update(context.TODO(), &oldManifestwork); err != nil {
-				log.Error(err, "Fail to update manifestwork")
+				r.Log.Error(err, "Fail to update manifestwork")
 				return err
 			}
 		}
 	} else {
 		if errors.IsNotFound(err) {
-			//if err := controllerutil.SetControllerReference(owner, manifestwork, scheme); err != nil {
-			//	log.Error(err, "Unable to SetControllerReference")
-			//	return err
-			//}
 			if err := client.Create(context.TODO(), manifestwork); err != nil {
-				log.Error(err, "Fail to create manifestwork")
+				r.Log.Error(err, "Fail to create manifestwork")
 				return err
 			}
 			return nil
@@ -390,49 +388,34 @@ func CreateOrUpdateManifestWork(
 	return nil
 }
 
-// DeleteManifestWork deletes a manifestwork
+// deleteManifestWork deletes a manifestwork
 // if removeFinalizers is set to true, will remove all finalizers to make sure it can be deleted
-func DeleteManifestWork(name, namespace string, client client.Client, removeFinalizers bool) error {
-	manifestWork := &manifestworkv1.ManifestWork{}
-	var retErr error
-	if err := client.Get(
-		context.TODO(),
-		types.NamespacedName{Name: name, Namespace: namespace},
-		manifestWork,
-	); err != nil {
+func (r *ClusterOAuthReconciler) deleteManifestWork(clusterOAuth *identitatemv1alpha1.ClusterOAuth) error {
+
+	clusterOAuths := &identitatemv1alpha1.ClusterOAuthList{}
+	if err := r.Client.List(context.TODO(), clusterOAuths, client.InNamespace(clusterOAuth.Namespace)); err != nil {
 		return err
 	}
 
-	if removeFinalizers && len(manifestWork.GetFinalizers()) > 0 {
-		manifestWork.SetFinalizers([]string{})
-		if err := client.Update(context.TODO(), manifestWork); err != nil {
-			log.Error(err, fmt.Sprintf("Failed to remove finalizers of Manifestwork %s in %s namespace", name, namespace))
-			retErr = err
-		}
-	}
-
-	if manifestWork.DeletionTimestamp == nil {
-		err := client.Delete(context.TODO(), manifestWork)
-		if err != nil {
+	//Remove the finalizers when there is no other clusterOAuth for that placement.
+	if len(clusterOAuths.Items) == 1 {
+		manifestWork := &manifestworkv1.ManifestWork{}
+		if err := r.Client.Get(
+			context.TODO(),
+			types.NamespacedName{Name: helpers.ManifestWorkName(), Namespace: clusterOAuth.Namespace},
+			manifestWork,
+		); err != nil && !errors.IsNotFound(err) {
 			return err
 		}
+
+		if manifestWork.DeletionTimestamp == nil {
+			err := r.Client.Delete(context.TODO(), manifestWork)
+			if err != nil {
+				return err
+			}
+		}
 	}
-
-	return retErr
-}
-
-func GetManifestWork(name, namespace string, client client.Client) (*manifestworkv1.ManifestWork, error) {
-	manifestWork := &manifestworkv1.ManifestWork{}
-
-	if err := client.Get(
-		context.TODO(),
-		types.NamespacedName{Name: name, Namespace: namespace},
-		manifestWork,
-	); err != nil {
-		return nil, err
-	}
-
-	return manifestWork, nil
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
