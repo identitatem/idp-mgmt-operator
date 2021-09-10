@@ -14,6 +14,7 @@ import (
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
@@ -98,6 +99,46 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 		return err
 	}
 
+	return nil
+}
+func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.AuthRealm) error {
+	r.Log.Info("deleteDexOperator", "Name", authRealm.Name, "Namespace", authRealm.Name)
+	authRealms := &identitatemv1alpha1.AuthRealmList{}
+	if err := r.Client.List(context.TODO(), authRealms); err != nil {
+		return err
+	}
+	nbFound := 0
+	for _, authRealm := range authRealms.Items {
+		if authRealm.Spec.Type == identitatemv1alpha1.AuthProxyDex {
+			nbFound++
+		}
+	}
+	if nbFound == 1 {
+		//Delete dex-operator ns
+		ns := &corev1.Namespace{}
+		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexOperatorNamespace()}, ns); err == nil {
+			err := r.Client.Delete(context.TODO(), ns)
+			if err != nil {
+				return err
+			}
+		}
+		//Delete clusterRoleBinding
+		crb := &rbacv1.ClusterRoleBinding{}
+		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "dex-operator-rolebinding"}, crb); err == nil {
+			err := r.Client.Delete(context.TODO(), crb)
+			if err != nil {
+				return err
+			}
+		}
+		//Delete clusterRole
+		cr := &rbacv1.ClusterRole{}
+		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "dex-operator-manager-role"}, cr); err == nil {
+			err := r.Client.Delete(context.TODO(), cr)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -256,5 +297,8 @@ func (r *AuthRealmReconciler) deleteAuthRealmNamespace(authRealm *identitatemv1a
 		}
 		return err
 	}
-	return r.Client.Delete(context.TODO(), ns)
+	if err := r.Client.Delete(context.TODO(), ns); err != nil {
+		return err
+	}
+	return r.deleteDexOperator(authRealm)
 }

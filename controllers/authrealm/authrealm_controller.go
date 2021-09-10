@@ -22,13 +22,10 @@ import (
 
 	identitatemdexserverv1lapha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 
 	idpoperatorconfig "github.com/identitatem/idp-client-api/config"
 	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
-)
-
-const (
-	authrealmFinalizer string = "authrealm.identitatem.io/cleanup"
 )
 
 // AuthRealmReconciler reconciles a AuthRealm object
@@ -77,7 +74,7 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if err := r.deleteAuthRealmNamespace(instance); err != nil {
 			return reconcile.Result{}, err
 		}
-		controllerutil.RemoveFinalizer(instance, authrealmFinalizer)
+		controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
 		if err := r.Client.Update(context.TODO(), instance); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -85,7 +82,7 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	//Add finalizer, it will be removed once the ns is deleted
-	controllerutil.AddFinalizer(instance, authrealmFinalizer)
+	controllerutil.AddFinalizer(instance, helpers.AuthrealmFinalizer)
 
 	r.Log.Info("Process", "Name", instance.GetName(), "Namespace", instance.GetNamespace())
 

@@ -20,6 +20,7 @@ import (
 	"k8s.io/klog/v2"
 	"k8s.io/kubectl/pkg/scheme"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
+	manifestworkv1 "open-cluster-management.io/api/work/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -299,11 +300,19 @@ var _ = Describe("Strategy", func() {
 			}, 30, 1).Should(BeNil())
 			By("Checking strategy", func() {
 				var err error
-				strategy, err := identitatemClientSet.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), StrategyName, metav1.GetOptions{})
-				Expect(err).To(BeNil())
-				Eventually(func() string {
-					return strategy.Spec.PlacementRef.Name
-				}, 30, 1).Should(Equal(PlacementStrategyName))
+				var strategy *identitatemv1alpha1.Strategy
+				Eventually(func() error {
+					strategy, err = identitatemClientSet.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), StrategyName, metav1.GetOptions{})
+					if err != nil {
+						return err
+					}
+					if strategy.Spec.PlacementRef.Name != PlacementStrategyName {
+						return fmt.Errorf("Expect PlacementStrategyName = %s but got strategy.Spec.PlacementRef.Name= %s",
+							PlacementStrategyName,
+							strategy.Spec.PlacementRef.Name)
+					}
+					return nil
+				}, 30, 1).Should(BeNil())
 			})
 			By("Checking placement strategy", func() {
 				_, err := clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).
@@ -321,15 +330,6 @@ var _ = Describe("Strategy", func() {
 				Get(context.TODO(), PlacementStrategyName, metav1.GetOptions{})
 			Expect(err).To(BeNil())
 		})
-		// By(fmt.Sprintf("creation of Dex namespace %s", AuthRealmName), func() {
-		// 	ns := &corev1.Namespace{
-		// 		ObjectMeta: metav1.ObjectMeta{
-		// 			Name: AuthRealmName,
-		// 		},
-		// 	}
-		// 	err := k8sClient.Create(context.TODO(), ns)
-		// 	Expect(err).To(BeNil())
-		// })
 
 		var placementDecision *clusterv1alpha1.PlacementDecision
 		By("Create Placement Decision CR", func() {
@@ -372,6 +372,34 @@ var _ = Describe("Strategy", func() {
 						return err
 					}
 					logf.Log.Info("ClientSecret", "Name", MyIDPName, "Namespace", ClusterName)
+					return err
+				}
+				return nil
+			}, 30, 1).Should(BeNil())
+		})
+		By(fmt.Sprintf("Checking clusterOAuth %s", MyIDPName), func() {
+			Eventually(func() error {
+				clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: MyIDPName, Namespace: ClusterName}, clusterOAuth)
+				if err != nil {
+					if !errors.IsNotFound(err) {
+						return err
+					}
+					logf.Log.Info("clusterOAuth", "Name", MyIDPName, "Namespace", ClusterName)
+					return err
+				}
+				return nil
+			}, 30, 1).Should(BeNil())
+		})
+		By(fmt.Sprintf("Checking Manifestwork %s", helpers.ManifestWorkName()), func() {
+			Eventually(func() error {
+				mw := &manifestworkv1.ManifestWork{}
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, mw)
+				if err != nil {
+					if !errors.IsNotFound(err) {
+						return err
+					}
+					logf.Log.Info("Manifestwork", "Name", helpers.ManifestWorkName(), "Namespace", ClusterName)
 					return err
 				}
 				return nil
@@ -421,10 +449,10 @@ var _ = Describe("Strategy", func() {
 				return fmt.Errorf("clusteroauth %s still exist", MyIDPName)
 			}, 30, 1).Should(BeNil())
 		})
-		By(fmt.Sprintf("Checking manifestwork deletion %s", "idp-oauth"), func() {
+		By(fmt.Sprintf("Checking manifestwork deletion %s", helpers.ManifestWorkName()), func() {
 			Eventually(func() error {
 				clientSecret := &identitatemv1alpha1.ClusterOAuth{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: "idp-oauth", Namespace: ClusterName}, clientSecret)
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, clientSecret)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err
@@ -461,9 +489,5 @@ var _ = Describe("Strategy", func() {
 
 			}, 30, 1).Should(BeNil())
 		})
-		// By("Deleting the AuthRealm", func() {
-		// 	err := identitatemClientSet.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Delete(context.TODO(), AuthRealmName, metav1.DeleteOptions{})
-		// 	Expect(err).To(BeNil())
-		// })
 	})
 })

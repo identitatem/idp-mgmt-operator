@@ -46,11 +46,6 @@ type PlacementDecisionReconciler struct {
 	Scheme             *runtime.Scheme
 }
 
-const (
-	placementDecisionFinalizer          string = "placelementdecision.identitatem.io/cleanup"
-	placementDecisionBackplaneFinalizer string = "placelementdecision.identitatem.io/cleanup-backplane"
-)
-
 // +kubebuilder:rbac:groups="",resources={namespaces,secrets},verbs=get;list;watch;create;update;patch;delete
 
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies},verbs=get;list;watch;create;update;patch;delete
@@ -113,8 +108,8 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		if err := r.deletePlacementDecision(instance); err != nil {
 			return reconcile.Result{}, err
 		}
-		r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", placementDecisionFinalizer)
-		controllerutil.RemoveFinalizer(instance, placementDecisionFinalizer)
+		r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", helpers.PlacementDecisionFinalizer)
+		controllerutil.RemoveFinalizer(instance, helpers.PlacementDecisionFinalizer)
 		if err := r.Client.Update(context.TODO(), instance); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -122,14 +117,14 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	//Add finalizer
-	r.Log.Info("add PlacementDecision finalizer", "Finalizer:", placementDecisionFinalizer)
-	controllerutil.AddFinalizer(instance, placementDecisionFinalizer)
+	r.Log.Info("add PlacementDecision finalizer", "Finalizer:", helpers.PlacementDecisionFinalizer)
+	controllerutil.AddFinalizer(instance, helpers.PlacementDecisionFinalizer)
 	if err := r.Client.Update(context.TODO(), instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	//Search the placement corresponding to the placementDecision
-	r.Log.Info("search Placement", " Namespace:", instance.GetNamespace(), "Finalizer:", placementDecisionFinalizer, "Name: ", instance.GetLabels()[clusterv1alpha1.PlacementLabel])
+	r.Log.Info("search Placement", " Namespace:", instance.GetNamespace(), "Finalizer:", helpers.PlacementDecisionFinalizer, "Name: ", instance.GetLabels()[clusterv1alpha1.PlacementLabel])
 	placement := &clusterv1alpha1.Placement{}
 	err = r.Get(context.TODO(),
 		client.ObjectKey{
@@ -141,13 +136,13 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	//Add finalizer to the placement, it will be removed once the ns is deleted
-	r.Log.Info("add PlacementDecision finalizer on placement", " Namespace:", placement.GetNamespace(), "Name: ", placement.GetName(), "Finalizer:", placementDecisionBackplaneFinalizer)
+	r.Log.Info("add PlacementDecision finalizer on placement", " Namespace:", placement.GetNamespace(), "Name: ", placement.GetName(), "Finalizer:", helpers.PlacementDecisionBackplaneFinalizer)
 	if err := r.AddPlacementDecisionFinalizer(strategy, placement); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	//Add finalizer to the strategy, it will be removed once the ns is deleted
-	r.Log.Info("add PlacementDecision finalizer on strategy", " Namespace:", strategy.GetNamespace(), "Name: ", strategy.GetName(), "Finalizer:", placementDecisionBackplaneFinalizer)
+	r.Log.Info("add PlacementDecision finalizer on strategy", " Namespace:", strategy.GetNamespace(), "Name: ", strategy.GetName(), "Finalizer:", helpers.PlacementDecisionBackplaneFinalizer)
 	if err := r.AddPlacementDecisionFinalizer(strategy, strategy); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -158,29 +153,13 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	//Add finalizer to the authrealm, it will be removed once the ns is deleted
-	r.Log.Info("add PlacementDecision finalizer on authrealm", " Namespace:", authrealm.GetNamespace(), "Name: ", authrealm.GetName(), "Finalizer:", placementDecisionBackplaneFinalizer)
+	r.Log.Info("add PlacementDecision finalizer on authrealm", " Namespace:", authrealm.GetNamespace(), "Name: ", authrealm.GetName(), "Finalizer:", helpers.PlacementDecisionBackplaneFinalizer)
 	if err := r.AddPlacementDecisionFinalizer(strategy, authrealm); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	switch strategy.Spec.Type {
-	case identitatemv1alpha1.BackplaneStrategyType:
-		//check if dex server installed
-		// r.Log.Info("check if dex server namespace exists", "Namespace:", helpers.DexServerNamespace(authrealm))
-		// ns := &corev1.Namespace{}
-		// if err := r.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authrealm)}, ns); err != nil {
-		// 	return reconcile.Result{Requeue: true, RequeueAfter: 10 * time.Second}, err
-		// }
-
-		if err := r.backplaneStrategy(authrealm, instance); err != nil {
-			return reconcile.Result{}, err
-		}
-	// case identitatemv1alpha1.GrcStrategyType:
-	// 	if err := r.grcStrategy(placement, instance); err != nil {
-	// 		return reconcile.Result{}, err
-	// 	}
-	default:
-		return reconcile.Result{}, fmt.Errorf("strategy type %s not supported", strategy.Spec.Type)
+	if err := r.processPlacementDecision(authrealm, instance); err != nil {
+		return reconcile.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
@@ -189,7 +168,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 func (r *PlacementDecisionReconciler) AddPlacementDecisionFinalizer(strategy *identitatemv1alpha1.Strategy, obj client.Object) error {
 	switch strategy.Spec.Type {
 	case identitatemv1alpha1.BackplaneStrategyType:
-		controllerutil.AddFinalizer(obj, placementDecisionBackplaneFinalizer)
+		controllerutil.AddFinalizer(obj, helpers.PlacementDecisionBackplaneFinalizer)
 		// case identitatemv1alpha1.GrcStrategyType:
 		// controllerutil.AddFinalizer(obj, placementDecisionGRCFinalizer)
 	default:
@@ -203,7 +182,7 @@ func (r *PlacementDecisionReconciler) AddPlacementDecisionFinalizer(strategy *id
 func (r *PlacementDecisionReconciler) RemovePlacementDecisionFinalizer(strategy *identitatemv1alpha1.Strategy, obj client.Object) error {
 	switch strategy.Spec.Type {
 	case identitatemv1alpha1.BackplaneStrategyType:
-		controllerutil.RemoveFinalizer(obj, placementDecisionBackplaneFinalizer)
+		controllerutil.RemoveFinalizer(obj, helpers.PlacementDecisionBackplaneFinalizer)
 		// case identitatemv1alpha1.GrcStrategyType:
 		// controllerutil.RemoveFinalizer(obj, placementDecisionGRCFinalizer)
 	default:
@@ -212,6 +191,18 @@ func (r *PlacementDecisionReconciler) RemovePlacementDecisionFinalizer(strategy 
 
 	return r.Client.Update(context.TODO(), obj)
 
+}
+
+//DV
+//processPlacementDecision generates resources for the Backplane strategy
+func (r *PlacementDecisionReconciler) processPlacementDecision(
+	authrealm *identitatemv1alpha1.AuthRealm,
+	placementDecision *clusterv1alpha1.PlacementDecision) error {
+	r.Log.Info("run backplane strategy")
+	if err := r.syncDexClients(authrealm, placementDecision); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) error {
@@ -264,17 +255,17 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 				return err
 			}
 			//Delete Manifestwork
-			manifestworkName := helpers.ManifestWorkName()
-			r.Log.Info("delete manifestwork", "namespace", decision.ClusterName, "name", manifestworkName)
-			manifestwork := &workv1.ManifestWork{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      manifestworkName,
-					Namespace: decision.ClusterName,
-				},
-			}
-			if err := r.Delete(context.TODO(), manifestwork); err != nil && !errors.IsNotFound(err) {
-				return err
-			}
+			// manifestworkName := helpers.ManifestWorkName()
+			// r.Log.Info("delete manifestwork", "namespace", decision.ClusterName, "name", manifestworkName)
+			// manifestwork := &workv1.ManifestWork{
+			// 	ObjectMeta: metav1.ObjectMeta{
+			// 		Name:      manifestworkName,
+			// 		Namespace: decision.ClusterName,
+			// 	},
+			// }
+			// if err := r.Delete(context.TODO(), manifestwork); err != nil && !errors.IsNotFound(err) {
+			// 	return err
+			// }
 		}
 	}
 	placementDecisions := &clusterv1alpha1.PlacementDecisionList{}
