@@ -15,8 +15,10 @@ import (
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 	clusteradmasset "open-cluster-management.io/clusteradm/pkg/helpers/asset"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -136,6 +138,26 @@ func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.A
 			err := r.Client.Delete(context.TODO(), cr)
 			if err != nil {
 				return err
+			}
+		}
+		readerIDPStrategyOperator := dexoperatorconfig.GetScenarioResourcesReader()
+
+		crdFiles := []string{"crd/bases/auth.identitatem.io_dexclients.yaml",
+			"crd/bases/auth.identitatem.io_dexservers.yaml"}
+		for _, crdFile := range crdFiles {
+			data, err := readerIDPStrategyOperator.Asset(crdFile)
+			if err != nil {
+				return err
+			}
+			crd := &apiextensionsv1.CustomResourceDefinition{}
+			if err := yaml.Unmarshal(data, crd); err != nil {
+				return err
+			}
+			if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: crd.Name}, crd); err == nil {
+				err := r.Client.Delete(context.TODO(), crd)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
