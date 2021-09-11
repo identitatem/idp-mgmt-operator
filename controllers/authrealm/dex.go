@@ -117,6 +117,7 @@ func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.A
 	}
 	if nbFound == 1 {
 		//Delete dex-operator ns
+		r.Log.Info("Delete dex-operator ns", "namespace", helpers.DexOperatorNamespace())
 		ns := &corev1.Namespace{}
 		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexOperatorNamespace()}, ns); err == nil {
 			err := r.Client.Delete(context.TODO(), ns)
@@ -125,6 +126,7 @@ func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.A
 			}
 		}
 		//Delete clusterRoleBinding
+		r.Log.Info("Delete clusterRoleBinding", "name", "dex-operator-rolebinding")
 		crb := &rbacv1.ClusterRoleBinding{}
 		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "dex-operator-rolebinding"}, crb); err == nil {
 			err := r.Client.Delete(context.TODO(), crb)
@@ -133,6 +135,7 @@ func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.A
 			}
 		}
 		//Delete clusterRole
+		r.Log.Info("Delete clusterRoleBinding", "name", "dex-operator-manager-role")
 		cr := &rbacv1.ClusterRole{}
 		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "dex-operator-manager-role"}, cr); err == nil {
 			err := r.Client.Delete(context.TODO(), cr)
@@ -153,6 +156,7 @@ func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.A
 			if err := yaml.Unmarshal(data, crd); err != nil {
 				return err
 			}
+			r.Log.Info("Delete crd", "name", crd.Name)
 			if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: crd.Name}, crd); err == nil {
 				err := r.Client.Delete(context.TODO(), crd)
 				if err != nil {
