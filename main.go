@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+
 	"github.com/identitatem/idp-mgmt-operator/controllers/authrealm"
 	"github.com/identitatem/idp-mgmt-operator/controllers/clusteroauth"
 	"github.com/identitatem/idp-mgmt-operator/controllers/placementdecision"
@@ -111,6 +112,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&identitatemv1alpha1.AuthRealm{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "AuthRealm")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")
