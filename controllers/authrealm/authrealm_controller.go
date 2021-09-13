@@ -144,16 +144,22 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&identitatemv1alpha1.AuthRealm{}).
 		Owns(&identitatemv1alpha1.Strategy{}).
-		Owns(&identitatemdexserverv1lapha1.DexServer{}).
-		Watches(&source.Kind{Type: &identitatemdexserverv1lapha1.DexClient{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
-			return []reconcile.Request{
-				{
-					NamespacedName: types.NamespacedName{
-						Name:      o.GetName(),
-						Namespace: o.GetNamespace(),
+		Watches(&source.Kind{Type: &identitatemdexserverv1lapha1.DexServer{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+			name, nameOk := o.GetLabels()[helpers.AuthRealmNameLabel]
+			namespace, namespaceOk := o.GetLabels()[helpers.AuthRealmNamespaceLabel]
+			if nameOk && namespaceOk {
+				return []reconcile.Request{
+					{
+						NamespacedName: types.NamespacedName{
+							Name:      name,
+							Namespace: namespace,
+						},
 					},
-				},
+				}
 			}
+			return []reconcile.Request{}
 		})).
+		//TODO change to watch with mapping
+		Owns(&identitatemdexserverv1lapha1.DexServer{}).
 		Complete(r)
 }

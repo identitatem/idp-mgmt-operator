@@ -67,7 +67,7 @@ var _ = BeforeSuite(func(done Done) {
 	strategyCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_strategies.yaml")
 	Expect(err).Should(BeNil())
 
-	authrealmCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
+	authRealmCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
 	Expect(err).Should(BeNil())
 
 	clusterOAuthCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_clusteroauths.yaml")
@@ -84,7 +84,7 @@ var _ = BeforeSuite(func(done Done) {
 	testEnv = &envtest.Environment{
 		CRDs: []client.Object{
 			strategyCRD,
-			authrealmCRD,
+			authRealmCRD,
 			clusterOAuthCRD,
 			dexClientCRD,
 			dexServerCRD,

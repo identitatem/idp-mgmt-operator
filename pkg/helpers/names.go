@@ -18,6 +18,15 @@ const (
 	dexServerNamespacePrefix string = "idp-mgmt"
 )
 
+const (
+	ClusterNameLabel                string = "cluster.identitatem.io/name"
+	IdentityProviderNameLabel       string = "identityprovider.identitatem.io/name"
+	AuthRealmNameLabel              string = "authrealm.identitatem.io/name"
+	AuthRealmNamespaceLabel         string = "authrealm.identitatem.io/namespace"
+	PlacementDecisionNameLabel      string = "placementdecision.identitatem.io/name"
+	PlacementDecisionNamespaceLabel string = "placementdecision.identitatem.io/namespace"
+)
+
 func ManifestWorkName() string {
 	return manifestWorkName
 }
@@ -30,8 +39,8 @@ func DexServerName() string {
 	return dexServerName
 }
 
-func DexServerNamespace(authrealm *identitatemv1alpha1.AuthRealm) string {
-	return fmt.Sprintf("%s-%s", dexServerNamespacePrefix, authrealm.Spec.RouteSubDomain)
+func DexServerNamespace(authRealm *identitatemv1alpha1.AuthRealm) string {
+	return fmt.Sprintf("%s-%s", dexServerNamespacePrefix, authRealm.Spec.RouteSubDomain)
 }
 
 func DexClientName(
@@ -42,16 +51,16 @@ func DexClientName(
 }
 
 func DexClientObjectKey(
-	authrealm *identitatemv1alpha1.AuthRealm,
+	authRealm *identitatemv1alpha1.AuthRealm,
 	decision clusterv1alpha1.ClusterDecision,
 	idp openshiftconfigv1.IdentityProvider,
 ) client.ObjectKey {
 	return client.ObjectKey{
 		Name:      DexClientName(decision, idp),
-		Namespace: DexServerNamespace(authrealm),
+		Namespace: DexServerNamespace(authRealm),
 	}
 }
 
-func StrategyName(authrealm *identitatemv1alpha1.AuthRealm, t identitatemv1alpha1.StrategyType) string {
-	return fmt.Sprintf("%s-%s", authrealm.Name, string(t))
+func StrategyName(authRealm *identitatemv1alpha1.AuthRealm, t identitatemv1alpha1.StrategyType) string {
+	return fmt.Sprintf("%s-%s", authRealm.Name, string(t))
 }

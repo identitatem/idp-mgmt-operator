@@ -13,23 +13,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *AuthRealmReconciler) createStrategy(t identitatemv1alpha1.StrategyType, authrealm *identitatemv1alpha1.AuthRealm) error {
+func (r *AuthRealmReconciler) createStrategy(t identitatemv1alpha1.StrategyType, authRealm *identitatemv1alpha1.AuthRealm) error {
 	strategy := &identitatemv1alpha1.Strategy{}
-	name := helpers.StrategyName(authrealm, t)
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: authrealm.Namespace}, strategy); err != nil {
+	name := helpers.StrategyName(authRealm, t)
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: authRealm.Namespace}, strategy); err != nil {
 		if !errors.IsNotFound(err) {
 			return err
 		}
 		strategy := &identitatemv1alpha1.Strategy{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
-				Namespace: authrealm.Namespace,
+				Namespace: authRealm.Namespace,
 			},
 			Spec: identitatemv1alpha1.StrategySpec{
 				Type: t,
 			},
 		}
-		if err := controllerutil.SetOwnerReference(authrealm, strategy, r.Scheme); err != nil {
+		if err := controllerutil.SetOwnerReference(authRealm, strategy, r.Scheme); err != nil {
 			return err
 		}
 		if err := r.Client.Create(context.TODO(), strategy); err != nil {

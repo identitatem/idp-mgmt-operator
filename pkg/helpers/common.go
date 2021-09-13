@@ -12,7 +12,7 @@ import (
 )
 
 func GetAuthrealmFromStrategy(c client.Client, strategy *identitatemv1alpha1.Strategy) (*identitatemv1alpha1.AuthRealm, error) {
-	authrealm := &identitatemv1alpha1.AuthRealm{}
+	authRealm := &identitatemv1alpha1.AuthRealm{}
 	var ownerRef metav1.OwnerReference
 	//DV not needed
 	// placementInfo := &identitatemv1alpha1.Placement{}
@@ -26,8 +26,8 @@ func GetAuthrealmFromStrategy(c client.Client, strategy *identitatemv1alpha1.Str
 			break
 		}
 	}
-	if err := c.Get(context.TODO(), client.ObjectKey{Name: ownerRef.Name, Namespace: strategy.Namespace}, authrealm); err != nil {
+	if err := c.Get(context.TODO(), client.ObjectKey{Name: ownerRef.Name, Namespace: strategy.Namespace}, authRealm); err != nil {
 		return nil, err
 	}
-	return authrealm, nil
+	return authRealm, nil
 }

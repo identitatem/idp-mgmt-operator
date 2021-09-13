@@ -44,7 +44,7 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 	return clientSecret, nil
 }
 
-func (r *PlacementDecisionReconciler) createClusterOAuth(authrealm *identitatemv1alpha1.AuthRealm,
+func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv1alpha1.AuthRealm,
 	decision clusterv1alpha1.ClusterDecision,
 	idp openshiftconfigv1.IdentityProvider,
 	clientSecret *corev1.Secret) error {
@@ -91,7 +91,7 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authrealm *identitatemv
 				ClientSecret: openshiftconfigv1.SecretNameReference{
 					Name: clientSecret.Name,
 				},
-				Issuer: fmt.Sprintf("%s://%s-%s.%s", uScheme, authrealm.Name, authrealm.Name, host),
+				Issuer: fmt.Sprintf("%s://%s-%s.%s", uScheme, authRealm.Name, authRealm.Name, host),
 			},
 		},
 	}

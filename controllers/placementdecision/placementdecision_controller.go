@@ -18,10 +18,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
 	dexoperatorv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
+	identitatemdexserverv1lapha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	idpoperatorconfig "github.com/identitatem/idp-client-api/config"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
@@ -146,18 +149,18 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, err
 	}
 
-	authrealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
+	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	//Add finalizer to the authrealm, it will be removed once the ns is deleted
-	r.Log.Info("add PlacementDecision finalizer on authrealm", " Namespace:", authrealm.GetNamespace(), "Name: ", authrealm.GetName(), "Finalizer:", helpers.PlacementDecisionBackplaneFinalizer)
-	if err := r.AddPlacementDecisionFinalizer(strategy, authrealm); err != nil {
+	r.Log.Info("add PlacementDecision finalizer on authrealm", " Namespace:", authRealm.GetNamespace(), "Name: ", authRealm.GetName(), "Finalizer:", helpers.PlacementDecisionBackplaneFinalizer)
+	if err := r.AddPlacementDecisionFinalizer(strategy, authRealm); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err := r.processPlacementDecision(authrealm, instance); err != nil {
+	if err := r.processPlacementDecision(authRealm, instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -195,10 +198,10 @@ func (r *PlacementDecisionReconciler) RemovePlacementDecisionFinalizer(strategy 
 //DV
 //processPlacementDecision generates resources for the Backplane strategy
 func (r *PlacementDecisionReconciler) processPlacementDecision(
-	authrealm *identitatemv1alpha1.AuthRealm,
+	authRealm *identitatemv1alpha1.AuthRealm,
 	placementDecision *clusterv1alpha1.PlacementDecision) error {
 	r.Log.Info("run backplane strategy")
-	if err := r.syncDexClients(authrealm, placementDecision); err != nil {
+	if err := r.syncDexClients(authRealm, placementDecision); err != nil {
 		return err
 	}
 	return nil
@@ -212,14 +215,14 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 		return err
 	}
 
-	authrealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
+	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
 	if err != nil {
 		return err
 	}
 
 	for _, decision := range placementDecision.Status.Decisions {
-		for _, idp := range authrealm.Spec.IdentityProviders {
-			if err := r.deleteConfig(authrealm, helpers.DexClientName(decision, idp), decision.ClusterName, idp); err != nil {
+		for _, idp := range authRealm.Spec.IdentityProviders {
+			if err := r.deleteConfig(authRealm, helpers.DexClientName(decision, idp), decision.ClusterName, idp); err != nil {
 				return err
 			}
 		}
@@ -251,7 +254,7 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 		if err := r.RemovePlacementDecisionFinalizer(strategy, strategy); err != nil {
 			return err
 		}
-		if err := r.RemovePlacementDecisionFinalizer(strategy, authrealm); err != nil {
+		if err := r.RemovePlacementDecisionFinalizer(strategy, authRealm); err != nil {
 			return err
 		}
 	}
@@ -298,6 +301,21 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&clusterv1alpha1.PlacementDecision{}).
+		Watches(&source.Kind{Type: &identitatemdexserverv1lapha1.DexClient{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+			name, nameOk := o.GetLabels()[helpers.PlacementDecisionNameLabel]
+			namespace, namespaceOk := o.GetLabels()[helpers.PlacementDecisionNamespaceLabel]
+			if nameOk && namespaceOk {
+				return []reconcile.Request{
+					{
+						NamespacedName: types.NamespacedName{
+							Name:      name,
+							Namespace: namespace,
+						},
+					},
+				}
+			}
+			return []reconcile.Request{}
+		})).
 		//TODO Watch clientSecret to regenerate dexclient/clusterOAuth
 		Complete(r)
 }

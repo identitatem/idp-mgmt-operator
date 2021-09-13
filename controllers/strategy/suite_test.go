@@ -64,7 +64,7 @@ var _ = BeforeSuite(func(done Done) {
 	strategyCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_strategies.yaml")
 	Expect(err).Should(BeNil())
 
-	authrealmCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
+	authRealmCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
 	Expect(err).Should(BeNil())
 
 	readerDex := dexoperatorconfig.GetScenarioResourcesReader()
@@ -76,7 +76,7 @@ var _ = BeforeSuite(func(done Done) {
 	testEnv = &envtest.Environment{
 		CRDs: []client.Object{
 			strategyCRD,
-			authrealmCRD,
+			authRealmCRD,
 			dexServerCRD,
 		},
 		CRDDirectoryPaths: []string{

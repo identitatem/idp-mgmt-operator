@@ -191,6 +191,10 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      helpers.DexServerName(),
 				Namespace: helpers.DexServerNamespace(authRealm),
+				Labels: map[string]string{
+					helpers.AuthRealmNameLabel:      authRealm.Name,
+					helpers.AuthRealmNamespaceLabel: authRealm.Namespace,
+				},
 			},
 		}
 	}
