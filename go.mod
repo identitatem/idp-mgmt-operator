@@ -22,6 +22,8 @@ require (
 )
 
 replace (
+	//github.com/identitatem/idp-client-api => /Users/cahl/go/src/github.com/identitatem/idp-client-api
+	github.com/identitatem/idp-client-api => github.com/chrisahl/idp-client-api v0.0.0-20210913201231-bb170b8368ec
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20210817132244-67c28690af52
 	k8s.io/api => k8s.io/api v0.22.0
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.22.0
