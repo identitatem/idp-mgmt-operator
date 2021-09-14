@@ -115,15 +115,17 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	//Check if the placementDecision is linked to a strategy
+	ok, err := r.isLinkedToStrategy(instance)
+	if !ok {
+		return reconcile.Result{}, nil
+	}
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	strategy, err := r.GetStrategyFromPlacementDecision(instance)
 	if err != nil {
-		if !errors.IsNotFound(err) {
-			r.Log.Error(err, "Error while getting the strategy")
-			return reconcile.Result{}, err
-		}
-		r.Log.Info("PlacementDecision not linked to a strategy", "Error:", err)
-		//No further processing
-		return reconcile.Result{}, nil
+		return reconcile.Result{}, err
 	}
 
 	//Search the placement corresponding to the placementDecision
@@ -208,11 +210,31 @@ func (r *PlacementDecisionReconciler) processPlacementDecision(
 	return nil
 }
 
+func (r *PlacementDecisionReconciler) isLinkedToStrategy(placementDecision *clusterv1alpha1.PlacementDecision) (bool, error) {
+	_, err := r.GetStrategyFromPlacementDecision(placementDecision)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			return false, nil
+		}
+		r.Log.Info("PlacementDecision not linked to a strategy", "Error:", err)
+		//No further processing
+		return false, nil
+	}
+	return true, err
+}
+
 func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) error {
 	r.Log.Info("start deletion of PlacementDecision", "name", placementDecision.Name, "namespace", placementDecision.Namespace)
+	ok, err := r.isLinkedToStrategy(placementDecision)
+	if !ok {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
 	strategy, err := r.GetStrategyFromPlacementDecision(placementDecision)
 	if err != nil {
-		r.Log.Error(err, "Error while getting the strategy")
 		return err
 	}
 
