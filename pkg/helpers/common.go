@@ -14,13 +14,7 @@ import (
 func GetAuthrealmFromStrategy(c client.Client, strategy *identitatemv1alpha1.Strategy) (*identitatemv1alpha1.AuthRealm, error) {
 	authRealm := &identitatemv1alpha1.AuthRealm{}
 	var ownerRef metav1.OwnerReference
-	//DV not needed
-	// placementInfo := &identitatemv1alpha1.Placement{}
-
-	//for _, or := range ownerRefs {
 	for _, or := range strategy.GetOwnerReferences() {
-		//DV add a parameter as it should be key/value pair
-		//TODO find a better way
 		if or.Kind == "AuthRealm" {
 			ownerRef = or
 			break

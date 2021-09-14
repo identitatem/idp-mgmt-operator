@@ -105,16 +105,18 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 	return nil
 }
 
-func GetStrategyFromPlacementDecision(c client.Client, placementDecision *clusterv1alpha1.PlacementDecision) (*identitatemv1alpha1.Strategy, error) {
+func (r *PlacementDecisionReconciler) GetStrategyFromPlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) (*identitatemv1alpha1.Strategy, error) {
+	r.Log.Info("GetStrategyFromPlacementDecision placementDecision:", "name", placementDecision.Name, "namespace", placementDecision.Namespace)
 	if placementName, ok := placementDecision.GetLabels()[clusterv1alpha1.PlacementLabel]; ok {
-		return GetStrategyFromPlacement(c, placementName, placementDecision.Namespace)
+		return r.GetStrategyFromPlacement(placementName, placementDecision.Namespace)
 	}
 	return nil, fmt.Errorf("placementDecision %s has no label %s", placementDecision.Name, clusterv1alpha1.PlacementLabel)
 }
 
-func GetStrategyFromPlacement(c client.Client, placementName, placementNamespace string) (*identitatemv1alpha1.Strategy, error) {
+func (r *PlacementDecisionReconciler) GetStrategyFromPlacement(placementName, placementNamespace string) (*identitatemv1alpha1.Strategy, error) {
+	r.Log.Info("GetStrategyFromPlacement", "placementName", placementName, "placementNamespace", placementNamespace)
 	strategies := &identitatemv1alpha1.StrategyList{}
-	if err := c.List(context.TODO(), strategies, &client.ListOptions{Namespace: placementNamespace}); err != nil {
+	if err := r.List(context.TODO(), strategies, &client.ListOptions{Namespace: placementNamespace}); err != nil {
 		return nil, err
 	}
 	for _, strategy := range strategies.Items {

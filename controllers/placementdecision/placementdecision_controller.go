@@ -94,17 +94,6 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	r.Log.Info("running Reconcile for PlacementDecision")
 
-	strategy, err := GetStrategyFromPlacementDecision(r.Client, instance)
-	if err != nil {
-		if !errors.IsNotFound(err) {
-			r.Log.Error(err, "Error while getting the strategy")
-			return reconcile.Result{}, err
-		}
-		r.Log.Info("PlacementDecision not linked to a strategy", "Error:", err)
-		//No further processing
-		return reconcile.Result{}, nil
-	}
-
 	//if deletetimestamp then delete dex namespace
 	if instance.DeletionTimestamp != nil {
 		if err := r.deletePlacementDecision(instance); err != nil {
@@ -123,6 +112,18 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	controllerutil.AddFinalizer(instance, helpers.PlacementDecisionFinalizer)
 	if err := r.Client.Update(context.TODO(), instance); err != nil {
 		return reconcile.Result{}, err
+	}
+
+	//Check if the placementDecision is linked to a strategy
+	strategy, err := r.GetStrategyFromPlacementDecision(instance)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			r.Log.Error(err, "Error while getting the strategy")
+			return reconcile.Result{}, err
+		}
+		r.Log.Info("PlacementDecision not linked to a strategy", "Error:", err)
+		//No further processing
+		return reconcile.Result{}, nil
 	}
 
 	//Search the placement corresponding to the placementDecision
@@ -208,8 +209,8 @@ func (r *PlacementDecisionReconciler) processPlacementDecision(
 }
 
 func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) error {
-	r.Log.Info("delete PlacementDecision")
-	strategy, err := GetStrategyFromPlacementDecision(r.Client, placementDecision)
+	r.Log.Info("start deletion of PlacementDecision", "name", placementDecision.Name, "namespace", placementDecision.Namespace)
+	strategy, err := r.GetStrategyFromPlacementDecision(placementDecision)
 	if err != nil {
 		r.Log.Error(err, "Error while getting the strategy")
 		return err
