@@ -261,7 +261,8 @@ var _ = Describe("Process AuthRealm: ", func() {
 					},
 				},
 			}
-			_, err := clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})
+			var err error
+			authRealm, err = clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})
 			Expect(err).To(BeNil())
 		})
 		By("Run reconcile", func() {
@@ -304,6 +305,8 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
 			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
 			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
+			Expect(len(dexServer.Status.RelatedObjects)).To(Equal(1))
+			Expect(dexServer.Status.RelatedObjects[0].Kind).To(Equal("AuthRealm"))
 			//TODO CA missing in Web
 		})
 	})

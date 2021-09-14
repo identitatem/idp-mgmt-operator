@@ -19,12 +19,8 @@ const (
 )
 
 const (
-	ClusterNameLabel                string = "cluster.identitatem.io/name"
-	IdentityProviderNameLabel       string = "identityprovider.identitatem.io/name"
-	AuthRealmNameLabel              string = "authrealm.identitatem.io/name"
-	AuthRealmNamespaceLabel         string = "authrealm.identitatem.io/namespace"
-	PlacementDecisionNameLabel      string = "placementdecision.identitatem.io/name"
-	PlacementDecisionNamespaceLabel string = "placementdecision.identitatem.io/namespace"
+	ClusterNameLabel          string = "cluster.identitatem.io/name"
+	IdentityProviderNameLabel string = "identityprovider.identitatem.io/name"
 )
 
 func ManifestWorkName() string {

@@ -302,19 +302,19 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&clusterv1alpha1.PlacementDecision{}).
 		Watches(&source.Kind{Type: &identitatemdexserverv1lapha1.DexClient{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
-			name, nameOk := o.GetLabels()[helpers.PlacementDecisionNameLabel]
-			namespace, namespaceOk := o.GetLabels()[helpers.PlacementDecisionNamespaceLabel]
-			if nameOk && namespaceOk {
-				return []reconcile.Request{
-					{
+			dexClient := o.(*identitatemdexserverv1lapha1.DexClient)
+			req := make([]reconcile.Request, 0)
+			for _, relatedObject := range dexClient.Status.RelatedObjects {
+				if relatedObject.Kind == "PlacementDecision" {
+					req = append(req, reconcile.Request{
 						NamespacedName: types.NamespacedName{
-							Name:      name,
-							Namespace: namespace,
+							Name:      relatedObject.Name,
+							Namespace: relatedObject.Namespace,
 						},
-					},
+					})
 				}
 			}
-			return []reconcile.Request{}
+			return req
 		})).
 		//TODO Watch clientSecret to regenerate dexclient/clusterOAuth
 		Complete(r)

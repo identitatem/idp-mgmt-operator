@@ -107,10 +107,8 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 				Name:      helpers.DexClientName(decision, idp),
 				Namespace: helpers.DexServerNamespace(authRealm),
 				Labels: map[string]string{
-					helpers.ClusterNameLabel:                decision.ClusterName,
-					helpers.IdentityProviderNameLabel:       idp.Name,
-					helpers.PlacementDecisionNameLabel:      placementDecision.Name,
-					helpers.PlacementDecisionNamespaceLabel: placementDecision.Namespace,
+					helpers.ClusterNameLabel:          decision.ClusterName,
+					helpers.IdentityProviderNameLabel: idp.Name,
 				},
 			},
 			Spec: identitatemdexv1alpha1.DexClientSpec{
@@ -132,8 +130,24 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 	case true:
 		return r.Client.Update(context.TODO(), dexClient)
 	case false:
-		return r.Client.Create(context.Background(), dexClient)
+		if err := r.Client.Create(context.Background(), dexClient); err != nil {
+			return err
+		}
+		dexClient.Status.RelatedObjects =
+			[]identitatemdexv1alpha1.RelatedObjectReference{
+				{
+					Kind:      "PlacementDecision",
+					Name:      placementDecision.Name,
+					Namespace: placementDecision.Namespace,
+				},
+			}
+		if err := r.Status().Update(context.TODO(), dexClient); err != nil {
+			return err
+		}
+
 	}
+
+	r.Log.Info("after update", "dexClient", dexClient)
 	return nil
 }
 

@@ -354,6 +354,8 @@ var _ = Describe("Process Strategy backplane: ", func() {
 			Expect(err).To(BeNil())
 			Expect(dexClient.Spec.ClientID).To(Equal(ClusterName))
 			Expect(dexClient.Spec.ClientSecret).To(Equal(string(clientSecret.Data["clientSecret"])))
+			Expect(len(dexClient.Status.RelatedObjects)).To(Equal(1))
+			Expect(dexClient.Status.RelatedObjects[0].Kind).To(Equal("PlacementDecision"))
 		})
 		By(fmt.Sprintf("Checking ClusterOAuth %s", dexClientName), func() {
 			clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}

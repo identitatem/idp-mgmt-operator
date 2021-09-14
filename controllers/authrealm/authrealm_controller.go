@@ -39,7 +39,7 @@ type AuthRealmReconciler struct {
 }
 
 // +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies},verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexservers,dexclients},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexservers,dexservers/status,dexclients,dexclients/status},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources={namespaces,secrets,serviceaccounts},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="apps",resources={deployments},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={clusterrolebindings,rolebindings},verbs=get;list;watch;create;update;patch;delete
@@ -145,19 +145,19 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&identitatemv1alpha1.AuthRealm{}).
 		Owns(&identitatemv1alpha1.Strategy{}).
 		Watches(&source.Kind{Type: &identitatemdexserverv1lapha1.DexServer{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
-			name, nameOk := o.GetLabels()[helpers.AuthRealmNameLabel]
-			namespace, namespaceOk := o.GetLabels()[helpers.AuthRealmNamespaceLabel]
-			if nameOk && namespaceOk {
-				return []reconcile.Request{
-					{
+			dexServer := o.(*identitatemdexserverv1lapha1.DexServer)
+			req := make([]reconcile.Request, 0)
+			for _, relatedObject := range dexServer.Status.RelatedObjects {
+				if relatedObject.Kind == "AuthRealm" {
+					req = append(req, reconcile.Request{
 						NamespacedName: types.NamespacedName{
-							Name:      name,
-							Namespace: namespace,
+							Name:      relatedObject.Name,
+							Namespace: relatedObject.Namespace,
 						},
-					},
+					})
 				}
 			}
-			return []reconcile.Request{}
+			return req
 		})).
 		//TODO change to watch with mapping
 		Owns(&identitatemdexserverv1lapha1.DexServer{}).

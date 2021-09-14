@@ -35,7 +35,7 @@ func init() {
 var _ = Describe("AuthRealm", func() {
 	AuthRealmName := "my-authrealm-1"
 	AuthRealmNameSpace := "my-authrealm-ns-1"
-	RouteSubDomain := "myroute"
+	RouteSubDomain := "myroute-1"
 	It("process a AuthRealm CR", func() {
 		By("checking CRD", func() {
 			Eventually(func() error {
