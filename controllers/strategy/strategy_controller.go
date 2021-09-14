@@ -109,6 +109,10 @@ func (r *StrategyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+
+	if authRealm.DeletionTimestamp != nil {
+		return reconcile.Result{}, nil
+	}
 	// get placement info from AuthRealm ownerRef
 
 	//Make sure Placement is created and correct

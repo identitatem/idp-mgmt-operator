@@ -184,20 +184,6 @@ func (r *PlacementDecisionReconciler) AddPlacementDecisionFinalizer(strategy *id
 
 }
 
-func (r *PlacementDecisionReconciler) RemovePlacementDecisionFinalizer(strategy *identitatemv1alpha1.Strategy, obj client.Object) error {
-	switch strategy.Spec.Type {
-	case identitatemv1alpha1.BackplaneStrategyType:
-		controllerutil.RemoveFinalizer(obj, helpers.PlacementDecisionBackplaneFinalizer)
-		// case identitatemv1alpha1.GrcStrategyType:
-		// controllerutil.RemoveFinalizer(obj, placementDecisionGRCFinalizer)
-	default:
-		return fmt.Errorf("strategy type %s not supported", strategy.Spec.Type)
-	}
-
-	return r.Client.Update(context.TODO(), obj)
-
-}
-
 //DV
 //processPlacementDecision generates resources for the Backplane strategy
 func (r *PlacementDecisionReconciler) processPlacementDecision(
@@ -271,13 +257,13 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 		}
 
 		//All resources are cleaned, finalizers on authrealm and strategy can be removed
-		if err := r.RemovePlacementDecisionFinalizer(strategy, placement); err != nil {
+		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, strategy, placement); err != nil {
 			return err
 		}
-		if err := r.RemovePlacementDecisionFinalizer(strategy, strategy); err != nil {
+		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, strategy, strategy); err != nil {
 			return err
 		}
-		if err := r.RemovePlacementDecisionFinalizer(strategy, authRealm); err != nil {
+		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, strategy, authRealm); err != nil {
 			return err
 		}
 	}
