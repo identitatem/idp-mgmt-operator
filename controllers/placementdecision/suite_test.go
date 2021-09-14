@@ -67,7 +67,7 @@ var _ = BeforeSuite(func(done Done) {
 	strategyCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_strategies.yaml")
 	Expect(err).Should(BeNil())
 
-	authrealmCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
+	authRealmCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
 	Expect(err).Should(BeNil())
 
 	clusterOAuthCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_clusteroauths.yaml")
@@ -84,7 +84,7 @@ var _ = BeforeSuite(func(done Done) {
 	testEnv = &envtest.Environment{
 		CRDs: []client.Object{
 			strategyCRD,
-			authrealmCRD,
+			authRealmCRD,
 			clusterOAuthCRD,
 			dexClientCRD,
 			dexServerCRD,
@@ -354,6 +354,8 @@ var _ = Describe("Process Strategy backplane: ", func() {
 			Expect(err).To(BeNil())
 			Expect(dexClient.Spec.ClientID).To(Equal(ClusterName))
 			Expect(dexClient.Spec.ClientSecret).To(Equal(string(clientSecret.Data["clientSecret"])))
+			Expect(len(dexClient.Status.RelatedObjects)).To(Equal(1))
+			Expect(dexClient.Status.RelatedObjects[0].Kind).To(Equal("PlacementDecision"))
 		})
 		By(fmt.Sprintf("Checking ClusterOAuth %s", dexClientName), func() {
 			clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}

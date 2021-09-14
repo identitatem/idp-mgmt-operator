@@ -72,7 +72,9 @@ rules:
   - auth.identitatem.io
   resources:
   - dexclients
+  - dexclients/status
   - dexservers
+  - dexservers/status
   verbs:
   - create
   - delete

@@ -21,7 +21,7 @@ import (
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 )
 
-func (r *PlacementDecisionReconciler) syncDexClients(authrealm *identitatemv1alpha1.AuthRealm,
+func (r *PlacementDecisionReconciler) syncDexClients(authRealm *identitatemv1alpha1.AuthRealm,
 	placementDecision *clusterv1alpha1.PlacementDecision) error {
 
 	placementDecisions := &clusterv1alpha1.PlacementDecisionList{}
@@ -31,32 +31,32 @@ func (r *PlacementDecisionReconciler) syncDexClients(authrealm *identitatemv1alp
 		return err
 	}
 
-	if err := r.deleteObsoleteConfigs(authrealm, placementDecisions); err != nil {
+	if err := r.deleteObsoleteConfigs(authRealm, placementDecisions); err != nil {
 		return err
 	}
 
-	if err := r.createConfigs(authrealm, placementDecisions); err != nil {
+	if err := r.createConfigs(authRealm, placementDecisions); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authrealm *identitatemv1alpha1.AuthRealm,
+func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authRealm *identitatemv1alpha1.AuthRealm,
 	placementDecisions *clusterv1alpha1.PlacementDecisionList) error {
-	r.Log.Info("delete obsolete config for Authrealm", "Namespace", authrealm.Namespace, "Name", authrealm.Name)
+	r.Log.Info("delete obsolete config for Authrealm", "Namespace", authRealm.Namespace, "Name", authRealm.Name)
 	dexClients := &identitatemdexv1alpha1.DexClientList{}
-	if err := r.Client.List(context.TODO(), dexClients, &client.ListOptions{Namespace: helpers.DexServerNamespace(authrealm)}); err != nil {
+	if err := r.Client.List(context.TODO(), dexClients, &client.ListOptions{Namespace: helpers.DexServerNamespace(authRealm)}); err != nil {
 		return err
 	}
 
 	for _, dexClient := range dexClients.Items {
 		r.Log.Info("for dexClient", "Namespace", dexClient.Namespace, "Name", dexClient.Name)
-		for _, idp := range authrealm.Spec.IdentityProviders {
+		for _, idp := range authRealm.Spec.IdentityProviders {
 			r.Log.Info("for IDP", "Name", idp.Name)
-			if !inPlacementDecision(dexClient.GetLabels()["cluster"], placementDecisions) &&
-				dexClient.GetLabels()["idp"] == idp.Name {
-				if err := r.deleteConfig(authrealm, dexClient.Name, dexClient.GetLabels()["cluster"], idp); err != nil {
+			if !inPlacementDecision(dexClient.GetLabels()[helpers.ClusterNameLabel], placementDecisions) &&
+				dexClient.GetLabels()[helpers.IdentityProviderNameLabel] == idp.Name {
+				if err := r.deleteConfig(authRealm, dexClient.Name, dexClient.GetLabels()[helpers.ClusterNameLabel], idp); err != nil {
 					return err
 				}
 			}
@@ -65,22 +65,22 @@ func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authrealm *identitat
 	return nil
 }
 
-func (r *PlacementDecisionReconciler) createConfigs(authrealm *identitatemv1alpha1.AuthRealm,
+func (r *PlacementDecisionReconciler) createConfigs(authRealm *identitatemv1alpha1.AuthRealm,
 	placementDecisions *clusterv1alpha1.PlacementDecisionList) error {
 	for _, placementDecision := range placementDecisions.Items {
 		for _, decision := range placementDecision.Status.Decisions {
-			for _, idp := range authrealm.Spec.IdentityProviders {
+			for _, idp := range authRealm.Spec.IdentityProviders {
 				//Create Secret
 				clientSecret, err := r.createClientSecret(decision, idp)
 				if err != nil {
 					return err
 				}
 				//Create dexClient
-				if err := r.createDexClient(authrealm, decision, idp, clientSecret); err != nil {
+				if err := r.createDexClient(authRealm, placementDecision, decision, idp, clientSecret); err != nil {
 					return err
 				}
 				//Create ClusterOAuth
-				if err := r.createClusterOAuth(authrealm, decision, idp, clientSecret); err != nil {
+				if err := r.createClusterOAuth(authRealm, decision, idp, clientSecret); err != nil {
 					return err
 				}
 			}
@@ -89,14 +89,15 @@ func (r *PlacementDecisionReconciler) createConfigs(authrealm *identitatemv1alph
 	return nil
 }
 
-func (r *PlacementDecisionReconciler) createDexClient(authrealm *identitatemv1alpha1.AuthRealm,
+func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1alpha1.AuthRealm,
+	placementDecision clusterv1alpha1.PlacementDecision,
 	decision clusterv1alpha1.ClusterDecision,
 	idp openshiftconfigv1.IdentityProvider,
 	clientSecret *corev1.Secret) error {
 	r.Log.Info("create dexClient for", "cluster", decision.ClusterName, "identityProvider", idp.Name)
 	dexClientExists := true
 	dexClient := &identitatemdexv1alpha1.DexClient{}
-	if err := r.Client.Get(context.TODO(), helpers.DexClientObjectKey(authrealm, decision, idp), dexClient); err != nil {
+	if err := r.Client.Get(context.TODO(), helpers.DexClientObjectKey(authRealm, decision, idp), dexClient); err != nil {
 		if !errors.IsNotFound(err) {
 			return err
 		}
@@ -104,10 +105,10 @@ func (r *PlacementDecisionReconciler) createDexClient(authrealm *identitatemv1al
 		dexClient = &identitatemdexv1alpha1.DexClient{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      helpers.DexClientName(decision, idp),
-				Namespace: helpers.DexServerNamespace(authrealm),
+				Namespace: helpers.DexServerNamespace(authRealm),
 				Labels: map[string]string{
-					"cluster": decision.ClusterName,
-					"idp":     idp.Name,
+					helpers.ClusterNameLabel:          decision.ClusterName,
+					helpers.IdentityProviderNameLabel: idp.Name,
 				},
 			},
 			Spec: identitatemdexv1alpha1.DexClientSpec{
@@ -129,18 +130,34 @@ func (r *PlacementDecisionReconciler) createDexClient(authrealm *identitatemv1al
 	case true:
 		return r.Client.Update(context.TODO(), dexClient)
 	case false:
-		return r.Client.Create(context.Background(), dexClient)
+		if err := r.Client.Create(context.Background(), dexClient); err != nil {
+			return err
+		}
+		dexClient.Status.RelatedObjects =
+			[]identitatemdexv1alpha1.RelatedObjectReference{
+				{
+					Kind:      "PlacementDecision",
+					Name:      placementDecision.Name,
+					Namespace: placementDecision.Namespace,
+				},
+			}
+		if err := r.Status().Update(context.TODO(), dexClient); err != nil {
+			return err
+		}
+
 	}
+
+	r.Log.Info("after update", "dexClient", dexClient)
 	return nil
 }
 
-func (r *PlacementDecisionReconciler) deleteConfig(authrealm *identitatemv1alpha1.AuthRealm,
+func (r *PlacementDecisionReconciler) deleteConfig(authRealm *identitatemv1alpha1.AuthRealm,
 	dexClientName, clusterName string,
 	idp openshiftconfigv1.IdentityProvider) error {
 	//Delete DexClient
-	r.Log.Info("delete dexclient", "namespace", authrealm.Name, "name", dexClientName)
+	r.Log.Info("delete dexclient", "namespace", authRealm.Name, "name", dexClientName)
 	dexClient := &dexoperatorv1alpha1.DexClient{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: helpers.DexServerNamespace(authrealm)}, dexClient); err == nil {
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: helpers.DexServerNamespace(authRealm)}, dexClient); err == nil {
 		if err := r.Delete(context.TODO(), dexClient); err != nil && !errors.IsNotFound(err) {
 			return err
 		}
@@ -154,7 +171,7 @@ func (r *PlacementDecisionReconciler) deleteConfig(authrealm *identitatemv1alpha
 		}
 	}
 	//Delete clusterOAuth
-	r.Log.Info("delete clusterOAuth", "Namespace", dexClient.GetLabels()["cluster"], "Name", idp.Name)
+	r.Log.Info("delete clusterOAuth", "Namespace", dexClient.GetLabels()[helpers.ClusterNameLabel], "Name", idp.Name)
 	clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: idp.Name, Namespace: clusterName}, clusterOAuth); err == nil {
 		if err := r.Delete(context.TODO(), clusterOAuth); err != nil && !errors.IsNotFound(err) {

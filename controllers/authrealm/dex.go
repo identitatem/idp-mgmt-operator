@@ -202,16 +202,25 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 	switch dexServerExists {
 	case true:
 		r.Log.V(1).Info("createDexServer update dexServer", "Name", dexServer.Name, "Namespace", dexServer.Namespace)
-		if err := r.Client.Update(context.TODO(), dexServer); err != nil {
-			return err
-		}
+		return r.Client.Update(context.TODO(), dexServer)
 	case false:
 		r.Log.V(1).Info("createDexServer create dexServer", "Name", dexServer.Name, "Namespace", dexServer.Namespace)
 		if err := r.Client.Create(context.TODO(), dexServer); err != nil {
 			return err
 		}
+		dexServer.Status.RelatedObjects =
+			[]identitatemdexserverv1alpha1.RelatedObjectReference{
+				{
+					Kind:      "AuthRealm",
+					Name:      authRealm.Name,
+					Namespace: authRealm.Namespace,
+				},
+			}
+		if err := r.Status().Update(context.TODO(), dexServer); err != nil {
+			return err
+		}
 	}
-
+	r.Log.Info("after update", "dexServer", dexServer)
 	return nil
 }
 

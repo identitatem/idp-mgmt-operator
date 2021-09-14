@@ -35,7 +35,7 @@ func init() {
 var _ = Describe("AuthRealm", func() {
 	AuthRealmName := "my-authrealm-1"
 	AuthRealmNameSpace := "my-authrealm-ns-1"
-	RouteSubDomain := "myroute"
+	RouteSubDomain := "myroute-1"
 	It("process a AuthRealm CR", func() {
 		By("checking CRD", func() {
 			Eventually(func() error {
@@ -184,7 +184,7 @@ var _ = Describe("AuthRealm", func() {
 var _ = Describe("Strategy", func() {
 	AuthRealmName := "my-authrealm"
 	AuthRealmNameSpace := "my-authrealmns"
-	CertificatesSecretRef := "my-certs"
+	// CertificatesSecretRef := "my-certs"
 	StrategyName := AuthRealmName + "-backplane"
 	PlacementStrategyName := StrategyName
 	ClusterName := "my-cluster"
@@ -239,9 +239,9 @@ var _ = Describe("Strategy", func() {
 				Spec: identitatemv1alpha1.AuthRealmSpec{
 					RouteSubDomain: RouteSubDomain,
 					Type:           identitatemv1alpha1.AuthProxyDex,
-					CertificatesSecretRef: corev1.LocalObjectReference{
-						Name: CertificatesSecretRef,
-					},
+					// CertificatesSecretRef: corev1.LocalObjectReference{
+					// 	Name: CertificatesSecretRef,
+					// },
 					IdentityProviders: []openshiftconfigv1.IdentityProvider{
 						{
 							Name:          MyIDPName,

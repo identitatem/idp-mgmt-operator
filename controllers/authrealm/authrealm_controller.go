@@ -39,7 +39,7 @@ type AuthRealmReconciler struct {
 }
 
 // +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies},verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexservers,dexclients},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexservers,dexservers/status,dexclients,dexclients/status},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources={namespaces,secrets,serviceaccounts},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="apps",resources={deployments},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={clusterrolebindings,rolebindings},verbs=get;list;watch;create;update;patch;delete
@@ -144,16 +144,22 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&identitatemv1alpha1.AuthRealm{}).
 		Owns(&identitatemv1alpha1.Strategy{}).
-		Owns(&identitatemdexserverv1lapha1.DexServer{}).
-		Watches(&source.Kind{Type: &identitatemdexserverv1lapha1.DexClient{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
-			return []reconcile.Request{
-				{
-					NamespacedName: types.NamespacedName{
-						Name:      o.GetName(),
-						Namespace: o.GetNamespace(),
-					},
-				},
+		Watches(&source.Kind{Type: &identitatemdexserverv1lapha1.DexServer{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+			dexServer := o.(*identitatemdexserverv1lapha1.DexServer)
+			req := make([]reconcile.Request, 0)
+			for _, relatedObject := range dexServer.Status.RelatedObjects {
+				if relatedObject.Kind == "AuthRealm" {
+					req = append(req, reconcile.Request{
+						NamespacedName: types.NamespacedName{
+							Name:      relatedObject.Name,
+							Namespace: relatedObject.Namespace,
+						},
+					})
+				}
 			}
+			return req
 		})).
+		//TODO change to watch with mapping
+		Owns(&identitatemdexserverv1lapha1.DexServer{}).
 		Complete(r)
 }

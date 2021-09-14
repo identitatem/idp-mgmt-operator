@@ -105,9 +105,13 @@ func (r *StrategyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// Get the AuthRealm Placement bits we need to help create a new Placement
 
 	r.Log.Info("Searching for AuthRealm in ownerRefs", "strategy", instance.Name)
-	authrealm, err := helpers.GetAuthrealmFromStrategy(r.Client, instance)
+	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, instance)
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	if authRealm.DeletionTimestamp != nil {
+		return reconcile.Result{}, nil
 	}
 	// get placement info from AuthRealm ownerRef
 
@@ -117,12 +121,12 @@ func (r *StrategyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	//Check if there is a predicate to add, if not nothing to do
 
 	placement := &clusterv1alpha1.Placement{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: authrealm.Spec.PlacementRef.Name, Namespace: req.Namespace}, placement); err != nil {
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: authRealm.Spec.PlacementRef.Name, Namespace: req.Namespace}, placement); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	//Get placementStrategy
-	placementStrategy, placementStrategyExists, err := r.getStrategyPlacement(instance, authrealm, placement)
+	placementStrategy, placementStrategyExists, err := r.getStrategyPlacement(instance, authRealm, placement)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -130,11 +134,11 @@ func (r *StrategyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	//Enrich placementStrategy
 	switch instance.Spec.Type {
 	case identitatemv1alpha1.BackplaneStrategyType:
-		if err := r.backplanePlacementStrategy(instance, authrealm, placement, placementStrategy); err != nil {
+		if err := r.backplanePlacementStrategy(instance, authRealm, placement, placementStrategy); err != nil {
 			return reconcile.Result{}, err
 		}
 	// case identitatemv1alpha1.GrcStrategyType:
-	// 	if err := r.grcPlacementStrategy(instance, authrealm, placement, placementStrategy); err != nil {
+	// 	if err := r.grcPlacementStrategy(instance, authRealm, placement, placementStrategy); err != nil {
 	// 		return reconcile.Result{}, err
 	// 	}
 	default:
@@ -163,11 +167,11 @@ func (r *StrategyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.Strategy,
-	authrealm *identitatemv1alpha1.AuthRealm,
+	authRealm *identitatemv1alpha1.AuthRealm,
 	placement *clusterv1alpha1.Placement) (*clusterv1alpha1.Placement, bool, error) {
 	placementStrategy := &clusterv1alpha1.Placement{}
 	placementStrategyExists := true
-	placementStrategyName := getPlacementStrategyName(strategy, authrealm)
+	placementStrategyName := getPlacementStrategyName(strategy, authRealm)
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: placementStrategyName, Namespace: strategy.Namespace}, placementStrategy); err != nil {
 		if !errors.IsNotFound(err) {
 			return nil, false, err
@@ -194,8 +198,8 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 }
 
 func getPlacementStrategyName(strategy *identitatemv1alpha1.Strategy,
-	authrealm *identitatemv1alpha1.AuthRealm) string {
-	return fmt.Sprintf("%s-%s", authrealm.Spec.PlacementRef.Name, strategy.Spec.Type)
+	authRealm *identitatemv1alpha1.AuthRealm) string {
+	return fmt.Sprintf("%s-%s", authRealm.Spec.PlacementRef.Name, strategy.Spec.Type)
 }
 
 // SetupWithManager sets up the controller with the Manager.
