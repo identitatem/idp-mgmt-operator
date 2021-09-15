@@ -19,7 +19,9 @@ RUN GOFLAGS="" go build -a -o idp-mgmt main.go
 RUN GOFLAGS="" go test -covermode=atomic \
     -coverpkg=github.com/identitatem/idp-mgmt-operator/pkg/...,\
 github.com/identitatem/idp-mgmt-operator/controllers/... \
-     -c -tags testrunmain . -o idp-mgmt-coverage
+     -c -tags testrunmain \ 
+     github.com/identitatem/idp-mgmt-operator/cmd/manager \
+     -o idp-mgmt-coverage
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 RUN microdnf update
