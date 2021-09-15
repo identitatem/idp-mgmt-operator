@@ -30,8 +30,8 @@ ENV OPERATOR=/usr/local/bin/idp-mgmt \
     USER_NAME=idp-mgmt-operator
     
 # install operator binary
-COPY --from=builder $REMOTE_SOURCE_DIR/app/manager ${OPERATOR}
-COPY --from=builder $REMOTE_SOURCE_DIR/app/manager-coverage ${OPERATOR}-coverage
+COPY --from=builder $REMOTE_SOURCE_DIR/app/idp-mgmt ${OPERATOR}
+COPY --from=builder $REMOTE_SOURCE_DIR/app/idp-mgmt-coverage ${OPERATOR}-coverage
 COPY --from=builder $REMOTE_SOURCE_DIR/app/build/bin /usr/local/bin
 
 RUN  /usr/local/bin/user_setup

@@ -6,7 +6,7 @@ ARG REMOTE_SOURCE
 ARG REMOTE_SOURCE_DIR
 ARG GITHUB_TOKEN
 
-ENV OPERATOR=/usr/local/bin/manager \
+ENV OPERATOR=/usr/local/bin/idp-mgmt \
     USER_UID=1001 \
     USER_NAME=idp-mgmt-operator
    

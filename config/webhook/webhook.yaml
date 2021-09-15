@@ -25,6 +25,7 @@ spec:
       containers:
       - args:
         - webhook
+        - cert-dir /tmp
         - --
         - --enable-leader-election
         - -v 5
