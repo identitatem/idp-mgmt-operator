@@ -24,6 +24,7 @@ spec:
     spec:
       containers:
       - args:
+        - manager
         - --
         - --enable-leader-election
         - -v 5

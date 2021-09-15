@@ -1,0 +1,13 @@
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  name: v1.admission.identitatem.open-cluster-management.io
+spec:
+  group: admission.identitatem.open-cluster-management.io
+  version: v1
+  service:
+    name: cluster-manager-registration-webhook
+    namespace: idp-mgmt-config
+  # caBundle: {{ .RegistrationAPIServiceCABundle }}
+  groupPriorityMinimum: 10000
+  versionPriority: 20

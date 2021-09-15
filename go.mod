@@ -10,10 +10,14 @@ require (
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.14.0
 	github.com/openshift/api v3.9.0+incompatible
+	github.com/openshift/generic-admission-server v1.14.1-0.20210422140326-da96454c926d
+	github.com/spf13/cobra v1.1.3
+	github.com/spf13/pflag v1.0.5
 	k8s.io/api v0.22.0
 	k8s.io/apiextensions-apiserver v0.22.0
 	k8s.io/apimachinery v0.22.0
 	k8s.io/client-go v12.0.0+incompatible
+	k8s.io/component-base v0.22.0
 	k8s.io/klog/v2 v2.10.0
 	k8s.io/kubectl v0.21.0
 	open-cluster-management.io/api v0.0.0-20210902053421-22c45bd6c7a1
