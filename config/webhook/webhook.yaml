@@ -1,19 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: controller-manager
-  namespace: idp-mgmt-config
+  name: webhook
   labels:
-    control-plane: controller-manager
+    control-plane: webhook
 spec:
   selector:
     matchLabels:
-      control-plane: controller-manager
-  replicas: 1
+      control-plane: webhook
+  replicas: 2
   template:
     metadata:
       labels:
-        control-plane: controller-manager
+        control-plane: webhook
     spec:
       containers:
       - args:
@@ -22,16 +21,9 @@ spec:
         - "--tls-cert-file=/serving-cert/tls.crt"
         - "--tls-private-key-file=/serving-cert/tls.key"
         - -v 5
-        image: quay.io/identitatem/idp-mgmt-operator@sha256:cd32c6b9ddadc2c8d0b7c2e75631499879a297441a41d3c289c5e0d1290cb65d
+        image: quay.io/identitatem/idp-mgmt-operator@sha256:d3f45150c33b19d45248ae16239a4f0444e4d977e3163d2ef5d4d9785a5465ac
         name: webhook
         imagePullPolicy: Always
-        resources:
-          limits:
-            cpu: 300m
-            memory: 500Mi
-          requests:
-            cpu: 300m
-            memory: 500Mi
         volumeMounts:
           - name: webhook-secret
             mountPath: "/serving-cert"
