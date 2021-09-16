@@ -29,8 +29,8 @@ spec:
             mountPath: "/serving-cert"
             readOnly: true
       volumes:
-      - name: webhook-secret
-        secret:
-          secretName: idp-mgmt-webhook
+        - name: webhook-secret
+          secret:
+            secretName: idp-mgmt-webhook
       serviceAccountName: idp-mgmt-operator-controller-manager
       terminationGracePeriodSeconds: 10
