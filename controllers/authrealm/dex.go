@@ -288,7 +288,7 @@ func (r *AuthRealmReconciler) createConnector(authRealm *identitatemv1alpha1.Aut
 		Id:   authRealm.Name,
 		Config: identitatemdexserverv1alpha1.ConfigSpec{
 			ClientID: clientID,
-			ClientSecretRef: corev1.ObjectReference{
+			ClientSecretRef: corev1.SecretReference{
 				Name:      clientSecretName,
 				Namespace: authRealm.Namespace,
 			},

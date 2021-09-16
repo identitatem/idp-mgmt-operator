@@ -3,7 +3,6 @@
 package manager
 
 import (
-	"flag"
 	"os"
 
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -29,6 +28,11 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 )
 
+type managerOptions struct {
+	metricsAddr          string
+	enableLeaderElection bool
+}
+
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
@@ -37,33 +41,31 @@ func init() {
 }
 
 func NewManager() *cobra.Command {
+	o := &managerOptions{}
 	cmd := &cobra.Command{
 		Use:   "manager",
 		Short: "manager for idp-mgmt-operator",
 		Run: func(cmd *cobra.Command, args []string) {
-			run()
+			o.run()
 			os.Exit(1)
 		},
 	}
+	cmd.Flags().StringVar(&o.metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	cmd.Flags().BoolVar(&o.enableLeaderElection, "enable-leader-election", false,
+		"Enable leader election for controller manager. "+
+			"Enabling this will ensure there is only one active controller manager.")
 	return cmd
 }
 
-func run() {
-	var metricsAddr string
-	var enableLeaderElection bool
-	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
-	flag.Parse()
+func (o *managerOptions) run() {
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
+		MetricsBindAddress: o.metricsAddr,
 		Port:               9443,
-		LeaderElection:     enableLeaderElection,
+		LeaderElection:     o.enableLeaderElection,
 		LeaderElectionID:   "628f2987.identitatem.io",
 	})
 	if err != nil {

@@ -118,7 +118,10 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 	}
 
 	dexClient.Spec.ClientID = decision.ClusterName
-	dexClient.Spec.ClientSecret = string(clientSecret.Data["clientSecret"])
+	dexClient.Spec.ClientSecretRef = corev1.SecretReference{
+		Name:      clientSecret.Name,
+		Namespace: clientSecret.Namespace,
+	}
 
 	urlScheme, host, err := helpers.GetAppsURL(r.Client, false)
 	if err != nil {

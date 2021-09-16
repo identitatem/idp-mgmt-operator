@@ -26,11 +26,8 @@ spec:
         fsGroup: 2000
       containers:
       - args:
+        - manager
         - --
-        - --enable-leader-election
-        - "--secure-port=6443"
-        - "--tls-cert-file=/serving-cert/tls.crt"
-        - "--tls-private-key-file=/serving-cert/tls.key"
         - -v 5
         env:
         - name: RELATED_IMAGE_DEX_OPERATOR
@@ -41,9 +38,6 @@ spec:
         volumeMounts:
           - mountPath: /tmp/coverage
             name: coverage-dir  
-          - name: webhook-secret
-            mountPath: "/serving-cert"
-            readOnly: true
         resources:
           limits:
             cpu: 100m
@@ -60,6 +54,3 @@ spec:
             path: /tmp/coverage
             # this field is optional
             type: Directory
-        - name: webhook-secret
-          secret:
-            secretName: authrealm-webhook-serving-cert

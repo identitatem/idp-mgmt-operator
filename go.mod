@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v0.4.0
-	github.com/identitatem/dex-operator v0.0.4-0.20210914114655-98f1be561fde
+	github.com/identitatem/dex-operator v0.0.4-0.20210916122739-0e77be8a16ad
 	github.com/identitatem/idp-client-api v0.0.0-20210909200618-ac59295a69b2
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.14.0
