@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: controller-manager
+  name: admission-webhook
   namespace: idp-mgmt-config
   labels:
     control-plane: controller-manager
@@ -16,29 +16,29 @@ spec:
         control-plane: controller-manager
     spec:
       containers:
-      - args:
-        - webhook
-        - "--secure-port=6443"
-        - "--tls-cert-file=/serving-cert/tls.crt"
-        - "--tls-private-key-file=/serving-cert/tls.key"
-        - -v 5
-        image: quay.io/identitatem/idp-mgmt-operator@sha256:cd32c6b9ddadc2c8d0b7c2e75631499879a297441a41d3c289c5e0d1290cb65d
-        name: webhook
-        imagePullPolicy: Always
-        resources:
-          limits:
-            cpu: 300m
-            memory: 500Mi
-          requests:
-            cpu: 300m
-            memory: 500Mi
-        volumeMounts:
-          - name: webhook-secret
-            mountPath: "/serving-cert"
-            readOnly: true
+        - args:
+            - webhook
+            - "--secure-port=6443"
+            - "--tls-cert-file=/serving-cert/tls.crt"
+            - "--tls-private-key-file=/serving-cert/tls.key"
+            - -v 5
+          image: quay.io/identitatem/idp-mgmt-operator@sha256:cd32c6b9ddadc2c8d0b7c2e75631499879a297441a41d3c289c5e0d1290cb65d
+          name: webhook
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: 300m
+              memory: 500Mi
+            requests:
+              cpu: 300m
+              memory: 500Mi
+          volumeMounts:
+            - name: webhook-secret
+              mountPath: "/serving-cert"
+              readOnly: true
       volumes:
-      - name: webhook-secret
-        secret:
-          secretName: idp-mgmt-webhook
+        - name: webhook-secret
+          secret:
+            secretName: idp-mgmt-webhook
       serviceAccountName: idp-mgmt-operator-controller-manager
       terminationGracePeriodSeconds: 10
