@@ -1,6 +1,7 @@
 // Copyright (c) Red Hat, Inc.
 // Copyright Red Hat
 
+//go:build testrunmain
 // +build testrunmain
 
 package manager
