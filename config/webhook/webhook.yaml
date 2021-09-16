@@ -1,15 +1,8 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    control-plane: controller-manager
-  name: system
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controller-manager
-  namespace: system
+  namespace: idp-mgmt-config
   labels:
     control-plane: controller-manager
 spec:
@@ -24,15 +17,13 @@ spec:
     spec:
       containers:
       - args:
-        - webhook
-        - cert-dir /tmp
         - --
-        - --enable-leader-election
+        - webhook
+        - "--cert-dir=/tmp"
+        - "--tls-cert-file=/serving-cert/tls.crt"
+        - "--tls-private-key-file=/serving-cert/tls.key"
         - -v 5
-        env:
-        - name: RELATED_IMAGE_DEX_OPERATOR
-          value: "quay.io/identitatem/dex-operator:latest"
-        image: quay.io/identitatem/idp-mgmt-operator:latest
+        image: quay.io/identitatem/idp-mgmt-operator@sha256:fb5ada2b64c42c7752617f28343426b150e81e0a1d0020566059ca1fd21b722d
         name: manager
         imagePullPolicy: Always
         resources:
@@ -42,5 +33,13 @@ spec:
           requests:
             cpu: 300m
             memory: 500Mi
+        volumeMounts:
+          - name: webhook-secret
+            mountPath: "/serving-cert"
+            readOnly: true
+      volumes:
+      - name: webhook-secret
+        secret:
+          secretName: cluster-manager-registration-webhook
       serviceAccountName: idp-mgmt-operator-controller-manager
       terminationGracePeriodSeconds: 10
