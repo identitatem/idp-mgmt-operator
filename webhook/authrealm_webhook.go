@@ -52,6 +52,8 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1.AdmissionRe
 		return status
 	}
 
+	status.Allowed = true
+
 	return status
 }
 

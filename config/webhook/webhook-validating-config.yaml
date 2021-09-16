@@ -3,9 +3,9 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: authrealm-webhook
 webhooks:
-  - name: admission.identityconfig.identatitem.io
+  - name: admission.identityconfig.identitatem.io
     admissionReviewVersions: 
-      - v1
+      - v1beta1
     sideEffects: None
     rules:
       - apiGroups:
@@ -22,4 +22,4 @@ webhooks:
       service:
         namespace: default
         name: kubernetes
-        path: /apis/admission.identityconfig.identatitem.io/v1alpha1/authrealms
+        path: /apis/admission.identityconfig.identitatem.io/v1alpha1/authrealms
