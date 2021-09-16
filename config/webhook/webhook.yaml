@@ -17,14 +17,13 @@ spec:
     spec:
       containers:
       - args:
-        - --
         - webhook
-        - "--cert-dir=/tmp"
+        - "--secure-port=6443"
         - "--tls-cert-file=/serving-cert/tls.crt"
         - "--tls-private-key-file=/serving-cert/tls.key"
         - -v 5
-        image: quay.io/identitatem/idp-mgmt-operator@sha256:fb5ada2b64c42c7752617f28343426b150e81e0a1d0020566059ca1fd21b722d
-        name: manager
+        image: quay.io/identitatem/idp-mgmt-operator@sha256:7d71cee24de1dcf289abc8247eb0276ed42fcbbe62905bad3530671a950383ec
+        name: webhook
         imagePullPolicy: Always
         resources:
           limits:
@@ -40,6 +39,6 @@ spec:
       volumes:
       - name: webhook-secret
         secret:
-          secretName: cluster-manager-registration-webhook
+          secretName: idp-mgmt-webhook
       serviceAccountName: idp-mgmt-operator-controller-manager
       terminationGracePeriodSeconds: 10

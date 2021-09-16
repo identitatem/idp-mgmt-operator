@@ -21,7 +21,7 @@ type AuthRealmAdmissionHook struct {
 
 func (a *AuthRealmAdmissionHook) ValidatingResource() (plural schema.GroupVersionResource, singular string) {
 	return schema.GroupVersionResource{
-			Group:    "identityconfig.identitatem.io",
+			Group:    "admission.identityconfig.identitatem.io",
 			Version:  "v1alpha1",
 			Resource: "authrealms",
 		},
