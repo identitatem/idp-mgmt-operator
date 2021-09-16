@@ -40,7 +40,7 @@ type AuthRealmReconciler struct {
 
 // +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexservers,dexservers/status,dexclients,dexclients/status},verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="",resources={namespaces,secrets,serviceaccounts},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources={namespaces,secrets,serviceaccounts,configmaps},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="apps",resources={deployments},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={clusterrolebindings,rolebindings},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={clusterroles,roles},verbs=get;list;watch;create;update;patch;delete;escalate;bind

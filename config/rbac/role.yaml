@@ -9,8 +9,10 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
   - namespaces
   - secrets
+  - serviceaccounts
   verbs:
   - create
   - delete
@@ -24,7 +26,6 @@ rules:
   resources:
   - namespaces
   - secrets
-  - serviceaccounts
   verbs:
   - create
   - delete
