@@ -25,7 +25,7 @@ func (a *AuthRealmAdmissionHook) ValidatingResource() (plural schema.GroupVersio
 			Version:  "v1alpha1",
 			Resource: "authrealms",
 		},
-		"authrealm"
+		"authrealms"
 }
 
 func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1.AdmissionRequest) *admissionv1.AdmissionResponse {

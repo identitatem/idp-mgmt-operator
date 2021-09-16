@@ -22,7 +22,7 @@ spec:
         - "--tls-cert-file=/serving-cert/tls.crt"
         - "--tls-private-key-file=/serving-cert/tls.key"
         - -v 5
-        image: quay.io/identitatem/idp-mgmt-operator@sha256:7d71cee24de1dcf289abc8247eb0276ed42fcbbe62905bad3530671a950383ec
+        image: quay.io/identitatem/idp-mgmt-operator@sha256:bd9d7b85c51eff095f5e7348ec0b41920b18561af1de7fb211c8fca2eee538fd
         name: webhook
         imagePullPolicy: Always
         resources:
