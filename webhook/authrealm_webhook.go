@@ -31,7 +31,7 @@ func (a *AuthRealmAdmissionHook) ValidatingResource() (plural schema.GroupVersio
 			Version:  "v1alpha1",
 			Resource: "authrealms",
 		},
-		"authrealm "
+		"authrealm"
 }
 
 // Validate is called by generic-admission-server when the registered REST resource above is called with an admission request.
