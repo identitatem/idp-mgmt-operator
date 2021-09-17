@@ -14,23 +14,26 @@ COPY go.sum go.sum
 # and so that source changes don't invalidate our downloaded layer
 # RUN go mod download
 
-RUN GOFLAGS="" go build -a -o manager main.go
+RUN GOFLAGS="" go build -a -o idp-mgmt main.go
+
 RUN GOFLAGS="" go test -covermode=atomic \
     -coverpkg=github.com/identitatem/idp-mgmt-operator/pkg/...,\
 github.com/identitatem/idp-mgmt-operator/controllers/... \
-     -c -tags testrunmain . -o manager-coverage
+     -c -tags testrunmain \ 
+     github.com/identitatem/idp-mgmt-operator/cmd/manager \
+     -o idp-mgmt-coverage
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 RUN microdnf update
 ENV REMOTE_SOURCE_DIR='/remote-source'
 
-ENV OPERATOR=/usr/local/bin/manager \
+ENV OPERATOR=/usr/local/bin/idp-mgmt \
     USER_UID=1001 \
     USER_NAME=idp-mgmt-operator
     
 # install operator binary
-COPY --from=builder $REMOTE_SOURCE_DIR/app/manager ${OPERATOR}
-COPY --from=builder $REMOTE_SOURCE_DIR/app/manager-coverage ${OPERATOR}-coverage
+COPY --from=builder $REMOTE_SOURCE_DIR/app/idp-mgmt ${OPERATOR}
+COPY --from=builder $REMOTE_SOURCE_DIR/app/idp-mgmt-coverage ${OPERATOR}-coverage
 COPY --from=builder $REMOTE_SOURCE_DIR/app/build/bin /usr/local/bin
 
 RUN  /usr/local/bin/user_setup

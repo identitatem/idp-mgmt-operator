@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook
+  labels:
+    control-plane: webhook
+spec:
+  selector:
+    matchLabels:
+      control-plane: webhook
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        control-plane: webhook
+    spec:
+      containers:
+      - args:
+        - webhook
+        - "--secure-port=6443"
+        - "--tls-cert-file=/serving-cert/tls.crt"
+        - "--tls-private-key-file=/serving-cert/tls.key"
+        - -v 5
+        image: quay.io/identitatem/idp-mgmt-operator:latest
+        name: webhook
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: webhook-secret
+            mountPath: "/serving-cert"
+            readOnly: true
+      volumes:
+        - name: webhook-secret
+          secret:
+            secretName: idp-mgmt-webhook
+      serviceAccountName: idp-mgmt-operator-controller-manager
+      terminationGracePeriodSeconds: 10

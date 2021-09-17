@@ -16,7 +16,7 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       labels:
@@ -24,8 +24,9 @@ spec:
     spec:
       containers:
       - args:
-        - --
+        - manager
         - --enable-leader-election
+        - --
         - -v 5
         env:
         - name: RELATED_IMAGE_DEX_OPERATOR

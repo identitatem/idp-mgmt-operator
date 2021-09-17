@@ -26,8 +26,8 @@ spec:
         fsGroup: 2000
       containers:
       - args:
+        - manager
         - --
-        - --enable-leader-election
         - -v 5
         env:
         - name: RELATED_IMAGE_DEX_OPERATOR

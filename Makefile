@@ -48,7 +48,7 @@ test: fmt vet manifests
 	
 # Build manager binary
 manager: fmt vet
-	go build -o bin/manager main.go
+	go build -o bin/idp-mgmt main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: fmt vet manifests

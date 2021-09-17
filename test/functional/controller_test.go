@@ -32,6 +32,48 @@ func init() {
 
 }
 
+// var _ = Describe("Webhook", func() {
+// 	AuthRealmName := "my-authrealm-webhook"
+// 	AuthRealmNameSpace := "my-authrealm-ns-webhook"
+// 	By("creation test namespace", func() {
+// 		ns := &corev1.Namespace{
+// 			ObjectMeta: metav1.ObjectMeta{
+// 				Name: AuthRealmNameSpace,
+// 			},
+// 		}
+// 		_, err := kubeClient.
+// 			CoreV1().
+// 			Namespaces().
+// 			Create(context.TODO(), ns, metav1.CreateOptions{})
+// 		Expect(err).To(BeNil())
+// 	})
+// 	By("Create a AuthRealm with no type", func() {
+// 		authRealm := identitatemv1alpha1.AuthRealm{
+// 			ObjectMeta: metav1.ObjectMeta{
+// 				Name:      AuthRealmName,
+// 				Namespace: AuthRealmNameSpace,
+// 			},
+// 			Spec: identitatemv1alpha1.AuthRealmSpec{},
+// 		}
+// 		_, err := authClientSet.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), &authRealm, metav1.CreateOptions{})
+// 		Expect(err).ToNot(BeNil())
+// 	})
+// 	By("Create a AuthRealm with type", func() {
+// 		authRealm := identitatemv1alpha1.AuthRealm{
+// 			ObjectMeta: metav1.ObjectMeta{
+// 				Name:      AuthRealmName,
+// 				Namespace: AuthRealmNameSpace,
+// 			},
+// 			Spec: identitatemv1alpha1.AuthRealmSpec{
+// 				Type: identitatemv1alpha1.AuthProxyDex,
+// 			},
+// 		}
+// 		_, err := authClientSet.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), &authRealm, metav1.CreateOptions{})
+// 		Expect(err).To(BeNil())
+// 	})
+
+// })
+
 var _ = Describe("AuthRealm", func() {
 	AuthRealmName := "my-authrealm-1"
 	AuthRealmNameSpace := "my-authrealm-ns-1"
@@ -451,6 +493,7 @@ var _ = Describe("Strategy", func() {
 		})
 		By(fmt.Sprintf("Checking manifestwork deletion %s", helpers.ManifestWorkName()), func() {
 			Eventually(func() error {
+				//TODO read manifest work and not clusterOauth
 				clientSecret := &identitatemv1alpha1.ClusterOAuth{}
 				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, clientSecret)
 				if err != nil {
