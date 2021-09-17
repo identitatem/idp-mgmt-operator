@@ -16,7 +16,7 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       labels:
@@ -31,7 +31,7 @@ spec:
         env:
         - name: RELATED_IMAGE_DEX_OPERATOR
           value: "quay.io/identitatem/dex-operator:latest"
-        image: quay.io/identitatem/idp-mgmt-operator:latest
+        image: quay.io/identitatem/idp-mgmt-operator@sha256:ea23e371d1134b87e889da50eee888ac53e147377df28d944634851ed8f30aff
         name: manager
         imagePullPolicy: Always
         resources:

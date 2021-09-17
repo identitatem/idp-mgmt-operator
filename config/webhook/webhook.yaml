@@ -8,7 +8,7 @@ spec:
   selector:
     matchLabels:
       control-plane: webhook
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       labels:
@@ -21,7 +21,7 @@ spec:
         - "--tls-cert-file=/serving-cert/tls.crt"
         - "--tls-private-key-file=/serving-cert/tls.key"
         - -v 5
-        image: quay.io/identitatem/idp-mgmt-operator:latest
+        image: quay.io/identitatem/idp-mgmt-operator@sha256:ea23e371d1134b87e889da50eee888ac53e147377df28d944634851ed8f30aff
         name: webhook
         imagePullPolicy: Always
         volumeMounts:

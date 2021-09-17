@@ -11,4 +11,4 @@ spec:
     - port: 443
       targetPort: 6443
   selector:
-    control-plane: controller-manager
+    control-plane: webhook
