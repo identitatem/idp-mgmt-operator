@@ -1,10 +1,11 @@
 resources:
-- webhook-apiservice.yaml
-- webhook-clusterrole.yaml
-- webhook-clusterrolebinding.yaml
-- webhook-service.yaml
+- webhook_apiservice.yaml
+- webhook_clusterrole.yaml
+- service_account.yaml
+- webhook_clusterrolebinding.yaml
+- webhook_service.yaml
 - webhook.yaml
-- webhook-validating-config.yaml
+- webhook_validating_config.yaml
 
 # configurations:
 # - kustomizeconfig.yaml

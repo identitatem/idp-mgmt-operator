@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: webhook
+  name: webhook-service
   labels:
-    control-plane: webhook
+    control-plane: webhook-service
 spec:
   selector:
     matchLabels:
-      control-plane: webhook
-  replicas: 2
+      control-plane: webhook-service
+  replicas: 1
   template:
     metadata:
       labels:
-        control-plane: webhook
+        control-plane: webhook-service
     spec:
       containers:
       - args:
@@ -32,5 +32,5 @@ spec:
         - name: webhook-secret
           secret:
             secretName: idp-mgmt-webhook
-      serviceAccountName: idp-mgmt-operator-controller-manager
+      serviceAccountName: idp-mgmt-operator-webhook-service
       terminationGracePeriodSeconds: 10
