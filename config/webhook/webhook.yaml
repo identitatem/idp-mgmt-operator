@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: webhook
+  name: webhook-service
   labels:
-    control-plane: webhook
+    control-plane: webhook-service
 spec:
   selector:
     matchLabels:
-      control-plane: webhook
+      control-plane: webhook-service
   replicas: 1
   template:
     metadata:
       labels:
-        control-plane: webhook
+        control-plane: webhook-service
     spec:
       containers:
       - args:
@@ -21,7 +21,7 @@ spec:
         - "--tls-cert-file=/serving-cert/tls.crt"
         - "--tls-private-key-file=/serving-cert/tls.key"
         - -v 5
-        image: quay.io/identitatem/idp-mgmt-operator@sha256:ea23e371d1134b87e889da50eee888ac53e147377df28d944634851ed8f30aff
+        image: quay.io/identitatem/idp-mgmt-operator@sha256:9907ca2c5d3854fd13696c379b2338926131c46b89ef40bc80fa0e3fef4b5faf
         name: webhook
         imagePullPolicy: Always
         volumeMounts:
@@ -32,5 +32,5 @@ spec:
         - name: webhook-secret
           secret:
             secretName: idp-mgmt-webhook
-      serviceAccountName: idp-mgmt-operator-controller-manager
+      serviceAccountName: idp-mgmt-operator-webhook-service
       terminationGracePeriodSeconds: 10

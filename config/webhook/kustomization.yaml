@@ -1,6 +1,7 @@
 resources:
 - webhook-apiservice.yaml
 - webhook-clusterrole.yaml
+- service_account.yaml
 - webhook-clusterrolebinding.yaml
 - webhook-service.yaml
 - webhook.yaml
