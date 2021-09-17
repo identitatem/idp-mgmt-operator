@@ -24,6 +24,9 @@ spec:
         image: {{ .Image }}
         imagePullPolicy: Always
         name: manager
+        env:
+        - name: RELATED_IMAGE_DEX
+          value: quay.io/dexidp/dex:v2.28.1
         securityContext:
           allowPrivilegeEscalation: false
         livenessProbe:
