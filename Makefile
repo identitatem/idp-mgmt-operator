@@ -78,6 +78,9 @@ deploy-coverage: manifests
 undeploy:
 	kubectl delete --wait=true -k config/default
 
+undeploy-coverage:
+	kubectl delete --wait=true -k config/default-coverage
+
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." 

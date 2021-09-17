@@ -94,7 +94,7 @@ echo "Wait 15 sec to let coverage to flush"
 sleep 15
 
 echo "remove deployment"
-make undeploy
+make undeploy-coverage
 
 echo "Wait 10 sec for copy to AWS"
 sleep 10
