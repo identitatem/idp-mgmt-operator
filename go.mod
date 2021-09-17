@@ -27,6 +27,7 @@ require (
 )
 
 replace (
+	github.com/identitatem/dex-operator => github.com/itdove/dex-operator v0.0.4-0.20210917173421-71602d6da285
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20210817132244-67c28690af52
 	k8s.io/api => k8s.io/api v0.22.0
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.22.0

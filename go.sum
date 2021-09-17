@@ -604,8 +604,6 @@ github.com/huandu/xstrings v1.3.2 h1:L18LIDzqlW6xN2rEkpdV8+oL/IXWJ1APd+vsdYy4Wdw
 github.com/huandu/xstrings v1.3.2/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365/go.mod h1:SK73tn/9oHe+/Y0h39VT4UCxmurVJkR5NA7kMEAOgSE=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
-github.com/identitatem/dex-operator v0.0.4-0.20210916122739-0e77be8a16ad h1:536Yl6eF3TOVf7ct61V79ydQ+5eItLYNYYObzMnC6iU=
-github.com/identitatem/dex-operator v0.0.4-0.20210916122739-0e77be8a16ad/go.mod h1:YkulVKGKYstc9cIR8EUl8LLmlcOgi0ognIjW1hI3pbQ=
 github.com/identitatem/idp-client-api v0.0.0-20210909200618-ac59295a69b2 h1:SjCtVk8hwlBFJqTl9iSeQ1K19QrXhi7vGv66X+0XTL4=
 github.com/identitatem/idp-client-api v0.0.0-20210909200618-ac59295a69b2/go.mod h1:w+IQrF6VckNFIR4BdFCj11HELl5NQe8/RE+G4TiQJ7k=
 github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
@@ -619,6 +617,8 @@ github.com/imdario/mergo v0.3.12/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH
 github.com/inconshreveable/mousetrap v1.0.0 h1:Z8tu5sraLXCXIcARxBp/8cbvlwVa7Z1NHg9XEKhtSvM=
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/influxdata/influxdb v1.7.7/go.mod h1:qZna6X/4elxqT3yI9iZYdZrWWdeFOOprn86kgg4+IzY=
+github.com/itdove/dex-operator v0.0.4-0.20210917173421-71602d6da285 h1:HJE1zdf3F1PK9ea4nvTl1qbEvHsqlwxTYnOo3djEUQ4=
+github.com/itdove/dex-operator v0.0.4-0.20210917173421-71602d6da285/go.mod h1:YkulVKGKYstc9cIR8EUl8LLmlcOgi0ognIjW1hI3pbQ=
 github.com/jackc/fake v0.0.0-20150926172116-812a484cc733/go.mod h1:WrMFNQdiFJ80sQsxDoMokWK1W5TQtxBFNpzWTD84ibQ=
 github.com/jackc/pgx v3.2.0+incompatible/go.mod h1:0ZGrqGqkRlliWnWB4zKnWtjbSWbGkVEFm4TeybAXq+I=
 github.com/jessevdk/go-flags v0.0.0-20180331124232-1c38ed7ad0cc/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
