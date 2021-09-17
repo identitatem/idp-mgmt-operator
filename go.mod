@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v0.4.0
-	github.com/identitatem/dex-operator v0.0.4-0.20210916122739-0e77be8a16ad
+	github.com/identitatem/dex-operator v0.0.4-0.20210917180744-29ab15afc1dd
 	github.com/identitatem/idp-client-api v0.0.0-20210909200618-ac59295a69b2
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.14.0
@@ -27,7 +27,6 @@ require (
 )
 
 replace (
-	github.com/identitatem/dex-operator => github.com/itdove/dex-operator v0.0.4-0.20210917173421-71602d6da285
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20210817132244-67c28690af52
 	k8s.io/api => k8s.io/api v0.22.0
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.22.0
