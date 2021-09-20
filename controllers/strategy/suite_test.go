@@ -149,6 +149,7 @@ var _ = Describe("Process Strategy backplane: ", func() {
 	StrategyName := AuthRealmName + "-backplane"
 	PlacementStrategyName := StrategyName
 	PlacementName := AuthRealmName
+	RouteSubDomain := "testroutesubdomain"
 
 	It("process a Strategy backplane CR", func() {
 		By(fmt.Sprintf("creation of User namespace %s", AuthRealmNameSpace), func() {
@@ -196,7 +197,8 @@ var _ = Describe("Process Strategy backplane: ", func() {
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.AuthRealmSpec{
-					Type: identitatemv1alpha1.AuthProxyDex,
+					Type:           identitatemv1alpha1.AuthProxyDex,
+					RouteSubDomain: RouteSubDomain,
 					CertificatesSecretRef: corev1.LocalObjectReference{
 						Name: CertificatesSecretRef,
 					},
