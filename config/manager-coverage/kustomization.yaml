@@ -1,9 +1,8 @@
 resources:
 - manager-coverage.yaml
-
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
   newName: idp-mgmt-operator-coverage
-  newTag: webhook_perm
+  newTag: mc_oauth
