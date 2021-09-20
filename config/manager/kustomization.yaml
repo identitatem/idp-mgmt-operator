@@ -6,4 +6,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: idp-mgmt-operator
-  newTag: fix_deploy_dex
+  newTag: main

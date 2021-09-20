@@ -91,7 +91,7 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 				ClientSecret: openshiftconfigv1.SecretNameReference{
 					Name: clientSecret.Name,
 				},
-				Issuer: fmt.Sprintf("%s://%s-%s.%s", uScheme, authRealm.Name, authRealm.Name, host),
+				Issuer: fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Spec.RouteSubDomain, host),
 			},
 		},
 	}
