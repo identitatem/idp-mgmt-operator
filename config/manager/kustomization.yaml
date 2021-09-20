@@ -6,4 +6,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: idp-mgmt-operator
-  newTag: webhook_perm
+  newTag: main

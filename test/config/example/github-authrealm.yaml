@@ -18,9 +18,9 @@ metadata:
   name: placement-sample
   namespace: my-authrealm
 spec:
-  predicates: 
-  - requiredClusterSelector: 
-      labelSelector: 
+  predicates:
+  - requiredClusterSelector:
+      labelSelector:
         matchLabels:
           authdeployment: east
 ---
@@ -48,14 +48,14 @@ metadata:
   namespace: my-authrealm
 spec:
   type: dex
+  routeSubDomain: testdomain
   placementRef:
     name: placement-sample
   identityProviders:
     - name: my-idp-github
       mappingMethod: claim
       type: GitHub
-      github: 
+      github:
         clientID: me
         clientSecret:
           name: authrealm-sample-client-secret
-      
