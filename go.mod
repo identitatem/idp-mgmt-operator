@@ -6,7 +6,7 @@ require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v0.4.0
 	github.com/identitatem/dex-operator v0.0.4-0.20210917180744-29ab15afc1dd
-	github.com/identitatem/idp-client-api v0.0.0-20210909200618-ac59295a69b2
+	github.com/identitatem/idp-client-api v0.0.0-20210920132446-528523b992c0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.14.0
 	github.com/openshift/api v3.9.0+incompatible

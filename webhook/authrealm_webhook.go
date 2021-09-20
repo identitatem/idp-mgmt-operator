@@ -9,21 +9,19 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/go-logr/logr"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"k8s.io/klog/v2"
 )
 
 type AuthRealmAdmissionHook struct {
 	Client      dynamic.ResourceInterface
 	lock        sync.RWMutex
 	initialized bool
-	Log         logr.Logger
 }
 
 // ValidatingResource is called by generic-admission-server on startup to register the returned REST resource through which the
@@ -42,7 +40,7 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 	status := &admissionv1beta1.AdmissionResponse{}
 
 	// only validate the request for authrealm
-	if admissionSpec.Resource.Group != "identityconfig.identitatem.io" ||
+	if admissionSpec.Resource.Group != "admission.identityconfig.identitatem.io" ||
 		admissionSpec.Resource.Resource != "authrealms" {
 		status.Allowed = true
 		return status
@@ -60,11 +58,10 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 		return status
 	}
 
-	a.Log.Info("Validate webhook for AuthRealm", "name:", authrealm.Name, "type:", authrealm.Spec.Type, "routeSubDomain:", authrealm.Spec.RouteSubDomain)
-
+	klog.V(4).Infof("Validate webhook for AuthRealm name: %s, type: %s, routeSubDomain: %s", authrealm.Name, authrealm.Spec.Type, authrealm.Spec.RouteSubDomain)
 	switch admissionSpec.Operation {
 	case admissionv1beta1.Create:
-		a.Log.Info("Validate AuthRealm create")
+		klog.V(4).Info("Validate AuthRealm create")
 
 		if len(authrealm.Spec.Type) == 0 {
 			status.Allowed = false
@@ -99,7 +96,7 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 
 		}
 	case admissionv1beta1.Update:
-		a.Log.Info("Validate AuthRealm update")
+		klog.V(4).Info("Validate AuthRealm update")
 
 		oldauthrealm := &identitatemv1alpha1.AuthRealm{}
 		err := json.Unmarshal(admissionSpec.OldObject.Raw, oldauthrealm)
@@ -112,7 +109,7 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 			return status
 		}
 
-		a.Log.Info("Compare RouteSubDomain", "old value:", oldauthrealm.Spec.RouteSubDomain, "new value:", authrealm.Spec.RouteSubDomain)
+		klog.V(4).Info("Compare RouteSubDomain", "old value:", oldauthrealm.Spec.RouteSubDomain, "new value:", authrealm.Spec.RouteSubDomain)
 
 		if authrealm.Spec.RouteSubDomain != oldauthrealm.Spec.RouteSubDomain {
 			status.Allowed = false
@@ -136,8 +133,6 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 func (a *AuthRealmAdmissionHook) Initialize(kubeClientConfig *rest.Config, stopCh <-chan struct{}) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
-
-	a.Log = ctrl.Log.WithName("webhooks").WithName("AuthRealm")
 
 	a.initialized = true
 
