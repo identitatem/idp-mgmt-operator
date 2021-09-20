@@ -1,0 +1,85 @@
+#!/bin/bash
+
+export NAME=${NAME:-"authrealm-sample"}
+export NS=${NS:-"authrealm-sample-ns"}
+export IDP_NAME=${IDP_NAME:-"sample-idp"}
+export GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID:-"githubappclientid"}
+export GITHUB_APP_CLIENT_SECRET=${GITHUB_APP_CLIENT_SECRET:-"githubappclientsecret"}
+export ROUTE_SUBDOMAIN=${ROUTE_SUBDOMAIN:-"testdomain"}
+
+export THE_FILENAME="authrealm-sample.yaml"
+
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+BASE64="base64 -w 0"
+if [ "${OS}" == "darwin" ]; then
+    BASE64="base64"
+fi
+
+GITHUB_APP_CLIENT_SECRET_B64=`echo $GITHUB_APP_CLIENT_SECRET | $BASE64`
+
+
+cat > ${THE_FILENAME} <<EOF
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: ${NS}
+---
+apiVersion: cluster.open-cluster-management.io/v1alpha1
+kind: ManagedClusterSet
+metadata:
+  name: ${NAME}-clusterset
+  namespace: ${NS}
+---
+apiVersion: cluster.open-cluster-management.io/v1alpha1
+kind: Placement
+metadata:
+  name: ${NAME}-placement
+  namespace: ${NS}
+spec:
+  predicates:
+  - requiredClusterSelector:
+      labelSelector:
+        matchLabels:
+          authdeployment: east
+---
+apiVersion: cluster.open-cluster-management.io/v1alpha1
+kind: ManagedClusterSetBinding
+metadata:
+  name: ${NAME}-clusterset
+  namespace: ${NS}
+spec:
+  clusterSet: ${NAME}-clusterset
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${NAME}-client-secret
+  namespace: ${NS}
+data:
+  clientSecret: ${GITHUB_APP_CLIENT_SECRET_B64}
+type: Opaque
+---
+apiVersion: identityconfig.identitatem.io/v1alpha1
+kind: AuthRealm
+metadata:
+  name: ${NAME}
+  namespace: ${NS}
+spec:
+  type: dex
+  routeSubDomain: ${ROUTE_SUBDOMAIN}
+  placementRef:
+    name: ${NAME}-placement
+  identityProviders:
+    - name: ${IDP_NAME}
+      mappingMethod: claim
+      type: GitHub
+      github:
+        clientID: ${GITHUB_APP_CLIENT_ID}
+        clientSecret:
+          name: ${NAME}-client-secret
+EOF
+
+echo "File ${THE_FILENAME} is generated and ready to \"oc apply -f\""
