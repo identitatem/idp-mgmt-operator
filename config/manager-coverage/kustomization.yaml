@@ -6,4 +6,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: idp-mgmt-operator-coverage
-  newTag: webhook_perm
+  newTag: test-webhook
