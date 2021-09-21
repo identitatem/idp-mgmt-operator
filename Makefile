@@ -44,8 +44,8 @@ test: fmt vet manifests
 	echo "-------------------------------------------------------------------------" &&\
 	echo "TOTAL COVERAGE IS $$COVERAGE%" &&\
 	echo "-------------------------------------------------------------------------" &&\
-	go tool cover -html "cover.out" -o ${PROJECT_DIR}/cover.html 
-	
+	go tool cover -html "cover.out" -o ${PROJECT_DIR}/cover.html
+
 # Build manager binary
 manager: fmt vet
 	go build -o bin/idp-mgmt main.go
@@ -67,13 +67,19 @@ uninstall: manifests
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
+	cp config/manager/kustomization.yaml config/manager/kustomization.yaml.tmp
 	cd config/manager && kustomize edit set image controller=${IMG}
 	kustomize build config/default | kubectl apply -f -
+	mv config/manager/kustomization.yaml.tmp config/manager/kustomization.yaml
+
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy-coverage: manifests
+	cp config/manager-coverage/kustomization.yaml config/manager/kustomization.yaml.tmp
 	cd config/manager-coverage && kustomize edit set image controller=${IMG_COVERAGE}
 	kustomize build config/default-coverage | kubectl apply -f -
+	mv config/manager-coverage/kustomization.yaml.tmp config/manager/kustomization.yaml
+
 
 undeploy:
 	kubectl delete --wait=true -k config/default
@@ -83,7 +89,7 @@ undeploy-coverage:
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." 
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..."
 # Run go fmt against code
 fmt:
 	go fmt ./...
