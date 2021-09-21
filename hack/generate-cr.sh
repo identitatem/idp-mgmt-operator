@@ -9,7 +9,7 @@ export GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID:-"githubappclientid"}
 export GITHUB_APP_CLIENT_SECRET=${GITHUB_APP_CLIENT_SECRET:-"githubappclientsecret"}
 export ROUTE_SUBDOMAIN=${ROUTE_SUBDOMAIN:-"testdomain"}
 
-export THE_FILENAME="authrealm-sample.yaml"
+export THE_FILENAME=${NAME}".yaml"
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 BASE64="base64 -w 0"
@@ -87,5 +87,8 @@ EOF
 echo "File ${THE_FILENAME} is generated and ready to \"oc apply -f ${THE_FILENAME}\""
 echo ""
 echo "Please ensure you have an entry in GitHub under Settings > Developer Settings > OAuth Apps "
-echo "for Client ID ${GITHUB_APP_CLIENT_ID} with an Authorization callback URL of https://${ROUTE_SUBDOMAIN}.${APPS}/callback" 
+echo "for Client ID ${GITHUB_APP_CLIENT_ID} with:" 
+echo "    - Homepage URL of https://console-openshift-console.${APPS}" 
+echo "    - Authorization callback URL of https://${ROUTE_SUBDOMAIN}.${APPS}/callback" 
 echo "prior to running the \"oc\" command."
+
