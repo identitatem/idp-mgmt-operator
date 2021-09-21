@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright Red Hat
 
 export NAME=${NAME:-"authrealm-sample"}
 export NS=${NS:-"authrealm-sample-ns"}
