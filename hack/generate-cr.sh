@@ -3,6 +3,7 @@
 
 export NAME=${NAME:-"authrealm-sample"}
 export NS=${NS:-"authrealm-sample-ns"}
+export APPS=$(oc get infrastructure cluster -ojsonpath='{.status.apiServerURL}' | cut -d':' -f2 | sed 's/\/\/api/apps/g')
 export IDP_NAME=${IDP_NAME:-"sample-idp"}
 export GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID:-"githubappclientid"}
 export GITHUB_APP_CLIENT_SECRET=${GITHUB_APP_CLIENT_SECRET:-"githubappclientsecret"}
@@ -83,4 +84,8 @@ spec:
           name: ${NAME}-client-secret
 EOF
 
-echo "File ${THE_FILENAME} is generated and ready to \"oc apply -f\""
+echo "File ${THE_FILENAME} is generated and ready to \"oc apply -f ${THE_FILENAME}\""
+echo ""
+echo "Please ensure you have an entry in GitHub under Settings > Developer Settings > OAuth Apps "
+echo "for Client ID ${GITHUB_APP_CLIENT_ID} with an Authorization callback URL of https://${ROUTE_SUBDOMAIN}.${APPS}/callback" 
+echo "prior to running the \"oc\" command."
