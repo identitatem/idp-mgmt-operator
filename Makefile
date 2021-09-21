@@ -75,10 +75,10 @@ deploy: manifests
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy-coverage: manifests
-	cp config/manager-coverage/kustomization.yaml config/manager/kustomization.yaml.tmp
+	cp config/manager-coverage/kustomization.yaml config/manager-coverage/kustomization.yaml.tmp
 	cd config/manager-coverage && kustomize edit set image controller=${IMG_COVERAGE}
 	kustomize build config/default-coverage | kubectl apply -f -
-	mv config/manager-coverage/kustomization.yaml.tmp config/manager/kustomization.yaml
+	mv config/manager-coverage/kustomization.yaml.tmp config/manager-coverage/kustomization.yaml
 
 
 undeploy:
