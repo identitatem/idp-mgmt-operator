@@ -191,6 +191,22 @@ var _ = Describe("Process Strategy backplane: ", func() {
 			err := k8sClient.Create(context.TODO(), ns)
 			Expect(err).To(BeNil())
 		})
+		By("Creating the managedcluster", func() {
+			mc := &clusterv1.ManagedCluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: ClusterName,
+				},
+				Spec: clusterv1.ManagedClusterSpec{
+					ManagedClusterClientConfigs: []clusterv1.ClientConfig{
+						{
+							URL: "https://api.my-cluster.com:6443",
+						},
+					},
+				},
+			}
+			_, err := clientSetCluster.ClusterV1().ManagedClusters().Create(context.TODO(), mc, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
 		var placement *clusterv1alpha1.Placement
 		By("Creating the placement", func() {
 			placement = &clusterv1alpha1.Placement{

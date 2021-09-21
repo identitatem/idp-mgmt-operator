@@ -19,6 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 	"k8s.io/kubectl/pkg/scheme"
+	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	manifestworkv1 "open-cluster-management.io/api/work/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -242,6 +243,22 @@ var _ = Describe("Strategy", func() {
 				},
 			}
 			err := k8sClient.Create(context.TODO(), ns)
+			Expect(err).To(BeNil())
+		})
+		By("Creating the managedcluster", func() {
+			mc := &clusterv1.ManagedCluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: ClusterName,
+				},
+				Spec: clusterv1.ManagedClusterSpec{
+					ManagedClusterClientConfigs: []clusterv1.ClientConfig{
+						{
+							URL: "https://api.my-cluster.com:6443",
+						},
+					},
+				},
+			}
+			_, err := clientSetCluster.ClusterV1().ManagedClusters().Create(context.TODO(), mc, metav1.CreateOptions{})
 			Expect(err).To(BeNil())
 		})
 		var placement *clusterv1alpha1.Placement

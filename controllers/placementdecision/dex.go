@@ -5,6 +5,9 @@ package placementdecision
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/url"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -14,6 +17,7 @@ import (
 	dexoperatorv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemdexv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
@@ -123,11 +127,30 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 		Namespace: clientSecret.Namespace,
 	}
 
-	urlScheme, host, err := helpers.GetAppsURL(r.Client, false)
+	mc := &clusterv1.ManagedCluster{}
+	err := r.Client.Get(context.TODO(), client.ObjectKey{Name: decision.ClusterName}, mc)
 	if err != nil {
 		return err
 	}
-	redirectURI := fmt.Sprintf("%s://oauth-openshift.%s/oauth2callback/%s", urlScheme, host, decision.ClusterName)
+
+	if len(mc.Spec.ManagedClusterClientConfigs) == 0 ||
+		mc.Spec.ManagedClusterClientConfigs[0].URL == "" {
+		return fmt.Errorf("api url not found for cluster %s", decision.ClusterName)
+	}
+
+	u, err := url.Parse(mc.Spec.ManagedClusterClientConfigs[0].URL)
+	if err != nil {
+		return err
+	}
+
+	host, _, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		return err
+	}
+
+	host = strings.Replace(host, "api", "apps", 1)
+
+	redirectURI := fmt.Sprintf("%s://oauth-openshift.%s/oauth2callback/%s", u.Scheme, host, idp.Name)
 	dexClient.Spec.RedirectURIs = []string{redirectURI}
 	switch dexClientExists {
 	case true:
