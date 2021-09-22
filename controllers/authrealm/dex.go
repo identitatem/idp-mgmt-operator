@@ -246,6 +246,7 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 		return err
 	}
 	dexServer.Spec.Connectors = cs
+	r.Log.Info("Updated dexserver", "dexServer:", dexServer)
 	return nil
 }
 
@@ -257,12 +258,15 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 	for _, idp := range authRealm.Spec.IdentityProviders {
 		switch idp.Type {
 		case openshiftconfigv1.IdentityProviderTypeGitHub:
+			r.Log.Info("create connector for GitHub")
 			c, err := r.createConnector(authRealm, identitatemdexserverv1alpha1.ConnectorTypeGitHub, idp.GitHub.ClientID, idp.GitHub.ClientSecret.Name)
 			if err != nil {
 				return nil, err
 			}
 			c.Config.RedirectURI = dexServer.Spec.Issuer + "/callback"
+			r.Log.Info("genrated connextor", "c.Config", c.Config)
 			cs = append(cs, *c)
+			r.Log.Info("genrated intermediate connextor", "cs", cs)
 		case openshiftconfigv1.IdentityProviderTypeLDAP:
 			c, err := r.createConnector(authRealm, identitatemdexserverv1alpha1.ConnectorTypeLDAP, "", idp.LDAP.BindPassword.Name)
 			if err != nil {
@@ -276,6 +280,7 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 	if len(cs) == 0 {
 		return nil, fmt.Errorf("no identityProvider defined in %s/%s", authRealm.Name, authRealm.Name)
 	}
+	r.Log.Info("genrated connextor", "cs", cs)
 	return cs, err
 }
 
