@@ -412,15 +412,17 @@ func (r *ClusterOAuthReconciler) deleteManifestWork(clusterOAuth *identitatemv1a
 			context.TODO(),
 			types.NamespacedName{Name: helpers.ManifestWorkName(), Namespace: clusterOAuth.Namespace},
 			manifestWork,
-		); err != nil && !errors.IsNotFound(err) {
-			return err
-		}
-
-		if manifestWork.DeletionTimestamp == nil {
-			r.Log.Info("delete manifest", "name", helpers.ManifestWorkName(), "namespace", clusterOAuth.Namespace)
-			err := r.Client.Delete(context.TODO(), manifestWork)
-			if err != nil && !errors.IsNotFound(err) {
+		); err != nil {
+			if !errors.IsNotFound(err) {
 				return err
+			}
+		} else {
+			if manifestWork.DeletionTimestamp == nil {
+				r.Log.Info("delete manifest", "name", manifestWork.Name, "namespace", manifestWork.Namespace)
+				err := r.Client.Delete(context.TODO(), manifestWork)
+				if err != nil && !errors.IsNotFound(err) {
+					return err
+				}
 			}
 		}
 	}
