@@ -57,7 +57,7 @@ oc patch ingresscontroller default -n openshift-ingress-operator --type=merge --
 popd
 ```  
 
-After running these commands, various pods on the OCP hub will restart in order to use the new certificate.  Wait a few minutes for all the pods to restart.  The OCP UI Overview page
+After running these commands, various pods on the OCP hub will restart in order to use the new certificate.  Wait a few minutes for all the pods to restart.  The OCP UI Overview page can be used to check the overall health of OCP.
 
 NOTE: To use the ACME certificate process, you must have Amazon AWS credentials to allow a Route53 domain to
 be added for certificate verification during creation.
