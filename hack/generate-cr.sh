@@ -4,12 +4,12 @@
 export NAME=${NAME:-"authrealm-sample"}
 export NS=${NS:-"authrealm-sample-ns"}
 export APPS=$(oc get infrastructure cluster -ojsonpath='{.status.apiServerURL}' | cut -d':' -f2 | sed 's/\/\/api/apps/g')
-export IDP_NAME=${IDP_NAME:-"sample-idp"}
+export IDP_NAME=${IDP_NAME:-"github-sample-idp"}
 export GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID:-"githubappclientid"}
 export GITHUB_APP_CLIENT_SECRET=${GITHUB_APP_CLIENT_SECRET:-"githubappclientsecret"}
 export ROUTE_SUBDOMAIN=${ROUTE_SUBDOMAIN:-"testdomain"}
 
-export THE_FILENAME=${NAME}".yaml"
+export THE_FILENAME=/tmp/${NAME}".yaml"
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 BASE64="base64 -w 0"
@@ -79,7 +79,7 @@ spec:
       mappingMethod: claim
       type: GitHub
       github:
-        clientID: ${GITHUB_APP_CLIENT_ID}
+        clientID: "${GITHUB_APP_CLIENT_ID}"
         clientSecret:
           name: ${NAME}-client-secret
 EOF
@@ -87,11 +87,12 @@ EOF
 echo "File ${THE_FILENAME} is generated and ready to \"oc apply -f ${THE_FILENAME}\""
 echo ""
 echo "Please ensure you have an entry in GitHub under Settings > Developer Settings > OAuth Apps "
-echo "for Client ID ${GITHUB_APP_CLIENT_ID} with:"
-echo "    - Homepage URL of https://console-openshift-console.${APPS}"
-echo "    - Authorization callback URL of https://${ROUTE_SUBDOMAIN}.${APPS}/callback"
+echo "for Client ID ${GITHUB_APP_CLIENT_ID} contains:"
+echo "    - Homepage URL: https://console-openshift-console.${APPS}"
+echo "    - Authorization callback URL: https://${ROUTE_SUBDOMAIN}.${APPS}/callback"
 echo "prior to running the \"oc\" command."
 echo ""
 echo "Add the following labels to any managed cluster you want in the cluster set ${NAME}-clusterset:"
 echo "    authdeployment=east"
 echo "    cluster.open-cluster-management.io/clusterset=${NAME}-clusterset"
+echo ""
