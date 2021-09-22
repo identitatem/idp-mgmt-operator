@@ -253,8 +253,8 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 	dexServer *identitatemdexserverv1alpha1.DexServer) (cs []identitatemdexserverv1alpha1.ConnectorSpec, err error) {
 	r.Log.Info("createDexConnectors", "Name", dexServer.Name, "Namespace", dexServer.Namespace)
 
+	cs = make([]identitatemdexserverv1alpha1.ConnectorSpec, 0)
 	for _, idp := range authRealm.Spec.IdentityProviders {
-		cs = make([]identitatemdexserverv1alpha1.ConnectorSpec, 0)
 		switch idp.Type {
 		case openshiftconfigv1.IdentityProviderTypeGitHub:
 			c, err := r.createConnector(authRealm, identitatemdexserverv1alpha1.ConnectorTypeGitHub, idp.GitHub.ClientID, idp.GitHub.ClientSecret.Name)
