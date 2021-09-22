@@ -27,37 +27,45 @@ oc cluster-info
 ## Setup Hub to use a signed certificate
 This is required for the Dex server we will be using under the covers to authenticate
 the managed clusters OpenID OAuth requests.  The quickest way to do this is using a tool from
-https://github.com/open-cluster-management/sre-tools/wiki/ACM---Day-1#add-an-acme-certificate.  Here is a summary of the commands you need to run:
+https://github.com/open-cluster-management/sre-tools/wiki/ACM---Day-1#add-an-acme-certificate.  
 
+Here is a summary of the commands you need to run:
+
+1. Clone the repo and setup AWS account environment variables
 ```bash
 export AWS_ACCESS_KEY={your AWS Key}
 export AWS_SECRET_ACCESS_KEY={your AWS Secret Key}
-export MY_EMAIL_ADDR={your email address}
-
 cd /tmp
 git clone https://github.com/acmesh-official/acme.sh.git
 cd acme.sh
+```
 
+2. Query OCP to setup some environment variables
+```bash
 export API=$(oc whoami --show-server | cut -f 2 -d ':' | cut -f 3 -d '/' | sed 's/-api././')
 export WILDCARD=$(oc get ingresscontroller default -n openshift-ingress-operator -o jsonpath='{.status.domain}')
+```
 
+3. If this is the first time running acme.sh, register your email address
+```bash
+./acme.sh --register-account -m {your email address}
+```
 
-./acme.sh --register-account -m ${MY_EMAIL_ADDR}
-
-
+4. Generate the certificate
+```bash
 ./acme.sh  --issue   --dns dns_aws -d ${API} -d "*.${WILDCARD}"
+```
 
+5. Apply the certificate to OCP
+```bash
 pushd ${PWD}
 cd ${HOME}/.acme.sh/${API}
-
 oc create secret tls router-certs --cert=fullchain.cer --key=${API}.key -n openshift-ingress
-
 oc patch ingresscontroller default -n openshift-ingress-operator --type=merge --patch='{"spec": { "defaultCertificate": { "name": "router-certs" } } }'
-
 popd
 ```  
 
-After running these commands, various pods on the OCP hub will restart in order to use the new certificate.  Wait a few minutes for all the pods to restart.  The OCP UI Overview page can be used to check the overall health of OCP.
+After running these commands, various pods on the OCP hub will restart in order to use the new certificate.  Wait a while, sometimes 10-20 minutes for all the required pods to restart.  The OCP UI Overview page can be used to check the overall health of OCP.  The Status section will show which operators are updating due to the certificate update.
 
 NOTE: To use the ACME certificate process, you must have Amazon AWS credentials to allow a Route53 domain to
 be added for certificate verification during creation.
@@ -87,14 +95,25 @@ NOTE: You will need to return to the GitHub OAuth a little bit later to correct 
 git clone https://github.com/identitatem/idp-mgmt-operator.git
 cd idp-mgmt-operator
 ```
-2. Login to your Red Hat Advanced Cluster Management or Multi Cluster Engine hub
+2. Login to Red Hat Advanced Cluster Management or Multi Cluster Engine hub
 3. Verify the hub cluster
 ```bash
 oc cluster-info
 ```
-3. From the cloned idp-mgmt-operator directory:
+4. From the cloned idp-mgmt-operator directory:
 ```bash
 make deploy
+```
+
+5. Verify the pods are running
+
+There are two pods that should be running:
+- idp-mgmt-operator-controller-manager
+- idp-mgmt-operator-webhook-service
+
+Check using the following command:
+```bash
+oc get pods -n idp-mgmt-config
 ```
 
 ## Create an AuthRealm, ManagedClusterSet, etc
@@ -128,7 +147,7 @@ A list of labels will also be displayed which will need to be added to the manag
 
 2. Select the OAuth App you had created above
 
-3. Correct the `Authorization callback URL` with the generated value from the `generates-cr.sh` script.
+3. Correct the `Authorization callback URL` with the value displayed in the `Authorization callback URL` output produced from running the `generates-cr.sh` script.
 
 4. Click `Update application`
 
