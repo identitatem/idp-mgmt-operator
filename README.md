@@ -99,7 +99,9 @@ make deploy
 
 ## Create an AuthRealm, ManagedClusterSet, etc
 We need to create a few custom resources to get idp-mgmt-operator to trigger.  Use the `generate-cr.sh` script in
-the `hack` directory to generate a yaml file with all the CRs needed.  First setup the required environment variables:
+the `hack` directory to generate a yaml file with all the CRs needed.  
+
+1. First setup the required environment variables:
 ```bash
 GITHUB_APP_CLIENT_ID={your GitHub App Client ID}
 GITHUB_APP_CLIENT_SECRET={your GitHub App Client Secret}
@@ -107,7 +109,8 @@ IDP_NAME=sample-idp
 NAME=authrealm-sample
 NS=authrealm-sample-ns
 ```
-Then run the script
+
+2. run the script
 ```bash
 cd hack
 ./generate-cr.sh
@@ -120,7 +123,7 @@ A list of labels will also be displayed which will need to be added to the manag
 
 
 
-## Correct th GitHub OAuth App
+## Correct the GitHub OAuth App
 1. Open https://github.com/settings/developers
 
 2. Select the OAuth App you had created above
