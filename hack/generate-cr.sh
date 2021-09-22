@@ -4,7 +4,7 @@
 export NAME=${NAME:-"authrealm-sample"}
 export NS=${NS:-"authrealm-sample-ns"}
 export APPS=$(oc get infrastructure cluster -ojsonpath='{.status.apiServerURL}' | cut -d':' -f2 | sed 's/\/\/api/apps/g')
-export IDP_NAME=${IDP_NAME:-"sample-idp"}
+export IDP_NAME=${IDP_NAME:-"github-sample-idp"}
 export GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID:-"githubappclientid"}
 export GITHUB_APP_CLIENT_SECRET=${GITHUB_APP_CLIENT_SECRET:-"githubappclientsecret"}
 export ROUTE_SUBDOMAIN=${ROUTE_SUBDOMAIN:-"testdomain"}
