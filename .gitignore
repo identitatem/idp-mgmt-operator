@@ -35,4 +35,3 @@
 /_output
 kind_kubeconfig.yaml
 kind_kubeconfig_internal.yaml
-/hack/authrealm-sample.yaml
