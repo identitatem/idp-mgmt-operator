@@ -1,7 +1,8 @@
 
 [comment]: # ( Copyright Red Hat )
 # idp-mgmt-operator
-This operator is in charge to configure the idp client service.
+This operator is in charge to configure the idp client service.  It will also install the
+dex operator.
 
 # Run test
 
@@ -11,25 +12,146 @@ This operator is in charge to configure the idp client service.
 
 `make functional-test-full`
 
-# Deploy the operator
+# Installing
 
-1. Login on your hub
-2. From the idp-mgmt-operator: `make deploy`
+## Prereqs
+You must meet the following requirements:
+- OpenShift Container Platform (OCP) 4.6+
+- `oc` (ver. 4.6+)
 
-# Example
-
-An example of the Authrealm CR is available [here](test/config/example/github-authrealm.yaml)
-
-You can do a `kubectl apply -f test/config/example/github-authrealm.yaml` to set that example
-and then delete the example with `kubectl delete -f test/config/example/github-authrealm.yaml`
-
-This example creates a placement with a matchlabel `authdeployment: east` and so you have to add that label in the managedcluster you want to be managed by the authrealm AND add a label `cluster.open-cluster-management.io/clusterset: cluster-sample` in it.
-
-```yaml
-    authdeployment: east
-    cluster.open-cluster-management.io/clusterset: clusterset-sample
+## Ensure you are logged in to the correct OCP hub
+```bash
+oc cluster-info
 ```
 
-# Undeploy the operator
+## Setup Hub to use a signed certificate
+This is required for the Dex server we will be using under the covers to authenticate
+the managed clusters OpenID OAuth requests.  The quickest way to do this is using a tool from
+https://github.com/open-cluster-management/sre-tools/wiki/ACM---Day-1#add-an-acme-certificate.  Here is a summary of the commands you need to run:
 
-`make undeploy`
+```bash
+export AWS_ACCESS_KEY={your AWS Key}
+export AWS_SECRET_ACCESS_KEY={your AWS Secret Key}
+export MY_EMAIL_ADDR={your email address}
+
+cd /tmp
+git clone https://github.com/acmesh-official/acme.sh.git
+cd acme.sh
+
+export API=$(oc whoami --show-server | cut -f 2 -d ':' | cut -f 3 -d '/' | sed 's/-api././')
+export WILDCARD=$(oc get ingresscontroller default -n openshift-ingress-operator -o jsonpath='{.status.domain}')
+
+
+./acme.sh --register-account -m ${MY_EMAIL_ADDR}
+
+
+./acme.sh  --issue   --dns dns_aws -d ${API} -d "*.${WILDCARD}"
+
+pushd ${PWD}
+cd ${HOME}/.acme.sh/${API}
+
+oc create secret tls router-certs --cert=fullchain.cer --key=${API}.key -n openshift-ingress
+
+oc patch ingresscontroller default -n openshift-ingress-operator --type=merge --patch='{"spec": { "defaultCertificate": { "name": "router-certs" } } }'
+
+popd
+```  
+
+After running these commands, various pods on the OCP hub will restart in order to use the new certificate.  Wait a few minutes for all the pods to restart.  The OCP UI Overview page
+
+NOTE: To use the ACME certificate process, you must have Amazon AWS credentials to allow a Route53 domain to
+be added for certificate verification during creation.
+
+
+## Setup GitHub OAuth
+Use GitHub as the OAuth provider.  On github.com, go to Settings > Developer Settings > OAuth Apps
+(The shortcut is https://github.com/settings/developers) and add a `New OAuth App`.  Copy the `Client ID` and `Client Secret` values.  You will need them later on.
+
+Fill in the `Application name` with something to help identify the owner and hub it will be used for.
+NOTE: If you have more than one hub, each one will need it's own entry.
+
+Fill in `Homepage URL` and `Authorization callback URL` with the hub console URL.  
+(NOTE: A little bit later we will correct the `Authorization callback URL` value once we have the generated value.)
+
+Click `Register Application`
+
+NOTE: You will need to return to the GitHub OAuth a little bit later to correct the `Authorization callback URL`, once the value is generated for you.
+
+
+## Install the operator
+1. Clone this repo
+```bash
+git clone https://github.com/identitatem/idp-mgmt-operator.git
+cd idp-mgmt-operator
+```
+2. Login to your Red Hat Advanced Cluster Management or Multi Cluster Engine hub
+3. Verify the hub cluster
+```bash
+oc cluster-info
+```
+3. From the cloned idp-mgmt-operator directory:
+```bash
+make deploy
+```
+
+## Create an AuthRealm, ManagedClusterSet, etc
+We need to create a few custom resources to get idp-mgmt-operator to trigger.  Use the `generate-cr.sh` script in
+the `hack` directory to generate a yaml file with all the CRs needed.  First setup the required environment variables:
+```bash
+GITHUB_APP_CLIENT_ID={your GitHub App Client ID}
+GITHUB_APP_CLIENT_SECRET={your GitHub App Client Secret}
+IDP_NAME=sample-idp
+NAME=authrealm-sample
+NS=authrealm-sample-ns
+```
+Then run the script:s
+```bash
+cd hack
+./generate-cr.sh
+```  
+
+The `generates-cr.sh` script will create the yaml and output the name of the yaml file.  In addition, it will
+provide values that need to be copied back into the GitHub Auth App.  
+
+A list of labels will also be displayed which will need to be added to the managed cluster to add it to the cluster set.
+
+
+
+## Correct th GitHub OAuth App
+- Open https://github.com/settings/developers
+- Select the OAuth App you had created above
+- Correct the `Authorization callback URL` with the generated value from the `generates-cr.sh` script.
+- Click `Update application`
+
+## Apply the Custom Resources
+Apply the custom resources using the yaml generated by the `generates-cr.sh` script
+```bash
+oc apply -f {your YAML file}
+```
+
+
+## Create or Import a managed cluster
+A managed cluster is needed so that the OAuth policy can be configured by idp-mgmt-operator.  Make sure
+you have a managed cluster defined in the hub.
+
+## Add labels to managed cluster to join the ClusterSet
+Use the labels displayed by the `generate-cr.sh` script and add them to the managed cluster.  
+```bash
+oc label managedclusters {managed cluster name} {key=value}
+```
+## Wait for managed cluster to have new OAuth method configured
+It will take a little while for the Placement to cause a ManifestWork to be generated and applied
+to the managed cluster.   You can monitor the managed cluster's OAuth CR to see if the new OAuth entry appears.
+Once the entry appears, you can logout of the managed cluster and when you attempt to login, the new OAuth option will appear on the login screen.
+
+
+# Uninstall the Custom Resources
+To delete the custom resources using the yaml generated by the `generates-cr.sh` script
+```bash
+oc delete -f {your YAML file}
+```
+
+# Uninstall the operator
+```bash
+make undeploy
+```
