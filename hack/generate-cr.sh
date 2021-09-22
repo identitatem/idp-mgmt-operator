@@ -79,7 +79,7 @@ spec:
       mappingMethod: claim
       type: GitHub
       github:
-        clientID: ${GITHUB_APP_CLIENT_ID}
+        clientID: "${GITHUB_APP_CLIENT_ID}"
         clientSecret:
           name: ${NAME}-client-secret
 EOF
