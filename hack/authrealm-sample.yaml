@@ -1,0 +1,62 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: authrealm-sample-ns
+---
+apiVersion: cluster.open-cluster-management.io/v1alpha1
+kind: ManagedClusterSet
+metadata:
+  name: authrealm-sample-clusterset
+  namespace: authrealm-sample-ns
+---
+apiVersion: cluster.open-cluster-management.io/v1alpha1
+kind: Placement
+metadata:
+  name: authrealm-sample-placement
+  namespace: authrealm-sample-ns
+spec:
+  predicates:
+  - requiredClusterSelector:
+      labelSelector:
+        matchLabels:
+          authdeployment: east
+---
+apiVersion: cluster.open-cluster-management.io/v1alpha1
+kind: ManagedClusterSetBinding
+metadata:
+  name: authrealm-sample-clusterset
+  namespace: authrealm-sample-ns
+spec:
+  clusterSet: authrealm-sample-clusterset
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: authrealm-sample-client-secret
+  namespace: authrealm-sample-ns
+data:
+  clientSecret: ZDA1Y2U2NDczZTU3MGNjODJmOTJjYzJmYTk4YmRkNjRkMmMyZGQxMAo=
+type: Opaque
+---
+apiVersion: identityconfig.identitatem.io/v1alpha1
+kind: AuthRealm
+metadata:
+  name: authrealm-sample
+  namespace: authrealm-sample-ns
+spec:
+  type: dex
+  routeSubDomain: mysso
+  placementRef:
+    name: authrealm-sample-placement
+  identityProviders:
+    - name: sample-idp
+      mappingMethod: claim
+      type: GitHub
+      github:
+        clientID: 0ecd117d742b682e79be
+        clientSecret:
+          name: authrealm-sample-client-secret
+          namespace: authrealm-sample-ns
