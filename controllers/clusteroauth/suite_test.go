@@ -206,7 +206,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 									MappingMethod: openshiftconfigv1.MappingMethodClaim,
 									IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 										Type: openshiftconfigv1.IdentityProviderTypeGitHub,
-										GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+										OpenID: &openshiftconfigv1.OpenIDIdentityProvider{
 											ClientID: "me",
 											ClientSecret: openshiftconfigv1.SecretNameReference{
 												Name: secret1.Name,
@@ -318,7 +318,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 									MappingMethod: openshiftconfigv1.MappingMethodClaim,
 									IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 										Type: openshiftconfigv1.IdentityProviderTypeGitHub,
-										GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+										OpenID: &openshiftconfigv1.OpenIDIdentityProvider{
 											ClientID: "me2",
 											ClientSecret: openshiftconfigv1.SecretNameReference{
 												Name: secret2.Name,
@@ -331,7 +331,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 									MappingMethod: openshiftconfigv1.MappingMethodClaim,
 									IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 										Type: openshiftconfigv1.IdentityProviderTypeGitHub,
-										GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+										OpenID: &openshiftconfigv1.OpenIDIdentityProvider{
 											ClientID: "me3",
 											ClientSecret: openshiftconfigv1.SecretNameReference{
 												Name: secret3.Name,
