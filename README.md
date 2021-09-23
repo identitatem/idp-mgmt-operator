@@ -1,4 +1,4 @@
-[comment]: # " Copyright Red Hat "
+[comment]: # ( Copyright Red Hat )
 
 # idp-mgmt-operator
 
