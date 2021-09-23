@@ -280,7 +280,7 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 	if len(cs) == 0 {
 		return nil, fmt.Errorf("no identityProvider defined in %s/%s", authRealm.Name, authRealm.Name)
 	}
-	r.Log.Info("genrated connextor", "cs", cs)
+	r.Log.Info("genrated connectors", "cs", cs)
 	return cs, err
 }
 
