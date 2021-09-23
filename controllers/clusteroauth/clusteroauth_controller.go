@@ -190,7 +190,7 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			//Look for secret for Identity Provider and if found, add to manifest work
 			secret := &corev1.Secret{}
 
-			if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: req.Namespace, Name: idp.Name}, secret); err != nil {
+			if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: req.Namespace, Name: idp.GitHub.ClientSecret.Name}, secret); err != nil {
 				return reconcile.Result{}, err
 			}
 			//add secret to manifest
