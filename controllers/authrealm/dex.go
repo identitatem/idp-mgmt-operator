@@ -259,20 +259,37 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 		switch idp.Type {
 		case openshiftconfigv1.IdentityProviderTypeGitHub:
 			r.Log.Info("create connector for GitHub")
-			c, err := r.createConnector(authRealm, identitatemdexserverv1alpha1.ConnectorTypeGitHub, idp.GitHub.ClientID, idp.GitHub.ClientSecret.Name)
-			if err != nil {
-				return nil, err
+			c := &identitatemdexserverv1alpha1.ConnectorSpec{
+				Type: identitatemdexserverv1alpha1.ConnectorTypeGitHub,
+				Name: authRealm.Name,
+				Id:   authRealm.Name,
+				GitHub: identitatemdexserverv1alpha1.GitHubConfigSpec{
+					ClientID: idp.GitHub.ClientID,
+					ClientSecretRef: corev1.SecretReference{
+						Name:      idp.GitHub.ClientSecret.Name,
+						Namespace: authRealm.Namespace,
+					},
+					RedirectURI: dexServer.Spec.Issuer + "/callback",
+				},
 			}
-			c.Config.RedirectURI = dexServer.Spec.Issuer + "/callback"
-			r.Log.Info("genrated connextor", "c.Config", c.Config)
+			c.GitHub.Orgs = make([]identitatemdexserverv1alpha1.Org, len(idp.GitHub.Organizations))
+			for i, org := range idp.GitHub.Organizations {
+				c.GitHub.Orgs[i].Name = org
+			}
+			r.Log.Info("genrated connextor", "c.GitHub", c.GitHub)
 			cs = append(cs, *c)
-			r.Log.Info("genrated intermediate connextor", "cs", cs)
+			r.Log.Info("genrated intermediate connextors", "cs", cs)
 		case openshiftconfigv1.IdentityProviderTypeLDAP:
-			c, err := r.createConnector(authRealm, identitatemdexserverv1alpha1.ConnectorTypeLDAP, "", idp.LDAP.BindPassword.Name)
-			if err != nil {
-				return nil, err
+			r.Log.Info("create connector for LDAP")
+			//TODO set LDAP
+			c := &identitatemdexserverv1alpha1.ConnectorSpec{
+				Type: identitatemdexserverv1alpha1.ConnectorTypeLDAP,
+				Name: authRealm.Name,
+				Id:   authRealm.Name,
 			}
+			r.Log.Info("genrated connextor", "c.LDAP", c.LDAP)
 			cs = append(cs, *c)
+			r.Log.Info("genrated intermediate connextors", "cs", cs)
 		default:
 			return nil, fmt.Errorf("unsupported provider type %s", idp.Type)
 		}
@@ -282,25 +299,6 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 	}
 	r.Log.Info("genrated connectors", "cs", cs)
 	return cs, err
-}
-
-func (r *AuthRealmReconciler) createConnector(authRealm *identitatemv1alpha1.AuthRealm,
-	identityProviderType identitatemdexserverv1alpha1.ConnectorType, clientID, clientSecretName string) (c *identitatemdexserverv1alpha1.ConnectorSpec, err error) {
-
-	c = &identitatemdexserverv1alpha1.ConnectorSpec{
-		Type: identityProviderType,
-		Name: authRealm.Name,
-		Id:   authRealm.Name,
-		Config: identitatemdexserverv1alpha1.ConfigSpec{
-			ClientID: clientID,
-			ClientSecretRef: corev1.SecretReference{
-				Name:      clientSecretName,
-				Namespace: authRealm.Namespace,
-			},
-		},
-	}
-
-	return c, nil
 }
 
 func (r *AuthRealmReconciler) deleteAuthRealmNamespace(authRealm *identitatemv1alpha1.AuthRealm) error {

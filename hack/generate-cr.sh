@@ -83,7 +83,8 @@ spec:
         clientID: "${GITHUB_APP_CLIENT_ID}"
         clientSecret:
           name: ${NAME}-client-secret
-        org: ${GITHUB_APP_CLIENT_ORG}
+        orgs:
+        - ${GITHUB_APP_CLIENT_ORG}
 EOF
 
 echo "File ${THE_FILENAME} is generated and ready to \"oc apply -f ${THE_FILENAME}\""
