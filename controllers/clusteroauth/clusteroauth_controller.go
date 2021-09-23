@@ -190,38 +190,39 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			//Look for secret for Identity Provider and if found, add to manifest work
 			secret := &corev1.Secret{}
 
-			if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: req.Namespace, Name: idp.Name}, secret); err == nil {
-				//add secret to manifest
-
-				//TODO TEMP PATCH
-				newSecret := &corev1.Secret{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: corev1.SchemeGroupVersion.String(),
-						Kind:       "Secret",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      secret.Name,
-						Namespace: "openshift-config",
-					},
-				}
-
-				newSecret.Data = secret.Data
-				newSecret.Type = secret.Type
-
-				data, err := json.Marshal(newSecret)
-				if err != nil {
-					return reconcile.Result{}, err
-				}
-
-				manifest := manifestworkv1.Manifest{
-					RawExtension: runtime.RawExtension{Raw: data},
-				}
-
-				//add manifest to manifest work
-				r.Log.Info("append workload for secret in manifest for idp", "name", idp.Name)
-				manifestWork.Spec.Workload.Manifests = append(manifestWork.Spec.Workload.Manifests, manifest)
-
+			if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: req.Namespace, Name: idp.Name}, secret); err != nil {
+				return reconcile.Result{}, err
 			}
+			//add secret to manifest
+
+			//TODO TEMP PATCH
+			newSecret := &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: corev1.SchemeGroupVersion.String(),
+					Kind:       "Secret",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      secret.Name,
+					Namespace: "openshift-config",
+				},
+			}
+
+			newSecret.Data = secret.Data
+			newSecret.Type = secret.Type
+
+			data, err := json.Marshal(newSecret)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
+			manifest := manifestworkv1.Manifest{
+				RawExtension: runtime.RawExtension{Raw: data},
+			}
+
+			//add manifest to manifest work
+			r.Log.Info("append workload for secret in manifest for idp", "name", idp.Name)
+			manifestWork.Spec.Workload.Manifests = append(manifestWork.Spec.Workload.Manifests, manifest)
+
 		}
 	}
 
