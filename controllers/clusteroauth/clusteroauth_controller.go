@@ -190,11 +190,8 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			//Look for secret for Identity Provider and if found, add to manifest work
 			secret := &corev1.Secret{}
 
-			if idp.Type == openshiftconfigv1.IdentityProviderTypeGitHub && idp.GitHub == nil {
-				return reconcile.Result{}, fmt.Errorf("github config for idp  %s not present", idp.Name)
-			}
-
-			if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: req.Namespace, Name: idp.GitHub.ClientSecret.Name}, secret); err != nil {
+			r.Log.Info("retrieving client secret", "name", idp.OpenID.ClientSecret.Name, "namespace", req.Namespace)
+			if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: req.Namespace, Name: idp.OpenID.ClientSecret.Name}, secret); err != nil {
 				return reconcile.Result{}, err
 			}
 			//add secret to manifest
