@@ -65,7 +65,7 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 			Spec: identitatemv1alpha1.ClusterOAuthSpec{
 				OAuth: &openshiftconfigv1.OAuth{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      idp.Name,
+						Name:      decision.ClusterName,
 						Namespace: decision.ClusterName,
 					},
 					Spec: openshiftconfigv1.OAuthSpec{
