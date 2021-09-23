@@ -87,6 +87,19 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 		IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 			Type: openshiftconfigv1.IdentityProviderTypeOpenID,
 			OpenID: &openshiftconfigv1.OpenIDIdentityProvider{
+				Claims: openshiftconfigv1.OpenIDClaims{
+					Email: []string{
+						"email",
+					},
+					Name: []string{
+						"name",
+					},
+					PreferredUsername: []string{
+						"preferred_username",
+						"email",
+						"name",
+					},
+				},
 				ClientID: decision.ClusterName,
 				ClientSecret: openshiftconfigv1.SecretNameReference{
 					Name: clientSecret.Name,
