@@ -18,7 +18,7 @@ if [ "${OS}" == "darwin" ]; then
     BASE64="base64"
 fi
 
-GITHUB_APP_CLIENT_SECRET_B64=`echo $GITHUB_APP_CLIENT_SECRET | $BASE64`
+GITHUB_APP_CLIENT_SECRET_B64=`echo -n "$GITHUB_APP_CLIENT_SECRET" | $BASE64`
 
 
 cat > ${THE_FILENAME} <<EOF
@@ -83,7 +83,7 @@ spec:
         clientID: "${GITHUB_APP_CLIENT_ID}"
         clientSecret:
           name: ${NAME}-client-secret
-        orgs:
+        organizations:
         - ${GITHUB_APP_CLIENT_ORG}
 EOF
 
