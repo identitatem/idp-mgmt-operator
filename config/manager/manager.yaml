@@ -23,23 +23,23 @@ spec:
         control-plane: controller-manager
     spec:
       containers:
-        - args:
-            - manager
-            - --enable-leader-election
-            - --
-            - -v 5
-          env:
-            - name: RELATED_IMAGE_DEX_OPERATOR
-              value: "quay.io/identitatem/dex-operator@sha256:907bf03e5b369c719ea770fdd27d4fc0214b65925b78f4725f485a337a79920f"
-          image: quay.io/identitatem/idp-mgmt-operator:latest
-          name: manager
-          imagePullPolicy: Always
-          resources:
-            limits:
-              cpu: 300m
-              memory: 500Mi
-            requests:
-              cpu: 300m
-              memory: 500Mi
+      - args:
+        - manager
+        - --enable-leader-election
+        - --
+        - -v 5
+        env:
+        - name: RELATED_IMAGE_DEX_OPERATOR
+          value: "quay.io/identitatem/dex-operator:latest"
+        image: quay.io/identitatem/idp-mgmt-operator:latest
+        name: manager
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: 300m
+            memory: 500Mi
+          requests:
+            cpu: 300m
+            memory: 500Mi
       serviceAccountName: idp-mgmt-operator-controller-manager
       terminationGracePeriodSeconds: 10

@@ -7,6 +7,7 @@ export APPS=$(oc get infrastructure cluster -ojsonpath='{.status.apiServerURL}' 
 export IDP_NAME=${IDP_NAME:-"github-sample-idp"}
 export GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID:-"githubappclientid"}
 export GITHUB_APP_CLIENT_SECRET=${GITHUB_APP_CLIENT_SECRET:-"githubappclientsecret"}
+export GITHUB_APP_CLIENT_ORG=${GITHUB_APP_CLIENT_ORG:-"githubappclientorg"}
 export ROUTE_SUBDOMAIN=${ROUTE_SUBDOMAIN:-"testdomain"}
 
 export THE_FILENAME=/tmp/${NAME}".yaml"
@@ -17,7 +18,7 @@ if [ "${OS}" == "darwin" ]; then
     BASE64="base64"
 fi
 
-GITHUB_APP_CLIENT_SECRET_B64=`echo $GITHUB_APP_CLIENT_SECRET | $BASE64`
+GITHUB_APP_CLIENT_SECRET_B64=`echo -n "$GITHUB_APP_CLIENT_SECRET" | $BASE64`
 
 
 cat > ${THE_FILENAME} <<EOF
@@ -82,6 +83,8 @@ spec:
         clientID: "${GITHUB_APP_CLIENT_ID}"
         clientSecret:
           name: ${NAME}-client-secret
+        organizations:
+        - ${GITHUB_APP_CLIENT_ORG}
 EOF
 
 echo "File ${THE_FILENAME} is generated and ready to \"oc apply -f ${THE_FILENAME}\""
