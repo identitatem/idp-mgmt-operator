@@ -104,9 +104,10 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 				ClientSecret: openshiftconfigv1.SecretNameReference{
 					Name: clientSecret.Name,
 				},
-				ExtraAuthorizeParameters: map[string]string{
-					"include_granted_scopes": "true",
-				},
+				// Was not working when tested
+				// ExtraAuthorizeParameters: map[string]string{
+				// 	"include_granted_scopes": "true",
+				// },
 				ExtraScopes: []string{
 					"email",
 					"profile",

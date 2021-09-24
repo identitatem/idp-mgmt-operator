@@ -21,6 +21,7 @@ You must meet the following requirements:
 
 - OpenShift Container Platform (OCP) 4.6+
 - `oc` (ver. 4.6+)
+- `kustomize` (ver. 4.2.0+)
 
 ## Ensure you are logged in to the correct OCP hub
 
