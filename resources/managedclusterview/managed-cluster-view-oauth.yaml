@@ -1,0 +1,13 @@
+# Copyright Red Hat
+
+apiVersion: view.open-cluster-management.io/v1beta1
+kind: ManagedClusterView
+metadata:
+  name: {{ .Name }}
+  namespace: {{ .Namespace }}
+spec:
+  scope:
+    apiGroup: config.openshift.io
+    kind: OAuth
+    version: v1
+    name: cluster

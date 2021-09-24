@@ -13,6 +13,8 @@ import (
 
 const (
 	manifestWorkName         string = "idp-oauth"
+	managedClusterViewOAuth  string = "oauth-view"
+	configMapOriginalOAuth   string = "oauth-original"
 	dexServerName            string = "dex-server"
 	dexOperatorNamespace     string = "idp-mgmt-dex"
 	dexServerNamespacePrefix string = "idp-mgmt"
@@ -25,6 +27,14 @@ const (
 
 func ManifestWorkName() string {
 	return manifestWorkName
+}
+
+func ManagedClusterViewOAuthName() string {
+	return managedClusterViewOAuth
+}
+
+func ConfigMapOriginalOAuthName() string {
+	return configMapOriginalOAuth
 }
 
 func DexOperatorNamespace() string {
