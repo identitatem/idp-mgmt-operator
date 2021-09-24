@@ -107,13 +107,13 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 				// ExtraAuthorizeParameters: map[string]string{
 				// 	"include_granted_scopes": "true",
 				// },
-				// ExtraScopes: []string{
-				// 	"email",
-				// 	"profile",
-				// 	"groups",
-				// 	"federated:id",
-				// 	"offline_access",
-				// },
+				ExtraScopes: []string{
+					"email",
+					"profile",
+					"groups",
+					"federated:id",
+					"offline_access",
+				},
 				Issuer: fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Spec.RouteSubDomain, host),
 			},
 		},
