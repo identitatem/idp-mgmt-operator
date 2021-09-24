@@ -15,7 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	dexoperatorv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
-	identitatemdexv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
@@ -49,7 +48,7 @@ func (r *PlacementDecisionReconciler) syncDexClients(authRealm *identitatemv1alp
 func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authRealm *identitatemv1alpha1.AuthRealm,
 	placementDecisions *clusterv1alpha1.PlacementDecisionList) error {
 	r.Log.Info("delete obsolete config for Authrealm", "Namespace", authRealm.Namespace, "Name", authRealm.Name)
-	dexClients := &identitatemdexv1alpha1.DexClientList{}
+	dexClients := &dexoperatorv1alpha1.DexClientList{}
 	if err := r.Client.List(context.TODO(), dexClients, &client.ListOptions{Namespace: helpers.DexServerNamespace(authRealm)}); err != nil {
 		return err
 	}
@@ -100,13 +99,13 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 	clientSecret *corev1.Secret) error {
 	r.Log.Info("create dexClient for", "cluster", decision.ClusterName, "identityProvider", idp.Name)
 	dexClientExists := true
-	dexClient := &identitatemdexv1alpha1.DexClient{}
+	dexClient := &dexoperatorv1alpha1.DexClient{}
 	if err := r.Client.Get(context.TODO(), helpers.DexClientObjectKey(authRealm, decision, idp), dexClient); err != nil {
 		if !errors.IsNotFound(err) {
 			return err
 		}
 		dexClientExists = false
-		dexClient = &identitatemdexv1alpha1.DexClient{
+		dexClient = &dexoperatorv1alpha1.DexClient{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      helpers.DexClientName(decision, idp),
 				Namespace: helpers.DexServerNamespace(authRealm),
@@ -115,7 +114,7 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 					helpers.IdentityProviderNameLabel: idp.Name,
 				},
 			},
-			Spec: identitatemdexv1alpha1.DexClientSpec{
+			Spec: dexoperatorv1alpha1.DexClientSpec{
 				Public: false,
 			},
 		}
@@ -160,7 +159,7 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 			return err
 		}
 		dexClient.Status.RelatedObjects =
-			[]identitatemdexv1alpha1.RelatedObjectReference{
+			[]dexoperatorv1alpha1.RelatedObjectReference{
 				{
 					Kind:      "PlacementDecision",
 					Name:      placementDecision.Name,
