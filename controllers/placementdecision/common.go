@@ -104,16 +104,16 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 				ClientSecret: openshiftconfigv1.SecretNameReference{
 					Name: clientSecret.Name,
 				},
-				ExtraAuthorizeParameters: map[string]string{
-					"include_granted_scopes": "true",
-				},
-				ExtraScopes: []string{
-					"email",
-					"profile",
-					"groups",
-					"federated:id",
-					"offline_access",
-				},
+				// ExtraAuthorizeParameters: map[string]string{
+				// 	"include_granted_scopes": "true",
+				// },
+				// ExtraScopes: []string{
+				// 	"email",
+				// 	"profile",
+				// 	"groups",
+				// 	"federated:id",
+				// 	"offline_access",
+				// },
 				Issuer: fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Spec.RouteSubDomain, host),
 			},
 		},
