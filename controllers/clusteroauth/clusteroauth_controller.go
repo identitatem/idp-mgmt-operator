@@ -28,7 +28,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/go-logr/logr"
-	"github.com/identitatem/idp-client-api/api/client/clientset/versioned/scheme"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	"github.com/identitatem/idp-mgmt-operator/resources"
@@ -160,7 +159,7 @@ func (r *ClusterOAuthReconciler) generateManagedClusterViewForOAuth(clusterOAuth
 		Name:      helpers.ManagedClusterViewOAuthName(),
 		Namespace: clusterOAuth.Namespace,
 	}
-	if _, err := applier.ApplyCustomResource(readerResources, values, false, "", file); err != nil {
+	if _, err := applier.ApplyCustomResources(readerResources, values, false, "", file); err != nil {
 		return err
 	}
 	r.Log.Info("saveManagedClusterViewForOAuthResult for", "name", clusterOAuth.Name, "namespace", clusterOAuth.Namespace)
@@ -537,15 +536,15 @@ func (r *ClusterOAuthReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	if err := identitatemdexv1alpha1.AddToScheme(scheme.Scheme); err != nil {
+	if err := identitatemdexv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		return err
 	}
 
-	if err := openshiftconfigv1.AddToScheme(scheme.Scheme); err != nil {
+	if err := openshiftconfigv1.AddToScheme(mgr.GetScheme()); err != nil {
 		return err
 	}
 
-	if err := viewv1beta1.AddToScheme(scheme.Scheme); err != nil {
+	if err := viewv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
 		return err
 	}
 
