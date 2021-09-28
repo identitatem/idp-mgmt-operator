@@ -1,4 +1,5 @@
 [comment]: # ( Copyright Red Hat )
+
 # idp-mgmt-operator
 
 This operator is in charge to configure the idp client service. It will also install the
@@ -20,6 +21,7 @@ You must meet the following requirements:
 
 - OpenShift Container Platform (OCP) 4.6+
 - `oc` (ver. 4.6+)
+- `kustomize` (ver. 4.2.0+)
 
 ## Ensure you are logged in to the correct OCP hub
 
@@ -211,6 +213,15 @@ oc label managedclusters {managed cluster name} {key=value}
 It will take a little while for the Placement to cause a ManifestWork to be generated and applied
 to the managed cluster. You can monitor the managed cluster's OAuth CR to see if the new OAuth entry appears.
 Once the entry appears, you can logout of the managed cluster and when you attempt to login, the new OAuth option will appear on the login screen.
+
+
+# Remove labels to remove managed cluster from the ClusterSet
+
+If you want to undo the OAuth on the managed cluster, remove the labels you added and the managed cluster will be removed from the cluster set.
+
+```bash
+oc label managedclusters {managed cluster name} {key}-
+```
 
 # Uninstall the Custom Resources
 
