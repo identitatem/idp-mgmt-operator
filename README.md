@@ -143,11 +143,12 @@ the `hack` directory to generate a yaml file with all the CRs needed.
 1. Setup the required environment variables:
 
 ```bash
-GITHUB_APP_CLIENT_ID={your GitHub App Client ID}
-GITHUB_APP_CLIENT_SECRET={your GitHub App Client Secret}
-IDP_NAME=sample-idp
-NAME=authrealm-sample
-NS=authrealm-sample-ns
+export GITHUB_APP_CLIENT_ID={your GitHub App Client ID}
+export GITHUB_APP_CLIENT_SECRET={your GitHub App Client Secret}
+export GITHUB_APP_CLIENT_ORG={your GitHub organization}
+export IDP_NAME=sample-idp
+export NAME=authrealm-sample
+export NS=authrealm-sample-ns
 ```
 
 2. Verify you are logged into the hub cluster
@@ -212,6 +213,7 @@ oc label managedclusters {managed cluster name} {key=value}
 It will take a little while for the Placement to cause a ManifestWork to be generated and applied
 to the managed cluster. You can monitor the managed cluster's OAuth CR to see if the new OAuth entry appears.
 Once the entry appears, you can logout of the managed cluster and when you attempt to login, the new OAuth option will appear on the login screen.
+
 
 # Remove labels to remove managed cluster from the ClusterSet
 
