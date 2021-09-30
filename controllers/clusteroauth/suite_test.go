@@ -309,7 +309,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		By("Checking manifestwork", func() {
 			mw := &workv1.ManifestWork{}
-			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, mw)
+			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManifestWorkOAuthName(), Namespace: ClusterName}, mw)
 			Expect(err).To(BeNil())
 			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(3))
 		})
@@ -434,7 +434,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		By("Checking manifestwork", func() {
 			mw := &workv1.ManifestWork{}
-			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, mw)
+			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManifestWorkOAuthName(), Namespace: ClusterName}, mw)
 			//var mw *workv1.ManifestWork
 			//mw, err := clientSetWork.WorkV1().ManifestWorks(ClusterName).Get(context.TODO(), "idp-backplane", metav1.GetOptions{})
 			Expect(err).To(BeNil())

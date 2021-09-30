@@ -450,15 +450,15 @@ var _ = Describe("Strategy", func() {
 				return nil
 			}, 30, 1).Should(BeNil())
 		})
-		By(fmt.Sprintf("Checking Manifestwork %s", helpers.ManifestWorkName()), func() {
+		By(fmt.Sprintf("Checking Manifestwork %s", helpers.ManifestWorkOAuthName()), func() {
 			Eventually(func() error {
 				mw := &manifestworkv1.ManifestWork{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, mw)
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkOAuthName(), Namespace: ClusterName}, mw)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err
 					}
-					logf.Log.Info("Manifestwork", "Name", helpers.ManifestWorkName(), "Namespace", ClusterName)
+					logf.Log.Info("Manifestwork", "Name", helpers.ManifestWorkOAuthName(), "Namespace", ClusterName)
 					return err
 				}
 				return nil
@@ -508,11 +508,11 @@ var _ = Describe("Strategy", func() {
 				return fmt.Errorf("clusteroauth %s still exist", MyIDPName)
 			}, 30, 1).Should(BeNil())
 		})
-		By(fmt.Sprintf("Checking manifestwork deletion %s", helpers.ManifestWorkName()), func() {
+		By(fmt.Sprintf("Checking manifestwork deletion %s", helpers.ManifestWorkOAuthName()), func() {
 			Eventually(func() error {
 				//TODO read manifest work and not clusterOauth
 				clientSecret := &identitatemv1alpha1.ClusterOAuth{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, clientSecret)
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkOAuthName(), Namespace: ClusterName}, clientSecret)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err

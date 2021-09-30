@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v0.4.0
-	github.com/identitatem/dex-operator v0.0.4-0.20210923130926-5be7f97451cb
+	github.com/identitatem/dex-operator v0.0.4-0.20210929211417-6b4b9eac0d03
 	github.com/identitatem/idp-client-api v0.0.0-20210920132446-528523b992c0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.14.0
@@ -14,9 +14,9 @@ require (
 	github.com/openshift/generic-admission-server v1.14.1-0.20210422140326-da96454c926d
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
-	k8s.io/api v0.22.0
-	k8s.io/apiextensions-apiserver v0.22.0
-	k8s.io/apimachinery v0.22.0
+	k8s.io/api v0.22.1
+	k8s.io/apiextensions-apiserver v0.22.1
+	k8s.io/apimachinery v0.22.1
 	k8s.io/apiserver v0.22.0
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/component-base v0.22.0
