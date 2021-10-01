@@ -180,13 +180,17 @@ func (r *ClusterOAuthReconciler) saveManagedClusterViewForOAuthResult(clusterOAu
 	}
 
 	r.Log.Info("create configmap containing the OAuth", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", clusterOAuth.Namespace)
+	b, err := yaml.JSONToYAML(mcvOAuth.Status.Result.Raw)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      helpers.ConfigMapOriginalOAuthName(),
 			Namespace: clusterOAuth.Namespace,
 		},
 		Data: map[string]string{
-			helpers.ConfigMapOriginalOAuthName(): string(mcvOAuth.Status.Result.Raw),
+			helpers.ConfigMapOriginalOAuthName(): string(b),
 		},
 	}
 
