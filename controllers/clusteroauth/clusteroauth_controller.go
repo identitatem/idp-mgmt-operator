@@ -349,15 +349,16 @@ func (r *ClusterOAuthReconciler) CreateOrUpdateManifestWork(
 	scheme *runtime.Scheme,
 ) error {
 
-	var oldManifestwork manifestworkv1.ManifestWork
+	oldManifestwork := &manifestworkv1.ManifestWork{}
 
 	err := client.Get(
 		context.TODO(),
 		types.NamespacedName{Name: manifestwork.Name, Namespace: manifestwork.Namespace},
-		&oldManifestwork,
+		oldManifestwork,
 	)
 	if err == nil {
-		if err := client.Update(context.TODO(), manifestwork); err != nil {
+		oldManifestwork.Spec.Workload = manifestwork.Spec.Workload
+		if err := client.Update(context.TODO(), oldManifestwork); err != nil {
 			r.Log.Error(err, "Fail to update manifestwork")
 			return err
 		}
