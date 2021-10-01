@@ -1,0 +1,353 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+    operators.operatorframework.io/builder: operator-sdk-v1.13.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+  name: idp-mgmt-operator.v0.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions: {}
+  description: Operator to Manage IDP Configurations at the Multicluster Scale
+  displayName: IDP Management Operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - namespaces
+          - secrets
+          - serviceaccounts
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          - secrets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - auth.identitatem.io
+          resources:
+          - dexclients
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - auth.identitatem.io
+          resources:
+          - dexclients
+          - dexclients/status
+          - dexservers
+          - dexservers/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - managedclusters
+          - placementdecisions
+          - placements
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - placementdecisions
+          - placements
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - placements
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - infrastructures
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+        - apiGroups:
+          - identityconfig.identitatem.io
+          resources:
+          - authrealms
+          - clusteroauths
+          - strategies
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - identityconfig.identitatem.io
+          resources:
+          - authrealms
+          - strategies
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - identityconfig.identitatem.io
+          resources:
+          - strategies/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - identityconfig.identitatem.io
+          resources:
+          - strategies/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterrolebindings
+          - rolebindings
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterroles
+          - roles
+          verbs:
+          - bind
+          - create
+          - delete
+          - escalate
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - work.open-cluster-management.io
+          resources:
+          - manifestworks
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        serviceAccountName: idp-mgmt-operator-controller-manager
+      deployments:
+      - name: idp-mgmt-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - manager
+                - --enable-leader-election
+                - --
+                - -v 5
+                env:
+                - name: RELATED_IMAGE_DEX_OPERATOR
+                  value: quay.io/identitatem/dex-operator:latest
+                image: quay.io/identitatem/idp-mgmt-operator:latest
+                imagePullPolicy: Always
+                name: manager
+                resources:
+                  limits:
+                    cpu: 300m
+                    memory: 500Mi
+                  requests:
+                    cpu: 300m
+                    memory: 500Mi
+              serviceAccountName: idp-mgmt-operator-controller-manager
+              terminationGracePeriodSeconds: 10
+      - name: idp-mgmt-operator-webhook-service
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: webhook-service
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: webhook-service
+            spec:
+              containers:
+              - args:
+                - webhook
+                - --secure-port=6443
+                - --tls-cert-file=/serving-cert/tls.crt
+                - --tls-private-key-file=/serving-cert/tls.key
+                - -v 5
+                image: quay.io/identitatem/idp-mgmt-operator:latest
+                imagePullPolicy: Always
+                name: webhook
+                resources: {}
+                volumeMounts:
+                - mountPath: /serving-cert
+                  name: webhook-secret
+                  readOnly: true
+              serviceAccountName: idp-mgmt-operator-webhook-sa
+              terminationGracePeriodSeconds: 10
+              volumes:
+              - name: webhook-secret
+                secret:
+                  secretName: idp-mgmt-webhook
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - idp-mgmt-operator
+  links:
+  - name: IDP Management Operator
+    url: https://github.com/identitatem
+  maintainers:
+  - email: your@email.com
+    name: Maintainer Name
+  maturity: alpha
+  provider:
+    name: Provider Name
+    url: https://your.domain
+  version: 0.0.1
+  webhookdefinitions:
+  - admissionReviewVersions:
+    - v1beta1
+    deploymentName: kubernetes
+    failurePolicy: Fail
+    generateName: admission.identityconfig.identitatem.io
+    rules:
+    - apiGroups:
+      - identityconfig.identitatem.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - authrealms
+    sideEffects: None
+    type: ValidatingAdmissionWebhook
+    webhookPath: /apis/admission.identityconfig.identitatem.io/v1alpha1/authrealms
