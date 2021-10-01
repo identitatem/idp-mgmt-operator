@@ -190,7 +190,8 @@ func (r *ClusterOAuthReconciler) saveManagedClusterViewForOAuthResult(clusterOAu
 			Namespace: clusterOAuth.Namespace,
 		},
 		Data: map[string]string{
-			helpers.ConfigMapOriginalOAuthName(): string(b),
+			"json": string(mcvOAuth.Status.Result.Raw),
+			"yaml": string(b),
 		},
 	}
 
