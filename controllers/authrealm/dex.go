@@ -238,8 +238,33 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 			certSecret); err != nil {
 			return err
 		}
-		dexServer.Spec.Web.TlsCert = string(certSecret.Data["tls.crt"])
-		dexServer.Spec.Web.TlsKey = string(certSecret.Data["tls.key"])
+		//Copy the secret from the authrealm to the dexserver namespace
+		dexServerCertSecret := &corev1.Secret{}
+		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: certSecret.Name, Namespace: dexServer.Namespace},
+			dexServerCertSecret); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+			dexServerCertSecret = &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      certSecret.Name,
+					Namespace: dexServer.Namespace,
+				},
+				Type: corev1.SecretTypeOpaque,
+				Data: certSecret.Data,
+			}
+			if err := r.Client.Create(context.TODO(), dexServerCertSecret); err != nil {
+				return err
+			}
+		} else {
+			dexServerCertSecret.Data = certSecret.Data
+			if err := r.Client.Update(context.TODO(), dexServerCertSecret); err != nil {
+				return err
+			}
+		}
+		dexServer.Spec.IngressCertificateRef = corev1.LocalObjectReference{
+			Name: dexServerCertSecret.Name,
+		}
 	}
 	cs, err := r.createDexConnectors(authRealm, dexServer)
 	if err != nil {

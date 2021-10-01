@@ -40,7 +40,7 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 	status := &admissionv1beta1.AdmissionResponse{}
 
 	// only validate the request for authrealm
-	if admissionSpec.Resource.Group != "admission.identityconfig.identitatem.io" ||
+	if admissionSpec.Resource.Group != "identityconfig.identitatem.io" ||
 		admissionSpec.Resource.Resource != "authrealms" {
 		status.Allowed = true
 		return status

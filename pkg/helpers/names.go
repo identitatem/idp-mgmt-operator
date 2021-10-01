@@ -12,7 +12,10 @@ import (
 )
 
 const (
-	manifestWorkName         string = "idp-oauth"
+	manifestWorkOAuthName    string = "idp-oauth"
+	manifestWorkSecretName   string = "idp-secret"
+	managedClusterViewOAuth  string = "oauth-view"
+	configMapOriginalOAuth   string = "oauth-original"
 	dexServerName            string = "dex-server"
 	dexOperatorNamespace     string = "idp-mgmt-dex"
 	dexServerNamespacePrefix string = "idp-mgmt"
@@ -23,8 +26,20 @@ const (
 	IdentityProviderNameLabel string = "identityprovider.identitatem.io/name"
 )
 
-func ManifestWorkName() string {
-	return manifestWorkName
+func ManifestWorkOAuthName() string {
+	return manifestWorkOAuthName
+}
+
+func ManifestWorkSecretName() string {
+	return manifestWorkSecretName
+}
+
+func ManagedClusterViewOAuthName() string {
+	return managedClusterViewOAuth
+}
+
+func ConfigMapOriginalOAuthName() string {
+	return configMapOriginalOAuth
 }
 
 func DexOperatorNamespace() string {

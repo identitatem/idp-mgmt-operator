@@ -303,8 +303,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			// Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Namespace).To(Equal(dexServerName))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
-			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
-			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
+			Expect(dexServer.Spec.IngressCertificateRef.Name).To(Equal(authRealm.Spec.CertificatesSecretRef.Name))
 			Expect(len(dexServer.Status.RelatedObjects)).To(Equal(1))
 			Expect(dexServer.Status.RelatedObjects[0].Kind).To(Equal("AuthRealm"))
 			//TODO CA missing in Web
@@ -332,8 +331,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientID).To(Equal(MyGithubAppClientID))
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
-			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
-			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
+			Expect(dexServer.Spec.IngressCertificateRef.Name).To(Equal(authRealm.Spec.CertificatesSecretRef.Name))
 		})
 	})
 	It("process an updated AuthRealm CR", func() {
@@ -366,8 +364,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientID).To(Equal(MyGithubAppClientID))
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
-			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.newcrt"))
-			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
+			Expect(dexServer.Spec.IngressCertificateRef.Name).To(Equal(authRealm.Spec.CertificatesSecretRef.Name))
 		})
 	})
 	It("process AuthRealm CR with 2 identityProviders", func() {
