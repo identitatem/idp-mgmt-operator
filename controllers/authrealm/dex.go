@@ -238,7 +238,7 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 			certSecret); err != nil {
 			return err
 		}
-		certSecret.DeepCopy()
+		//Copy the secret from the authrealm to the dexserver namespace
 		dexServerCertSecret := &corev1.Secret{}
 		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: certSecret.Name, Namespace: dexServer.Namespace},
 			dexServerCertSecret); err != nil {
