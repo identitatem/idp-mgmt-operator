@@ -242,6 +242,31 @@ spec:
           - update
           - watch
         serviceAccountName: idp-mgmt-operator-controller-manager
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        - apiGroups:
+          - flowcontrol.apiserver.k8s.io
+          resources:
+          - prioritylevelconfigurations
+          - flowschemas
+          verbs:
+          - get
+          - list
+          - watch
+        serviceAccountName: idp-mgmt-operator-webhook-service
       deployments:
       - name: idp-mgmt-operator-controller-manager
         spec:
@@ -303,7 +328,7 @@ spec:
                 - mountPath: /serving-cert
                   name: webhook-secret
                   readOnly: true
-              serviceAccountName: idp-mgmt-operator-webhook-sa
+              serviceAccountName: idp-mgmt-operator-webhook-service
               terminationGracePeriodSeconds: 10
               volumes:
               - name: webhook-secret
