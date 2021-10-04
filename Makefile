@@ -25,7 +25,7 @@ export VERSION ?= 0.0.1
 
 # Bundle Prereqs
 IMAGE_TAG_BASE ?= quay.io/identitatem/$(PROJECT_NAME)
-BUNDLE_IMG ?= ${IMAGE_TAG_BASE}-bundle:${IMG_TAG}
+BUNDLE_IMG ?= ${IMAGE_TAG_BASE}-bundle:${VERSION}
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
