@@ -24,7 +24,8 @@ import (
 
 	"github.com/go-logr/logr"
 	dexoperatorv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
-	identitatemdexserverv1lapha1 "github.com/identitatem/dex-operator/api/v1alpha1"
+
+	//identitatemdexserverv1lapha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	idpoperatorconfig "github.com/identitatem/idp-client-api/config"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
@@ -310,8 +311,8 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&clusterv1alpha1.PlacementDecision{}).
-		Watches(&source.Kind{Type: &identitatemdexserverv1lapha1.DexClient{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
-			dexClient := o.(*identitatemdexserverv1lapha1.DexClient)
+		Watches(&source.Kind{Type: &dexoperatorv1alpha1.DexClient{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+			dexClient := o.(*dexoperatorv1alpha1.DexClient)
 			req := make([]reconcile.Request, 0)
 			for _, relatedObject := range dexClient.Status.RelatedObjects {
 				if relatedObject.Kind == "PlacementDecision" {
