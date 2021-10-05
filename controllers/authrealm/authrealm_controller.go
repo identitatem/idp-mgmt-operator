@@ -117,6 +117,11 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	//Create Backplane strategy
 	if err := r.createStrategy(identitatemv1alpha1.BackplaneStrategyType, instance); err != nil {
+		r.Log.Info("Update status create strategy failure",
+			"type", identitatemv1alpha1.BackplaneStrategyType,
+			"name", helpers.StrategyName(instance, identitatemv1alpha1.BackplaneStrategyType),
+			"namespace", instance.Namespace,
+			"error", err.Error())
 		cond := metav1.Condition{
 			Type:   identitatemv1alpha1.AuthRealmApplied,
 			Status: metav1.ConditionFalse,
@@ -133,6 +138,9 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
+	r.Log.Info("Update status Authrealm applied Succeeded",
+		"name", instance.Name,
+		"namespace", instance.Namespace)
 	cond := metav1.Condition{
 		Type:    identitatemv1alpha1.AuthRealmApplied,
 		Status:  metav1.ConditionTrue,

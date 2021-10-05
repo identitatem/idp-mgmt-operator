@@ -35,6 +35,10 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 
 	// Create namespace and Install the dex-operator
 	if err := r.installDexOperator(authRealm); err != nil {
+		r.Log.Info("Update status create dexOperator failure",
+			"name", "dex-operator",
+			"namespace", helpers.DexOperatorNamespace(),
+			"error", err.Error())
 		cond := metav1.Condition{
 			Type:    identitatemv1alpha1.AuthRealmApplied,
 			Status:  metav1.ConditionFalse,
@@ -48,6 +52,10 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 	}
 	//Create DexServer CR
 	if err := r.createDexServer(authRealm); err != nil {
+		r.Log.Info("Update status create dexServer CR failure",
+			"name", helpers.DexServerName(),
+			"namespace", helpers.DexServerNamespace(authRealm),
+			"error", err.Error())
 		cond := metav1.Condition{
 			Type:   identitatemv1alpha1.AuthRealmApplied,
 			Status: metav1.ConditionFalse,
@@ -66,7 +74,7 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 }
 
 func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.AuthRealm) error {
-	r.Log.Info("installDexOperator", "Name", authRealm.Name, "Namespace", authRealm.Name)
+	r.Log.Info("installDexOperator", "Name", "dex-operator", "Namespace", helpers.DexOperatorNamespace())
 
 	applierBuilder := &clusteradmapply.ApplierBuilder{}
 	applier := applierBuilder.
