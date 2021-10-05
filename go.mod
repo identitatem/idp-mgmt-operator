@@ -27,6 +27,8 @@ require (
 	sigs.k8s.io/controller-runtime v0.9.6
 )
 
+replace github.com/identitatem/idp-client-api => github.com/itdove/idp-client-api v0.0.0-20211005141937-61a3da19b015
+
 replace (
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20210817132244-67c28690af52
 	k8s.io/api => k8s.io/api v0.22.0

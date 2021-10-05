@@ -35,10 +35,31 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 
 	// Create namespace and Install the dex-operator
 	if err := r.installDexOperator(authRealm); err != nil {
+		cond := metav1.Condition{
+			Type:    identitatemv1alpha1.AuthRealmApplied,
+			Status:  metav1.ConditionFalse,
+			Reason:  "AuthRealmAppliedFailed",
+			Message: fmt.Sprintf("failed to install installDexOperator error: %s", err.Error()),
+		}
+		if err := helpers.UpdateAuthRealmStatusConditions(r.Client, authRealm, cond); err != nil {
+			return err
+		}
 		return err
 	}
 	//Create DexServer CR
 	if err := r.createDexServer(authRealm); err != nil {
+		cond := metav1.Condition{
+			Type:   identitatemv1alpha1.AuthRealmApplied,
+			Status: metav1.ConditionFalse,
+			Reason: "AuthRealmAppliedFailed",
+			Message: fmt.Sprintf("failed to create dexServer name: %s namespace: %s error: %s",
+				helpers.DexServerName(),
+				helpers.DexServerNamespace(authRealm),
+				err.Error()),
+		}
+		if err := helpers.UpdateAuthRealmStatusConditions(r.Client, authRealm, cond); err != nil {
+			return err
+		}
 		return err
 	}
 	return nil
