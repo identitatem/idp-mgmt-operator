@@ -4,19 +4,25 @@ package authrealm
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -38,7 +44,7 @@ type AuthRealmReconciler struct {
 	Scheme             *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,authrealms/status,strategies},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexservers,dexservers/status,dexclients,dexclients/status},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources={namespaces,secrets,serviceaccounts,configmaps},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="apps",resources={deployments},verbs=get;list;watch;create;update;patch;delete
@@ -111,6 +117,37 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	//Create Backplane strategy
 	if err := r.createStrategy(identitatemv1alpha1.BackplaneStrategyType, instance); err != nil {
+		r.Log.Info("Update status create strategy failure",
+			"type", identitatemv1alpha1.BackplaneStrategyType,
+			"name", helpers.StrategyName(instance, identitatemv1alpha1.BackplaneStrategyType),
+			"namespace", instance.Namespace,
+			"error", err.Error())
+		cond := metav1.Condition{
+			Type:   identitatemv1alpha1.AuthRealmApplied,
+			Status: metav1.ConditionFalse,
+			Reason: "AuthRealmAppliedFailed",
+			Message: fmt.Sprintf("failed to create strategy type: %s name: %s namespace: %s error: %s",
+				identitatemv1alpha1.BackplaneStrategyType,
+				helpers.StrategyName(instance, identitatemv1alpha1.BackplaneStrategyType),
+				instance.Namespace,
+				err.Error()),
+		}
+		if err := helpers.UpdateAuthRealmStatusConditions(r.Client, instance, cond); err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, err
+	}
+
+	r.Log.Info("Update status Authrealm applied Succeeded",
+		"name", instance.Name,
+		"namespace", instance.Namespace)
+	cond := metav1.Condition{
+		Type:    identitatemv1alpha1.AuthRealmApplied,
+		Status:  metav1.ConditionTrue,
+		Reason:  "AuthRealmAppliedSucceeded",
+		Message: "AuthRealm successfully applied",
+	}
+	if err := helpers.UpdateAuthRealmStatusConditions(r.Client, instance, cond); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -142,8 +179,23 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := r.installDexOperatorCRDs(); err != nil {
 		return err
 	}
+	authRealmPredicate := predicate.Predicate(predicate.Funcs{
+		GenericFunc: func(e event.GenericEvent) bool { return false },
+		DeleteFunc:  func(e event.DeleteEvent) bool { return false },
+		CreateFunc:  func(e event.CreateEvent) bool { return true },
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			authRealmOld := e.ObjectOld.(*identitatemv1alpha1.AuthRealm)
+			authRealmNew := e.ObjectNew.(*identitatemv1alpha1.AuthRealm)
+			// only handle the Finalizer and Spec changes
+			return !equality.Semantic.DeepEqual(e.ObjectOld.GetFinalizers(), e.ObjectNew.GetFinalizers()) ||
+				!equality.Semantic.DeepEqual(authRealmOld.Spec, authRealmNew.Spec)
+
+		},
+	})
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&identitatemv1alpha1.AuthRealm{}).
+		For(&identitatemv1alpha1.AuthRealm{},
+			builder.WithPredicates(authRealmPredicate),
+		).
 		Owns(&identitatemv1alpha1.Strategy{}).
 		Watches(&source.Kind{Type: &identitatemdexserverv1lapha1.DexServer{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
 			dexServer := o.(*identitatemdexserverv1lapha1.DexServer)
