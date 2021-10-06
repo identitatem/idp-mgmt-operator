@@ -52,7 +52,7 @@ metadata:
   name: ${NAME}-clusterset
   namespace: ${NS}
 ---
-apiVersion: cluster.open-cluster-management.io/v1beta1
+apiVersion: cluster.open-cluster-management.io/v1alpha1
 kind: Placement
 metadata:
   name: ${NAME}-placement
