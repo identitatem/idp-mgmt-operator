@@ -92,7 +92,7 @@ spec:
   placementRef:
     name: ${NAME}-placement
   identityProviders:
-    - name: ${IDP_NAME}
+    - name: "${IDP_NAME}"
       mappingMethod: claim
       type: GitHub
       github:
