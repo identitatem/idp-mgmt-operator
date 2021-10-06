@@ -31,7 +31,7 @@ spec:
         env:
         - name: RELATED_IMAGE_DEX_OPERATOR
           value: "quay.io/identitatem/dex-operator@sha256:32829b387b9a7c490dcf67461b72597c6fa22c23ea5997bc8a53bcd11e6c043f"
-        - name: RELATED_IMAGE_DEX
+        - name: RELATED_IMAGE_DEX_SERVER
           value: quay.io/dexidp/dex:v2.28.1
         image: quay.io/identitatem/idp-mgmt-operator:latest
         name: manager

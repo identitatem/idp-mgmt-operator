@@ -9,7 +9,6 @@ import (
 
 	identitatemdexserverv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	dexoperatorconfig "github.com/identitatem/dex-operator/config"
-	dexoperatorcontrollers "github.com/identitatem/dex-operator/controllers"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/deploy"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
@@ -25,6 +24,7 @@ import (
 
 const (
 	dexOperatorImageEnvName string = "RELATED_IMAGE_DEX_OPERATOR"
+	dexServerImageEnvName   string = "RELATED_IMAGE_DEX_SERVER"
 )
 
 func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthRealm) error {
@@ -88,9 +88,9 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 		return fmt.Errorf("EnvVar %s not provided", dexOperatorImageEnvName)
 	}
 
-	dexServerImage := os.Getenv(dexoperatorcontrollers.DEX_IMAGE_ENV_NAME)
+	dexServerImage := os.Getenv(dexServerImageEnvName)
 	if len(dexServerImage) == 0 {
-		return fmt.Errorf("EnvVar %s not provided", dexoperatorcontrollers.DEX_IMAGE_ENV_NAME)
+		return fmt.Errorf("EnvVar %s not provided", dexServerImageEnvName)
 	}
 
 	//Create the namespace
