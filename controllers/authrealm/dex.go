@@ -9,6 +9,7 @@ import (
 
 	identitatemdexserverv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	dexoperatorconfig "github.com/identitatem/dex-operator/config"
+	dexoperatorcontrollers "github.com/identitatem/dex-operator/controllers"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/deploy"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
@@ -87,12 +88,18 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 		return fmt.Errorf("EnvVar %s not provided", dexOperatorImageEnvName)
 	}
 
+	dexServerImage := os.Getenv(dexoperatorcontrollers.DEX_IMAGE_ENV_NAME)
+	if len(dexServerImage) == 0 {
+		return fmt.Errorf("EnvVar %s not provided", dexoperatorcontrollers.DEX_IMAGE_ENV_NAME)
+	}
+
 	//Create the namespace
 	readerDeploy := deploy.GetScenarioResourcesReader()
 	readerDexOperator := dexoperatorconfig.GetScenarioResourcesReader()
 
 	values := struct {
 		Image              string
+		DexServerImage     string
 		Reader             *clusteradmasset.ScenarioResourcesReader
 		File               string
 		NewName            string
@@ -101,6 +108,7 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 		NewNamespaceLeader string
 	}{
 		Image:              dexOperatorImage,
+		DexServerImage:     dexServerImage,
 		Reader:             readerDexOperator,
 		File:               "rbac/role.yaml",
 		NewName:            "dex-operator-manager-role",
