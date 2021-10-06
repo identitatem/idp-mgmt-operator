@@ -82,7 +82,7 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 	}
 
 	clusterOAuth.Spec.OAuth.Spec.IdentityProviders[0] = openshiftconfigv1.IdentityProvider{
-		Name:          idp.Name,
+		Name:          authRealm.Name,
 		MappingMethod: idp.MappingMethod,
 		IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 			Type: openshiftconfigv1.IdentityProviderTypeOpenID,
