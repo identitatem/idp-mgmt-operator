@@ -149,7 +149,7 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 
 	host = strings.Replace(host, "api", "apps", 1)
 
-	redirectURI := fmt.Sprintf("%s://oauth-openshift.%s/oauth2callback/%s", u.Scheme, host, idp.Name)
+	redirectURI := fmt.Sprintf("%s://oauth-openshift.%s/oauth2callback/%s", u.Scheme, host, authRealm.Name)
 	dexClient.Spec.RedirectURIs = []string{redirectURI}
 	switch dexClientExists {
 	case true:
