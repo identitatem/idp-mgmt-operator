@@ -32,6 +32,8 @@ spec:
         env:
         - name: RELATED_IMAGE_DEX_OPERATOR
           value: "quay.io/identitatem/dex-operator:latest"
+        - name: RELATED_IMAGE_DEX_SERVER
+          value: quay.io/dexidp/dex:v2.28.1
         image: controller:latest
         name: manager
         imagePullPolicy: IfNotPresent
