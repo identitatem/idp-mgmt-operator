@@ -155,6 +155,23 @@ rm -rf $$TMP_DIR ;\
 }
 endef
 
+CURL := $(shell which curl 2> /dev/null)
+YQ_VERSION ?= v4.5.1
+OS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(shell uname -m | sed 's/x86_64/amd64/g')
+YQ_URL ?= https://github.com/mikefarah/yq/releases/download/$(YQ_VERSION)/yq_$(OS)_$(ARCH)
+YQ ?= ${PWD}/yq
+
+.PHONY: yq/install
+## Install yq
+yq/install: %install:
+	@[ -x $(YQ) ] || ( \
+		echo "Installing YQ $(YQ_VERSION) ($(YQ_PLATFORM)_$(YQ_ARCH)) from $(YQ_URL)" && \
+		curl '-#' -fL -o $(YQ) $(YQ_URL) && \
+		chmod +x $(YQ) \
+		)
+	$(YQ) --version
+
 kubebuilder-tools:
 ifeq (, $(shell which kubebuilder))
 	@( \
@@ -167,11 +184,12 @@ ifeq (, $(shell which kubebuilder))
 endif
 
 .PHONY: bundle
-bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
+bundle: manifests kustomize yq/install ## Generate bundle manifests and metadata, then validate generated files.
 	operator-sdk generate kustomize manifests --interactive=false -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION)
-	operator-sdk bundle validate ./bundle
+	@WEBHOOK_DEPLOYMENT_NAME=`${YQ} e '.spec.template.spec.serviceAccountName' config/webhook/webhook.yaml` \
+		${YQ} e '.spec.webhookdefinitions[0].deploymentName = env(WEBHOOK_DEPLOYMENT_NAME)' -i bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
 
 .PHONY: bundle-build
 bundle-build: ## Build the bundle image.
