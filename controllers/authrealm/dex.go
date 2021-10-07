@@ -24,6 +24,7 @@ import (
 
 const (
 	dexOperatorImageEnvName string = "RELATED_IMAGE_DEX_OPERATOR"
+	dexServerImageEnvName   string = "RELATED_IMAGE_DEX_SERVER"
 )
 
 func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthRealm) error {
@@ -87,12 +88,18 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 		return fmt.Errorf("EnvVar %s not provided", dexOperatorImageEnvName)
 	}
 
+	dexServerImage := os.Getenv(dexServerImageEnvName)
+	if len(dexServerImage) == 0 {
+		return fmt.Errorf("EnvVar %s not provided", dexServerImageEnvName)
+	}
+
 	//Create the namespace
 	readerDeploy := deploy.GetScenarioResourcesReader()
 	readerDexOperator := dexoperatorconfig.GetScenarioResourcesReader()
 
 	values := struct {
 		Image              string
+		DexServerImage     string
 		Reader             *clusteradmasset.ScenarioResourcesReader
 		File               string
 		NewName            string
@@ -101,6 +108,7 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 		NewNamespaceLeader string
 	}{
 		Image:              dexOperatorImage,
+		DexServerImage:     dexServerImage,
 		Reader:             readerDexOperator,
 		File:               "rbac/role.yaml",
 		NewName:            "dex-operator-manager-role",

@@ -68,6 +68,8 @@ var _ = BeforeSuite(func(done Done) {
 	By("bootstrapping test environment")
 	err := os.Setenv(dexOperatorImageEnvName, "dex_operator_inage")
 	Expect(err).NotTo(HaveOccurred())
+	err = os.Setenv(dexServerImageEnvName, "dex_server_inage")
+	Expect(err).NotTo(HaveOccurred())
 	err = identitatemv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 	err = identitatemv1alpha1.AddToScheme(scheme.Scheme)
