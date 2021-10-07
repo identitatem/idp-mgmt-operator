@@ -41,6 +41,10 @@ export GO111MODULE=on
 # Catalog Deploy Namespace
 CATALOG_DEPLOY_NAMESPACE ?= idp-mgmt-config
 
+# Global things
+OS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(shell uname -m | sed 's/x86_64/amd64/g')
+
 
 
 #### UTILITIES #####
@@ -89,8 +93,6 @@ kustomize: ## Download kustomize locally if necessary.
 
 CURL := $(shell which curl 2> /dev/null)
 YQ_VERSION ?= v4.5.1
-OS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
-ARCH=$(shell uname -m | sed 's/x86_64/amd64/g')
 YQ_URL ?= https://github.com/mikefarah/yq/releases/download/$(YQ_VERSION)/yq_$(OS)_$(ARCH)
 YQ ?= ${PWD}/yq
 .PHONY: yq/install
@@ -102,6 +104,15 @@ yq/install: %install:
 		chmod +x $(YQ) \
 		)
 	$(YQ) --version
+
+
+OPERATOR_SDK ?= ${PWD}/operator-sdk
+.PHONY: operatorsdk
+## Install operator-sdk to ${OPERATOR_SDK} (defaults to the current directory)
+operatorsdk:
+	@curl '-#' -fL -o ${OPERATOR_SDK} https://github.com/operator-framework/operator-sdk/releases/download/v1.13.0/operator-sdk_${OS}_${ARCH} && \
+		chmod +x ${OPERATOR_SDK}
+
 
 
 .PHONY: kubebuilder-tools
@@ -188,7 +199,7 @@ publish: bundle bundle-build bundle-push catalog-build catalog-push
 
 .PHONY: bundle
 ## Generate bundle manifests and metadata, patch the webhook deployment name, then validate generated files [NOTE: validate bundle is skipped for now].
-bundle: manifests kustomize yq/install
+bundle: manifests kustomize yq/install operatorsdk
 	operator-sdk generate kustomize manifests --interactive=false -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION)
