@@ -35,7 +35,7 @@ fi
 
 GITHUB_APP_CLIENT_SECRET_B64=`echo -n "$GITHUB_APP_CLIENT_SECRET" | $BASE64`
 
-printf "\n${BLUE}Generating YAML...${CLEAR}\n\n"
+printf "\n${BLUE}Generating YAML...${CLEAR}\n"
 
 cat > ${THE_FILENAME} <<EOF
 ---
@@ -106,13 +106,14 @@ EOF
 printf "\n${BLUE}Before using the generated YAML:${CLEAR}\n\n"
 
 printf "${BLUE}1) Ensure there is an entry in GitHub under Settings > Developer Settings > OAuth Apps${CLEAR}\n"
-printf "${BLUE}for Client ID ${GREEN}${GITHUB_APP_CLIENT_ID}${BLUE} contains:${CLEAR}\n"
+printf "${BLUE}for Client ID ${GREEN}${GITHUB_APP_CLIENT_ID}${BLUE} which contains:${CLEAR}\n"
 printf "    - ${GREEN}Homepage URL:${YELLOW} https://console-openshift-console.${APPS}${CLEAR}\n"
 printf "    - ${GREEN}Authorization callback URL:${YELLOW} https://${ROUTE_SUBDOMAIN}.${APPS}/callback${CLEAR}\n"
 printf "${BLUE}prior to running the ${GREEN}oc apply${BLUE} command shown below.\n\n${CLEAR}"
 
 printf "${BLUE}2) Add the following labels to any managed cluster you want in the cluster set ${GREEN}${NAME}-clusterset${BLUE}:${CLEAR}\n"
 printf "    ${GREEN}authdeployment=east${CLEAR}\n"
-printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${NAME}-clusterset${CLEAR}\n\n"
+printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${NAME}-clusterset${CLEAR}\n"
+printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}<managed cluster name> <label>${BLUE}\"${CLEAR}\n\n"
 
-printf "\n${BLUE}File${GREEN} ${THE_FILENAME}${BLUE} is generated.  Apply using \"${GREEN}oc apply -f ${THE_FILENAME}${BLUE}\"${CLEAR}\n\n"
+printf "${BLUE}YAML File${GREEN} ${THE_FILENAME}${BLUE} is generated.  Apply using \"${GREEN}oc apply -f ${THE_FILENAME}${BLUE}\"${CLEAR}\n\n"
