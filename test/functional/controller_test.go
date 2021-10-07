@@ -8,23 +8,43 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ghodss/yaml"
 	dexv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	viewv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/view/v1beta1"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 	"k8s.io/kubectl/pkg/scheme"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	manifestworkv1 "open-cluster-management.io/api/work/v1"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+const (
+	OAUTH string = `apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/create-only: "true"
+  creationTimestamp: "2021-09-30T15:39:20Z"
+  name: cluster
+  uid: 7417f691-dff7-4869-9813-d492e9b7cec9
+spec: {}`
 )
 
 func init() {
@@ -450,15 +470,45 @@ var _ = Describe("Strategy", func() {
 				return nil
 			}, 30, 1).Should(BeNil())
 		})
-		By(fmt.Sprintf("Checking Manifestwork %s", helpers.ManifestWorkName()), func() {
+		By(fmt.Sprintf("Checking ManagedClusterView %s", helpers.ManagedClusterViewOAuthName()), func() {
 			Eventually(func() error {
-				mw := &manifestworkv1.ManifestWork{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, mw)
+				mcv := &viewv1beta1.ManagedClusterView{}
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ManagedClusterViewOAuthName(), Namespace: ClusterName}, mcv)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err
 					}
-					logf.Log.Info("Manifestwork", "Name", helpers.ManifestWorkName(), "Namespace", ClusterName)
+					logf.Log.Info("ManagedClusterView", "Name", helpers.ManagedClusterViewOAuthName(), "Namespace", ClusterName)
+					return err
+				}
+				return nil
+			}, 30, 1).Should(BeNil())
+		})
+		By(fmt.Sprintf("Update status ManagedClusterView %s", helpers.ManagedClusterViewOAuthName()), func() {
+			gvr := schema.GroupVersionResource{Group: "view.open-cluster-management.io", Version: "v1beta1", Resource: "managedclusterviews"}
+			u, err := dynamicClient.Resource(gvr).Namespace(ClusterName).Get(context.TODO(), helpers.ManagedClusterViewOAuthName(), metav1.GetOptions{})
+			Expect(err).To(BeNil())
+			mcv := &viewv1beta1.ManagedClusterView{}
+			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), mcv)
+			Expect(err).To(BeNil())
+			b, err := yaml.YAMLToJSON([]byte(OAUTH))
+			Expect(err).To(BeNil())
+			mcv.Status.Result.Raw = b
+			uc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mcv)
+			Expect(err).To(BeNil())
+			u.SetUnstructuredContent(uc)
+			_, err = dynamicClient.Resource(gvr).Namespace(ClusterName).UpdateStatus(context.TODO(), u, metav1.UpdateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By(fmt.Sprintf("Checking Manifestwork %s", helpers.ManifestWorkOAuthName()), func() {
+			Eventually(func() error {
+				mw := &manifestworkv1.ManifestWork{}
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkOAuthName(), Namespace: ClusterName}, mw)
+				if err != nil {
+					if !errors.IsNotFound(err) {
+						return err
+					}
+					logf.Log.Info("Manifestwork", "Name", helpers.ManifestWorkOAuthName(), "Namespace", ClusterName)
 					return err
 				}
 				return nil
@@ -508,11 +558,11 @@ var _ = Describe("Strategy", func() {
 				return fmt.Errorf("clusteroauth %s still exist", MyIDPName)
 			}, 30, 1).Should(BeNil())
 		})
-		By(fmt.Sprintf("Checking manifestwork deletion %s", helpers.ManifestWorkName()), func() {
+		By(fmt.Sprintf("Checking manifestwork deletion %s", helpers.ManifestWorkOAuthName()), func() {
 			Eventually(func() error {
 				//TODO read manifest work and not clusterOauth
 				clientSecret := &identitatemv1alpha1.ClusterOAuth{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, clientSecret)
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkOAuthName(), Namespace: ClusterName}, clientSecret)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err

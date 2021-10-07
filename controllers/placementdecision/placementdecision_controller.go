@@ -130,7 +130,10 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	//Search the placement corresponding to the placementDecision
-	r.Log.Info("search Placement", " Namespace:", instance.GetNamespace(), "Finalizer:", helpers.PlacementDecisionFinalizer, "Name: ", instance.GetLabels()[clusterv1alpha1.PlacementLabel])
+	r.Log.Info("search Placement",
+		"finalizer", helpers.PlacementDecisionFinalizer,
+		"namespace", instance.GetNamespace(),
+		"name", instance.GetLabels()[clusterv1alpha1.PlacementLabel])
 	placement := &clusterv1alpha1.Placement{}
 	err = r.Get(context.TODO(),
 		client.ObjectKey{
@@ -142,13 +145,19 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	//Add finalizer to the placement, it will be removed once the ns is deleted
-	r.Log.Info("add PlacementDecision finalizer on placement", " Namespace:", placement.GetNamespace(), "Name: ", placement.GetName(), "Finalizer:", helpers.PlacementDecisionBackplaneFinalizer)
+	r.Log.Info("add PlacementDecision finalizer on placement",
+		"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
+		"namespace", placement.GetNamespace(),
+		"name", placement.GetName())
 	if err := r.AddPlacementDecisionFinalizer(strategy, placement); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	//Add finalizer to the strategy, it will be removed once the ns is deleted
-	r.Log.Info("add PlacementDecision finalizer on strategy", " Namespace:", strategy.GetNamespace(), "Name: ", strategy.GetName(), "Finalizer:", helpers.PlacementDecisionBackplaneFinalizer)
+	r.Log.Info("add PlacementDecision finalizer on strategy",
+		"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
+		"namespace", strategy.GetNamespace(),
+		"name", strategy.GetName())
 	if err := r.AddPlacementDecisionFinalizer(strategy, strategy); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -159,7 +168,10 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	//Add finalizer to the authrealm, it will be removed once the ns is deleted
-	r.Log.Info("add PlacementDecision finalizer on authrealm", " Namespace:", authRealm.GetNamespace(), "Name: ", authRealm.GetName(), "Finalizer:", helpers.PlacementDecisionBackplaneFinalizer)
+	r.Log.Info("add PlacementDecision finalizer on authrealm",
+		"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
+		"namespace", authRealm.GetNamespace(),
+		"name", authRealm.GetName())
 	if err := r.AddPlacementDecisionFinalizer(strategy, authRealm); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -211,7 +223,9 @@ func (r *PlacementDecisionReconciler) isLinkedToStrategy(placementDecision *clus
 }
 
 func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) error {
-	r.Log.Info("start deletion of PlacementDecision", "name", placementDecision.Name, "namespace", placementDecision.Namespace)
+	r.Log.Info("start deletion of PlacementDecision",
+		"namespace", placementDecision.Namespace,
+		"name", placementDecision.Name)
 	ok, err := r.isLinkedToStrategy(placementDecision)
 	if !ok {
 		return nil
@@ -258,13 +272,13 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 		}
 
 		//All resources are cleaned, finalizers on authrealm and strategy can be removed
-		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, strategy, placement); err != nil {
+		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, placement); err != nil {
 			return err
 		}
-		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, strategy, strategy); err != nil {
+		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, strategy); err != nil {
 			return err
 		}
-		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, strategy, authRealm); err != nil {
+		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, authRealm); err != nil {
 			return err
 		}
 	}

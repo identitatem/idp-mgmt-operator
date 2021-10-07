@@ -24,6 +24,7 @@ import (
 
 const (
 	dexOperatorImageEnvName string = "RELATED_IMAGE_DEX_OPERATOR"
+	dexServerImageEnvName   string = "RELATED_IMAGE_DEX_SERVER"
 )
 
 func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthRealm) error {
@@ -35,17 +36,46 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 
 	// Create namespace and Install the dex-operator
 	if err := r.installDexOperator(authRealm); err != nil {
+		r.Log.Info("Update status create dexOperator failure",
+			"name", "dex-operator",
+			"namespace", helpers.DexOperatorNamespace(),
+			"error", err.Error())
+		cond := metav1.Condition{
+			Type:    identitatemv1alpha1.AuthRealmApplied,
+			Status:  metav1.ConditionFalse,
+			Reason:  "AuthRealmAppliedFailed",
+			Message: fmt.Sprintf("failed to install installDexOperator error: %s", err.Error()),
+		}
+		if err := helpers.UpdateAuthRealmStatusConditions(r.Client, authRealm, cond); err != nil {
+			return err
+		}
 		return err
 	}
 	//Create DexServer CR
 	if err := r.createDexServer(authRealm); err != nil {
+		r.Log.Info("Update status create dexServer CR failure",
+			"name", helpers.DexServerName(),
+			"namespace", helpers.DexServerNamespace(authRealm),
+			"error", err.Error())
+		cond := metav1.Condition{
+			Type:   identitatemv1alpha1.AuthRealmApplied,
+			Status: metav1.ConditionFalse,
+			Reason: "AuthRealmAppliedFailed",
+			Message: fmt.Sprintf("failed to create dexServer name: %s namespace: %s error: %s",
+				helpers.DexServerName(),
+				helpers.DexServerNamespace(authRealm),
+				err.Error()),
+		}
+		if err := helpers.UpdateAuthRealmStatusConditions(r.Client, authRealm, cond); err != nil {
+			return err
+		}
 		return err
 	}
 	return nil
 }
 
 func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.AuthRealm) error {
-	r.Log.Info("installDexOperator", "Name", authRealm.Name, "Namespace", authRealm.Name)
+	r.Log.Info("installDexOperator", "Name", "dex-operator", "Namespace", helpers.DexOperatorNamespace())
 
 	applierBuilder := &clusteradmapply.ApplierBuilder{}
 	applier := applierBuilder.
@@ -58,12 +88,18 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 		return fmt.Errorf("EnvVar %s not provided", dexOperatorImageEnvName)
 	}
 
+	dexServerImage := os.Getenv(dexServerImageEnvName)
+	if len(dexServerImage) == 0 {
+		return fmt.Errorf("EnvVar %s not provided", dexServerImageEnvName)
+	}
+
 	//Create the namespace
 	readerDeploy := deploy.GetScenarioResourcesReader()
 	readerDexOperator := dexoperatorconfig.GetScenarioResourcesReader()
 
 	values := struct {
 		Image              string
+		DexServerImage     string
 		Reader             *clusteradmasset.ScenarioResourcesReader
 		File               string
 		NewName            string
@@ -72,6 +108,7 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 		NewNamespaceLeader string
 	}{
 		Image:              dexOperatorImage,
+		DexServerImage:     dexServerImage,
 		Reader:             readerDexOperator,
 		File:               "rbac/role.yaml",
 		NewName:            "dex-operator-manager-role",
@@ -238,8 +275,33 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 			certSecret); err != nil {
 			return err
 		}
-		dexServer.Spec.Web.TlsCert = string(certSecret.Data["tls.crt"])
-		dexServer.Spec.Web.TlsKey = string(certSecret.Data["tls.key"])
+		//Copy the secret from the authrealm to the dexserver namespace
+		dexServerCertSecret := &corev1.Secret{}
+		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: certSecret.Name, Namespace: dexServer.Namespace},
+			dexServerCertSecret); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+			dexServerCertSecret = &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      certSecret.Name,
+					Namespace: dexServer.Namespace,
+				},
+				Type: corev1.SecretTypeOpaque,
+				Data: certSecret.Data,
+			}
+			if err := r.Client.Create(context.TODO(), dexServerCertSecret); err != nil {
+				return err
+			}
+		} else {
+			dexServerCertSecret.Data = certSecret.Data
+			if err := r.Client.Update(context.TODO(), dexServerCertSecret); err != nil {
+				return err
+			}
+		}
+		dexServer.Spec.IngressCertificateRef = corev1.LocalObjectReference{
+			Name: dexServerCertSecret.Name,
+		}
 	}
 	cs, err := r.createDexConnectors(authRealm, dexServer)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -20,9 +21,14 @@ const (
 	PlacementDecisionBackplaneFinalizer string = "placelementdecision.identitatem.io/cleanup-backplane"
 )
 
-func RemovePlacementDecisionFinalizer(c client.Client, strategy *identitatemv1alpha1.Strategy, obj client.Object) error {
+func RemovePlacementDecisionFinalizer(c client.Client, log logr.Logger, strategy *identitatemv1alpha1.Strategy, obj client.Object) error {
 	switch strategy.Spec.Type {
 	case identitatemv1alpha1.BackplaneStrategyType:
+		log.Info("Remove finalizer from",
+			"finalizer", PlacementDecisionBackplaneFinalizer,
+			"kind", obj.GetObjectKind(),
+			"namespace", obj.GetNamespace(),
+			"name", obj.GetName())
 		controllerutil.RemoveFinalizer(obj, PlacementDecisionBackplaneFinalizer)
 		// case identitatemv1alpha1.GrcStrategyType:
 		// controllerutil.RemoveFinalizer(obj, placementDecisionGRCFinalizer)

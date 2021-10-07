@@ -20,6 +20,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -66,6 +67,8 @@ var _ = BeforeSuite(func(done Done) {
 
 	By("bootstrapping test environment")
 	err := os.Setenv(dexOperatorImageEnvName, "dex_operator_inage")
+	Expect(err).NotTo(HaveOccurred())
+	err = os.Setenv(dexServerImageEnvName, "dex_server_inage")
 	Expect(err).NotTo(HaveOccurred())
 	err = identitatemv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
@@ -273,8 +276,11 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(err).Should(BeNil())
 		})
 		By("Checking AuthRealm", func() {
-			_, err := clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
+			authRealm, err := clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
 			Expect(err).Should(BeNil())
+			status := meta.FindStatusCondition(authRealm.Status.Conditions, identitatemv1alpha1.AuthRealmApplied)
+			Expect(status).NotTo(BeNil())
+			Expect(meta.IsStatusConditionTrue(authRealm.Status.Conditions, identitatemv1alpha1.AuthRealmApplied)).To(BeTrue())
 		})
 		By("Checking Backplane Strategy", func() {
 			_, err := clientSetStrategy.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName+"-backplane", metav1.GetOptions{})
@@ -303,8 +309,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			// Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Namespace).To(Equal(dexServerName))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
-			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
-			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
+			Expect(dexServer.Spec.IngressCertificateRef.Name).To(Equal(authRealm.Spec.CertificatesSecretRef.Name))
 			Expect(len(dexServer.Status.RelatedObjects)).To(Equal(1))
 			Expect(dexServer.Status.RelatedObjects[0].Kind).To(Equal("AuthRealm"))
 			//TODO CA missing in Web
@@ -332,8 +337,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientID).To(Equal(MyGithubAppClientID))
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
-			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.mycrt"))
-			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
+			Expect(dexServer.Spec.IngressCertificateRef.Name).To(Equal(authRealm.Spec.CertificatesSecretRef.Name))
 		})
 	})
 	It("process an updated AuthRealm CR", func() {
@@ -366,8 +370,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientID).To(Equal(MyGithubAppClientID))
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
-			Expect(dexServer.Spec.Web.TlsCert).To(Equal("tls.newcrt"))
-			Expect(dexServer.Spec.Web.TlsKey).To(Equal("tls.mykey"))
+			Expect(dexServer.Spec.IngressCertificateRef.Name).To(Equal(authRealm.Spec.CertificatesSecretRef.Name))
 		})
 	})
 	It("process AuthRealm CR with 2 identityProviders", func() {

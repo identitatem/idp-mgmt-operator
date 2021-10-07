@@ -4,6 +4,7 @@ package clusteroauth
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -16,7 +17,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -30,6 +34,7 @@ import (
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	idpconfig "github.com/identitatem/idp-client-api/config"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
+	viewv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/view/v1beta1"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	clientsetcluster "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	clientsetwork "open-cluster-management.io/api/client/work/clientset/versioned"
@@ -95,6 +100,9 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = openshiftconfigv1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = viewv1beta1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	cfg, err = testEnv.Start()
@@ -225,9 +233,72 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		By("Calling reconcile", func() {
 			r := &ClusterOAuthReconciler{
-				Client: k8sClient,
-				Log:    logf.Log,
-				Scheme: scheme.Scheme,
+				Client:        k8sClient,
+				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
+				DynamicClient: dynamic.NewForConfigOrDie(cfg),
+				Log:           logf.Log,
+				Scheme:        scheme.Scheme,
+			}
+			req := ctrl.Request{}
+			req.Name = ClusterOAuthName1
+			req.Namespace = ClusterName
+
+			_, err := r.Reconcile(context.TODO(), req)
+			//Not nil because need to save OAuth
+			Expect(err).ToNot(BeNil())
+		})
+
+		mcv := &viewv1beta1.ManagedClusterView{}
+		By("Checking managedclusterview", func() {
+			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManagedClusterViewOAuthName(), Namespace: ClusterName}, mcv)
+			Expect(err).To(BeNil())
+		})
+
+		By("Calling reconcile after managedclusterview generated", func() {
+			r := &ClusterOAuthReconciler{
+				Client:        k8sClient,
+				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
+				DynamicClient: dynamic.NewForConfigOrDie(cfg),
+				Log:           logf.Log,
+				Scheme:        scheme.Scheme,
+			}
+			req := ctrl.Request{}
+			req.Name = ClusterOAuthName1
+			req.Namespace = ClusterName
+			_, err := r.Reconcile(context.TODO(), req)
+			//Not nil because waiting for the managedclusterview status.result
+			Expect(err).ToNot(BeNil())
+		})
+
+		By("Adding a result in the managedclusterview", func() {
+			OAuth := openshiftconfigv1.OAuth{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "config.openshift.io/v1",
+					Kind:       "OAuth",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "cluster",
+					Namespace: ClusterName,
+				},
+			}
+			data, err := json.Marshal(OAuth)
+			Expect(err).To(BeNil())
+			mcv.Status = viewv1beta1.ViewStatus{
+				Result: runtime.RawExtension{
+					Raw: data,
+				},
+			}
+			err = k8sClient.Status().Update(context.TODO(), mcv)
+			Expect(err).To(BeNil())
+		})
+
+		By("Calling reconcile after status added", func() {
+			r := &ClusterOAuthReconciler{
+				Client:        k8sClient,
+				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
+				DynamicClient: dynamic.NewForConfigOrDie(cfg),
+				Log:           logf.Log,
+				Scheme:        scheme.Scheme,
 			}
 			req := ctrl.Request{}
 			req.Name = ClusterOAuthName1
@@ -238,20 +309,18 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		By("Checking manifestwork", func() {
 			mw := &workv1.ManifestWork{}
-			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, mw)
-			//var mw *workv1.ManifestWork
-			//mw, err := clientSetWork.WorkV1().ManifestWorks(ClusterName).Get(context.TODO(), "idp-backplane", metav1.GetOptions{})
+			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManifestWorkOAuthName(), Namespace: ClusterName}, mw)
 			Expect(err).To(BeNil())
-			// should find manifest for OAuth and manifest for Secret
 			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(3))
-			//manifest := mw.Spec.Workload.Manifests[0]
 		})
 
 		By("Calling reconcile 2nd time", func() {
 			r := &ClusterOAuthReconciler{
-				Client: k8sClient,
-				Log:    logf.Log,
-				Scheme: scheme.Scheme,
+				Client:        k8sClient,
+				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
+				DynamicClient: dynamic.NewForConfigOrDie(cfg),
+				Log:           logf.Log,
+				Scheme:        scheme.Scheme,
 			}
 			req := ctrl.Request{}
 			req.Name = ClusterOAuthName1
@@ -350,9 +419,11 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		By("Calling reconcile", func() {
 			r := &ClusterOAuthReconciler{
-				Client: k8sClient,
-				Log:    logf.Log,
-				Scheme: scheme.Scheme,
+				Client:        k8sClient,
+				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
+				DynamicClient: dynamic.NewForConfigOrDie(cfg),
+				Log:           logf.Log,
+				Scheme:        scheme.Scheme,
 			}
 			req := ctrl.Request{}
 			req.Name = ClusterOAuthName2
@@ -363,7 +434,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		By("Checking manifestwork", func() {
 			mw := &workv1.ManifestWork{}
-			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManifestWorkName(), Namespace: ClusterName}, mw)
+			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManifestWorkOAuthName(), Namespace: ClusterName}, mw)
 			//var mw *workv1.ManifestWork
 			//mw, err := clientSetWork.WorkV1().ManifestWorks(ClusterName).Get(context.TODO(), "idp-backplane", metav1.GetOptions{})
 			Expect(err).To(BeNil())
@@ -371,7 +442,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 			// should find manifest for OAuth 1 and manifest for Secret 1
 			// AND
 			// should find manifest for OAuth 2 and manifest for Secret 2 and Secret 3 and an aggregated role
-			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(6))
+			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(5))
 		})
 
 	})

@@ -6,17 +6,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	//"fmt"
-	"reflect"
 
 	//"github.com/prometheus/common/log"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
@@ -28,17 +26,17 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/go-logr/logr"
-	"github.com/identitatem/idp-client-api/api/client/clientset/versioned/scheme"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
+	"github.com/identitatem/idp-mgmt-operator/resources"
 
-	// identitatemdexserverv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemdexv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 
-	//ocm "github.com/open-cluster-management-io/api/cluster/v1alpha1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	manifestworkv1 "open-cluster-management.io/api/work/v1"
+
+	viewv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/view/v1beta1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -50,6 +48,8 @@ import (
 
 	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 )
+
+const posthookAnnotation string = "managedcluster-import-controller.open-cluster-management.io/posthook-graceperiod"
 
 // ClusterOAuthReconciler reconciles a Strategy object
 type ClusterOAuthReconciler struct {
@@ -64,9 +64,10 @@ type ClusterOAuthReconciler struct {
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies,clusteroauths},verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources=strategies/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources=strategies/finalizers,verbs=update
-// +kubebuilder:rbac:groups="apiextensions.k8s.io",resources={customresourcedefinitions},verbs=get;list;create;update;patch;delete
+//+kubebuilder:rbac:groups="apiextensions.k8s.io",resources={customresourcedefinitions},verbs=get;list;create;update;patch;delete
 
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={placements,placementdecisions},verbs=get;list;watch;create;update;patch;delete;watch
+//+kubebuilder:rbac:groups=view.open-cluster-management.io,resources={managedclusterviews},verbs=get;list;watch;create;update;patch;delete;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -111,8 +112,8 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	//case identitatemv1alpha1.BackplaneStrategyType:
 
 	if instance.DeletionTimestamp != nil {
-		if err := r.deleteManifestWork(instance); err != nil {
-			return reconcile.Result{}, err
+		if result, err := r.unmanagedCluster(instance); err != nil {
+			return result, err
 		}
 		r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", helpers.ClusterOAuthFinalizer)
 		controllerutil.RemoveFinalizer(instance, helpers.ClusterOAuthFinalizer)
@@ -122,12 +123,99 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return reconcile.Result{}, nil
 	}
 
-	// Create empty manifest work
-	r.Log.Info("prepare manifestwork", "name", helpers.ManifestWorkName(), "namespace", instance.GetNamespace())
-	manifestWork := &manifestworkv1.ManifestWork{
+	r.Log.Info("generateManagedClusterViewForOAuth for", "name", instance.Name, "namespace", instance.Namespace)
+	if result, err := r.generateManagedClusterViewForOAuth(instance); err != nil {
+		return result, err
+	}
+
+	r.Log.Info("generateManifestWork for", "name", instance.Name, "namespace", instance.Namespace)
+	if err := r.generateManifestWork(instance); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *ClusterOAuthReconciler) generateManagedClusterViewForOAuth(clusterOAuth *identitatemv1alpha1.ClusterOAuth) (result ctrl.Result, err error) {
+	cm := &corev1.ConfigMap{}
+
+	//If already exist, do nothing
+	r.Log.Info("check if configMap already exists", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", clusterOAuth.Namespace)
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: clusterOAuth.Namespace}, cm); err == nil {
+		return ctrl.Result{}, nil
+	}
+
+	r.Log.Info("create managedclusterview", "name", helpers.ManagedClusterViewOAuthName(), "namespace", clusterOAuth.Namespace)
+	applierBuilder := &clusteradmapply.ApplierBuilder{}
+	applier := applierBuilder.WithClient(r.KubeClient, r.APIExtensionClient, r.DynamicClient).Build()
+
+	readerResources := resources.GetScenarioResourcesReader()
+
+	file := "managedclusterview/managed-cluster-view-oauth.yaml"
+
+	values := struct {
+		Name      string
+		Namespace string
+	}{
+		Name:      helpers.ManagedClusterViewOAuthName(),
+		Namespace: clusterOAuth.Namespace,
+	}
+	if _, err := applier.ApplyCustomResources(readerResources, values, false, "", file); err != nil {
+		return ctrl.Result{}, err
+	}
+	r.Log.Info("saveManagedClusterViewForOAuthResult for", "name", clusterOAuth.Name, "namespace", clusterOAuth.Namespace)
+	return r.saveManagedClusterViewForOAuthResult(clusterOAuth)
+}
+
+func (r *ClusterOAuthReconciler) saveManagedClusterViewForOAuthResult(clusterOAuth *identitatemv1alpha1.ClusterOAuth) (result ctrl.Result, err error) {
+	mcvOAuth := &viewv1beta1.ManagedClusterView{}
+	r.Log.Info("check if managedclusterview exists", "name", helpers.ManagedClusterViewOAuthName(), "namespace", clusterOAuth.Namespace)
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ManagedClusterViewOAuthName(), Namespace: clusterOAuth.Namespace}, mcvOAuth); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	r.Log.Info("check if managedclusterview has results", "name", helpers.ManagedClusterViewOAuthName(), "namespace", clusterOAuth.Namespace)
+	if len(mcvOAuth.Status.Result.Raw) == 0 {
+		return ctrl.Result{RequeueAfter: 10 * time.Second}, fmt.Errorf("waiting for cluster %s oauth", clusterOAuth.Namespace)
+	}
+
+	r.Log.Info("create configmap containing the OAuth", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", clusterOAuth.Namespace)
+	b, err := yaml.JSONToYAML(mcvOAuth.Status.Result.Raw)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      helpers.ManifestWorkName(),
-			Namespace: instance.GetNamespace(),
+			Name:      helpers.ConfigMapOriginalOAuthName(),
+			Namespace: clusterOAuth.Namespace,
+		},
+		Data: map[string]string{
+			"json": string(mcvOAuth.Status.Result.Raw),
+			"yaml": string(b),
+		},
+	}
+
+	if err := r.Client.Create(context.TODO(), cm); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	r.Log.Info("delete managedclusterview", "name", helpers.ManagedClusterViewOAuthName(), "namespace", clusterOAuth.Namespace)
+	if err := r.Client.Delete(context.TODO(), mcvOAuth); err != nil && !errors.IsNotFound(err) {
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *ClusterOAuthReconciler) generateManifestWork(clusterOAuth *identitatemv1alpha1.ClusterOAuth) (err error) {
+	// Create empty manifest work
+	r.Log.Info("prepare manifestwork", "name", helpers.ManifestWorkOAuthName(), "namespace", clusterOAuth.GetNamespace())
+	manifestWorkOAuth := &manifestworkv1.ManifestWork{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      helpers.ManifestWorkOAuthName(),
+			Namespace: clusterOAuth.GetNamespace(),
+			Annotations: map[string]string{
+				posthookAnnotation: "60",
+			},
 		},
 		Spec: manifestworkv1.ManifestWorkSpec{
 			Workload: manifestworkv1.ManifestsTemplate{
@@ -135,24 +223,23 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			},
 		},
 	}
-
 	//Add Aggregated role
 	r.Log.Info("add aggregated role")
 	aggregatedRoleYaml, err := idpmgmtconfig.GetScenarioResourcesReader().Asset("rbac/role-aggregated-clusterrole.yaml")
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
 	aggregatedRoleJson, err := yaml.YAMLToJSON(aggregatedRoleYaml)
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
 	manifestAggregated := manifestworkv1.Manifest{
 		RawExtension: runtime.RawExtension{Raw: aggregatedRoleJson},
 	}
 
-	manifestWork.Spec.Workload.Manifests = append(manifestWork.Spec.Workload.Manifests, manifestAggregated)
+	manifestWorkOAuth.Spec.Workload.Manifests = append(manifestWorkOAuth.Spec.Workload.Manifests, manifestAggregated)
 
 	// Get a list of all clusterOAuth
 	clusterOAuths := &identitatemv1alpha1.ClusterOAuthList{}
@@ -170,29 +257,37 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		Spec: openshiftconfigv1.OAuthSpec{},
 	}
 
-	r.Log.Info("search the clusterOAuths in namepsace", "namespace", instance.GetNamespace())
-	if err := r.List(context.TODO(), clusterOAuths, &client.ListOptions{Namespace: instance.GetNamespace()}); err != nil {
+	r.Log.Info("search the clusterOAuths in namepsace", "namespace", clusterOAuth.GetNamespace())
+	if err := r.List(context.TODO(), clusterOAuths, &client.ListOptions{Namespace: clusterOAuth.GetNamespace()}); err != nil {
 		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
+		return err
 	}
 
 	for _, clusterOAuth := range clusterOAuths.Items {
 		//build OAuth and add to manifest work
-		r.Log.Info(" build clusterOAuth", "name: ", clusterOAuth.GetName(), " namespace:", instance.GetNamespace(), "identityProviders:", len(instance.Spec.OAuth.Spec.IdentityProviders))
+		r.Log.Info(" build clusterOAuth", "name: ", clusterOAuth.GetName(), " namespace:", clusterOAuth.GetNamespace(), "identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
 
-		for j, idp := range instance.Spec.OAuth.Spec.IdentityProviders {
+		for j, idp := range clusterOAuth.Spec.OAuth.Spec.IdentityProviders {
 
 			r.Log.Info("process identityProvider", "identityProvider  ", j, " name:", idp.Name)
 
 			//build oauth by appending first clusterOAuth entry into single OAuth
 			singleOAuth.Spec.IdentityProviders = append(singleOAuth.Spec.IdentityProviders, idp)
+		}
+	}
+
+	for _, clusterOAuth := range clusterOAuths.Items {
+		//build OAuth and add to manifest work
+		r.Log.Info(" build clusterOAuth", "name: ", clusterOAuth.GetName(), " namespace:", clusterOAuth.GetNamespace(), "identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
+
+		for _, idp := range clusterOAuth.Spec.OAuth.Spec.IdentityProviders {
 
 			//Look for secret for Identity Provider and if found, add to manifest work
 			secret := &corev1.Secret{}
 
-			r.Log.Info("retrieving client secret", "name", idp.OpenID.ClientSecret.Name, "namespace", req.Namespace)
-			if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: req.Namespace, Name: idp.OpenID.ClientSecret.Name}, secret); err != nil {
-				return reconcile.Result{}, err
+			r.Log.Info("retrieving client secret", "name", idp.OpenID.ClientSecret.Name, "namespace", clusterOAuth.Namespace)
+			if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: clusterOAuth.Namespace, Name: idp.OpenID.ClientSecret.Name}, secret); err != nil {
+				return err
 			}
 			//add secret to manifest
 
@@ -213,7 +308,7 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 			data, err := json.Marshal(newSecret)
 			if err != nil {
-				return reconcile.Result{}, err
+				return err
 			}
 
 			manifest := manifestworkv1.Manifest{
@@ -222,7 +317,7 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 			//add manifest to manifest work
 			r.Log.Info("append workload for secret in manifest for idp", "name", idp.Name)
-			manifestWork.Spec.Workload.Manifests = append(manifestWork.Spec.Workload.Manifests, manifest)
+			manifestWorkOAuth.Spec.Workload.Manifests = append(manifestWorkOAuth.Spec.Workload.Manifests, manifest)
 
 		}
 	}
@@ -230,7 +325,7 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	// create manifest for single OAuth
 	data, err := json.Marshal(singleOAuth)
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
 	manifest := manifestworkv1.Manifest{
@@ -239,123 +334,16 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	//add OAuth manifest to manifest work
 	r.Log.Info("append workload for oauth in manifest")
-	manifestWork.Spec.Workload.Manifests = append(manifestWork.Spec.Workload.Manifests, manifest)
+	manifestWorkOAuth.Spec.Workload.Manifests = append(manifestWorkOAuth.Spec.Workload.Manifests, manifest)
 
 	// create manifest work for managed cluster
 	// (borrowed from https://github.com/open-cluster-management/endpoint-operator/blob/master/pkg/utils/utils.go)
-	if err := r.CreateOrUpdateManifestWork(manifestWork, r.Client, manifestWork, r.Scheme); err != nil {
+	if err := r.CreateOrUpdateManifestWork(manifestWorkOAuth, r.Client, manifestWorkOAuth, r.Scheme); err != nil {
 		r.Log.Error(err, "Failed to create manifest work for component")
 		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
+		return err
 	}
-
-	//case identitatemv1alpha1..GRCStrategyType:
-	//default:
-	//	return reconcile.Result{}, fmt.Errorf("strategy type %s not supported", instance.Spec.Type)
-	//
-	//}
-	return ctrl.Result{}, nil
-}
-
-// compareManifestWorks returns true if 2 manifestworks' specs are the same
-func (r *ClusterOAuthReconciler) compareManifestWorks(mw1 *manifestworkv1.ManifestWork, mw2 *manifestworkv1.ManifestWork) bool {
-	if mw1 == nil && mw2 == nil {
-		return true
-	}
-	if (mw1 == nil && mw2 != nil) || (mw2 == nil && mw1 != nil) {
-		return false
-	}
-	if len(mw1.Spec.Workload.Manifests) != len(mw2.Spec.Workload.Manifests) {
-		return false
-	}
-	used := make(map[int]bool)
-	for _, m1 := range mw1.Spec.Workload.Manifests {
-		hasMatch := false
-		for j, m2 := range mw2.Spec.Workload.Manifests {
-			if used[j] {
-				continue
-			}
-			if r.compareManifests(&m1.RawExtension, &m2.RawExtension) {
-				hasMatch = true
-				used[j] = true
-				break
-			}
-		}
-		if !hasMatch {
-			return false
-		}
-	}
-	return true
-}
-
-// convertRawExtensiontoUnstructured converts a rawExtension to a unstructured object
-func (r *ClusterOAuthReconciler) convertRawExtensiontoUnstructured(rawExt *runtime.RawExtension) (*unstructured.Unstructured, error) {
-	if r == nil {
-		return nil, fmt.Errorf("fail to convert rawExtension")
-	}
-	var obj runtime.Object
-	var scope conversion.Scope
-	err := runtime.Convert_runtime_RawExtension_To_runtime_Object(rawExt, &obj, scope)
-	if err != nil {
-		r.Log.Error(err, "failed to convert rawExtension to runtime.Object", "rawExtension", r)
-		return nil, err
-	}
-	if obj == nil {
-		return nil, nil
-	}
-	innerObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
-	if err != nil {
-		r.Log.Error(err, "failed to convert runtime.Objectt to Unstructured", "runtime.Object", &obj)
-		return nil, err
-	}
-	u := unstructured.Unstructured{Object: innerObj}
-	return &u, nil
-}
-
-var rootAttributes = []string{
-	"spec",
-	"rules",
-	"roleRef",
-	"subjects",
-	"secrets",
-	"imagePullSecrets",
-	"automountServiceAccountToken",
-	"data",
-}
-
-// compareManifests compares if 2 manifests are the same, it only checks value we care
-// (name/namespace/kind/group/spec/data)
-func (r *ClusterOAuthReconciler) compareManifests(r1, r2 *runtime.RawExtension) bool {
-	u1, err := r.convertRawExtensiontoUnstructured(r1)
-	if err != nil {
-		return false
-	}
-	u2, err := r.convertRawExtensiontoUnstructured(r2)
-	if err != nil {
-		return false
-	}
-	if u1 == nil || u2 == nil {
-		return u2 == nil && u1 == nil
-	}
-	if u1.GetName() != u2.GetName() ||
-		u1.GetNamespace() != u2.GetNamespace() ||
-		u1.GetKind() != u2.GetKind() ||
-		u1.GetAPIVersion() != u2.GetAPIVersion() {
-		return false
-	}
-	hasDiff := false
-	for _, r := range rootAttributes {
-		if newValue, ok := u2.Object[r]; ok {
-			if !reflect.DeepEqual(newValue, u1.Object[r]) {
-				hasDiff = true
-			}
-		} else {
-			if _, ok := u1.Object[r]; ok {
-				hasDiff = true
-			}
-		}
-	}
-	return !hasDiff
+	return nil
 }
 
 // CreateOrUpdateManifestWork creates a new ManifestWork or update an existing ManifestWork
@@ -365,70 +353,116 @@ func (r *ClusterOAuthReconciler) CreateOrUpdateManifestWork(
 	owner metav1.Object,
 	scheme *runtime.Scheme,
 ) error {
-	var oldManifestwork manifestworkv1.ManifestWork
+
+	oldManifestwork := &manifestworkv1.ManifestWork{}
 
 	err := client.Get(
 		context.TODO(),
 		types.NamespacedName{Name: manifestwork.Name, Namespace: manifestwork.Namespace},
-		&oldManifestwork,
+		oldManifestwork,
 	)
 	if err == nil {
-		// Check if update is require
-		if !r.compareManifestWorks(&oldManifestwork, manifestwork) {
-			r.Log.Info("update manifestwork", "name", manifestwork.Name, "namespace", manifestwork.Namespace)
-			oldManifestwork.Spec.Workload.Manifests = manifestwork.Spec.Workload.Manifests
-			if err := client.Update(context.TODO(), &oldManifestwork); err != nil {
-				r.Log.Error(err, "Fail to update manifestwork")
-				return err
-			}
+		oldManifestwork.Spec.Workload = manifestwork.Spec.Workload
+		if err := client.Update(context.TODO(), oldManifestwork); err != nil {
+			r.Log.Error(err, "Fail to update manifestwork")
+			return err
 		}
-	} else {
-		if errors.IsNotFound(err) {
-			r.Log.Info("create manifestwork", "name", manifestwork.Name, "namespace", manifestwork.Namespace)
-			if err := client.Create(context.TODO(), manifestwork); err != nil {
-				r.Log.Error(err, "Fail to create manifestwork")
-				return err
-			}
-			return nil
-		}
-		return err
+		return nil
 	}
-
+	if errors.IsNotFound(err) {
+		r.Log.Info("create manifestwork", "name", manifestwork.Name, "namespace", manifestwork.Namespace)
+		if err := client.Create(context.TODO(), manifestwork); err != nil {
+			r.Log.Error(err, "Fail to create manifestwork")
+			return err
+		}
+		return nil
+	}
 	return nil
 }
 
-// deleteManifestWork deletes a manifestwork
-// if removeFinalizers is set to true, will remove all finalizers to make sure it can be deleted
-func (r *ClusterOAuthReconciler) deleteManifestWork(clusterOAuth *identitatemv1alpha1.ClusterOAuth) error {
+// unmanagedCluster deletes a manifestwork
+func (r *ClusterOAuthReconciler) unmanagedCluster(clusterOAuth *identitatemv1alpha1.ClusterOAuth) (result ctrl.Result, err error) {
 	r.Log.Info("deleteManifestWork", "clusterOAuth", clusterOAuth)
 	clusterOAuths := &identitatemv1alpha1.ClusterOAuthList{}
 	if err := r.Client.List(context.TODO(), clusterOAuths, client.InNamespace(clusterOAuth.Namespace)); err != nil {
-		return err
+		return ctrl.Result{}, err
 	}
 
-	//Remove the finalizers when there is no other clusterOAuth for that placement.
 	if len(clusterOAuths.Items) == 1 {
-		r.Log.Info("search for manifest", "name", helpers.ManifestWorkName(), "namespace", clusterOAuth.Namespace)
-		manifestWork := &manifestworkv1.ManifestWork{}
-		if err := r.Client.Get(
-			context.TODO(),
-			types.NamespacedName{Name: helpers.ManifestWorkName(), Namespace: clusterOAuth.Namespace},
-			manifestWork,
-		); err != nil {
-			if !errors.IsNotFound(err) {
+		r.Log.Info("delete for manifestwork", "name", helpers.ManifestWorkOAuthName(), "namespace", clusterOAuth.Namespace)
+		if err := r.deleteManifestWork(clusterOAuth); err != nil {
+			return ctrl.Result{}, err
+		}
+		// if result, err := r.restoreOriginalOAuth(clusterOAuth); err != nil {
+		// 	return result, err
+		// }
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *ClusterOAuthReconciler) restoreOriginalOAuth(clusterOAuth *identitatemv1alpha1.ClusterOAuth) (result ctrl.Result, err error) {
+	cm := &corev1.ConfigMap{}
+
+	//If already exist, do nothing
+	r.Log.Info("check if configMap exists", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", clusterOAuth.Namespace)
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: clusterOAuth.Namespace}, cm); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	originalOAuth := &corev1.ConfigMap{}
+	if err := r.Get(context.TODO(), client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: clusterOAuth.Namespace}, originalOAuth); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	jsonData, err := yaml.YAMLToJSON([]byte(originalOAuth.Data[helpers.ConfigMapOriginalOAuthName()]))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	mw := &manifestworkv1.ManifestWork{}
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkOAuthName(), Namespace: clusterOAuth.Namespace}, mw); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	mw.Spec.Workload = manifestworkv1.ManifestsTemplate{
+		Manifests: []manifestworkv1.Manifest{
+			{RawExtension: runtime.RawExtension{Raw: jsonData}},
+		},
+	}
+
+	if err := r.Update(context.TODO(), mw); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	//TODO create mananifestwork with orphan
+
+	//TODO wait manifestwork applied
+
+	//TODO delete manifestwork
+
+	return ctrl.Result{}, nil
+}
+
+func (r *ClusterOAuthReconciler) deleteManifestWork(clusterOAuth *identitatemv1alpha1.ClusterOAuth) error {
+	manifestWork := &manifestworkv1.ManifestWork{}
+	if err := r.Client.Get(
+		context.TODO(),
+		types.NamespacedName{Name: helpers.ManifestWorkOAuthName(), Namespace: clusterOAuth.Namespace},
+		manifestWork,
+	); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
+	} else {
+		if manifestWork.DeletionTimestamp.IsZero() {
+			r.Log.Info("delete manifest", "name", manifestWork.Name, "namespace", manifestWork.Namespace)
+			err := r.Client.Delete(context.TODO(), manifestWork)
+			if err != nil && !errors.IsNotFound(err) {
 				return err
-			}
-		} else {
-			if manifestWork.DeletionTimestamp == nil {
-				r.Log.Info("delete manifest", "name", manifestWork.Name, "namespace", manifestWork.Namespace)
-				err := r.Client.Delete(context.TODO(), manifestWork)
-				if err != nil && !errors.IsNotFound(err) {
-					return err
-				}
 			}
 		}
 	}
 	return nil
+
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -464,15 +498,20 @@ func (r *ClusterOAuthReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	if err := identitatemdexv1alpha1.AddToScheme(scheme.Scheme); err != nil {
+	if err := identitatemdexv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		return err
 	}
 
-	if err := openshiftconfigv1.AddToScheme(scheme.Scheme); err != nil {
+	if err := openshiftconfigv1.AddToScheme(mgr.GetScheme()); err != nil {
+		return err
+	}
+
+	if err := viewv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
 		return err
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&identitatemv1alpha1.ClusterOAuth{}).
+		Owns(&manifestworkv1.ManifestWork{}).
 		Complete(r)
 }

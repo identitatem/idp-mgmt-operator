@@ -159,6 +159,20 @@ rules:
   - identityconfig.identitatem.io
   resources:
   - authrealms
+  - authrealms/status
+  - strategies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - identityconfig.identitatem.io
+  resources:
+  - authrealms
   - clusteroauths
   - strategies
   verbs:
@@ -219,6 +233,18 @@ rules:
   - create
   - delete
   - escalate
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - view.open-cluster-management.io
+  resources:
+  - managedclusterviews
+  verbs:
+  - create
+  - delete
   - get
   - list
   - patch
