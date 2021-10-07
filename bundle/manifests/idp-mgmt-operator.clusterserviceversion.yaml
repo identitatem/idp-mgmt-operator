@@ -173,6 +173,20 @@ spec:
                 - identityconfig.identitatem.io
               resources:
                 - authrealms
+                - authrealms/status
+                - strategies
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - identityconfig.identitatem.io
+              resources:
+                - authrealms
                 - clusteroauths
                 - strategies
               verbs:
@@ -239,6 +253,18 @@ spec:
                 - update
                 - watch
             - apiGroups:
+                - view.open-cluster-management.io
+              resources:
+                - managedclusterviews
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
                 - work.open-cluster-management.io
               resources:
                 - manifestworks
@@ -297,7 +323,9 @@ spec:
                       - -v 5
                     env:
                       - name: RELATED_IMAGE_DEX_OPERATOR
-                        value: quay.io/identitatem/dex-operator:latest
+                        value: quay.io/identitatem/dex-operator@sha256:b0b7c7f26f966782bb897378d4ccf26759ab2faa69a72375fbc1c65706da6b49
+                      - name: RELATED_IMAGE_DEX_SERVER
+                        value: quay.io/dexidp/dex:v2.28.1
                     image: quay.io/identitatem/idp-mgmt-operator:latest
                     imagePullPolicy: Always
                     name: manager
