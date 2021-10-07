@@ -13,6 +13,7 @@ import (
 	"github.com/identitatem/idp-mgmt-operator/deploy"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
+	giterrors "github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +32,7 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 	r.Log.Info("syncDexCRs", "AuthRealm.Name", authRealm.Name, "AuthRealm.Namespace", authRealm.Namespace)
 	//TODO this test should maybe be in a webhook to avoid the creation of an invalid CR
 	if len(authRealm.Spec.IdentityProviders) != 1 {
-		return fmt.Errorf("the identityproviders array of the authrealm %s can have one and only one element", authRealm.Name)
+		return giterrors.WithStack(fmt.Errorf("the identityproviders array of the authrealm %s can have one and only one element", authRealm.Name))
 	}
 
 	// Create namespace and Install the dex-operator
@@ -85,12 +86,12 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 
 	dexOperatorImage := os.Getenv(dexOperatorImageEnvName)
 	if len(dexOperatorImage) == 0 {
-		return fmt.Errorf("EnvVar %s not provided", dexOperatorImageEnvName)
+		return giterrors.WithStack(fmt.Errorf("EnvVar %s not provided", dexOperatorImageEnvName))
 	}
 
 	dexServerImage := os.Getenv(dexServerImageEnvName)
 	if len(dexServerImage) == 0 {
-		return fmt.Errorf("EnvVar %s not provided", dexServerImageEnvName)
+		return giterrors.WithStack(fmt.Errorf("EnvVar %s not provided", dexServerImageEnvName))
 	}
 
 	//Create the namespace
@@ -128,12 +129,12 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 
 	_, err := applier.ApplyDirectly(readerDeploy, values, false, "", files...)
 	if err != nil {
-		return err
+		return giterrors.WithStack(err)
 	}
 
 	_, err = applier.ApplyDeployments(readerDeploy, values, false, "", "dex-operator/manager.yaml")
 	if err != nil {
-		return err
+		return giterrors.WithStack(err)
 	}
 
 	return nil
@@ -142,7 +143,7 @@ func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.A
 	r.Log.Info("deleteDexOperator", "Name", authRealm.Name, "Namespace", authRealm.Name)
 	authRealms := &identitatemv1alpha1.AuthRealmList{}
 	if err := r.Client.List(context.TODO(), authRealms); err != nil {
-		return err
+		return giterrors.WithStack(err)
 	}
 	nbFound := 0
 	for _, authRealm := range authRealms.Items {
@@ -156,7 +157,7 @@ func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.A
 		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexOperatorNamespace()}, ns); err == nil {
 			err := r.Client.Delete(context.TODO(), ns)
 			if err != nil {
-				return err
+				return giterrors.WithStack(err)
 			}
 		}
 		//Delete clusterRoleBinding
@@ -164,7 +165,7 @@ func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.A
 		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "dex-operator-rolebinding"}, crb); err == nil {
 			err := r.Client.Delete(context.TODO(), crb)
 			if err != nil {
-				return err
+				return giterrors.WithStack(err)
 			}
 		}
 		//Delete clusterRole
@@ -172,7 +173,7 @@ func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.A
 		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "dex-operator-manager-role"}, cr); err == nil {
 			err := r.Client.Delete(context.TODO(), cr)
 			if err != nil {
-				return err
+				return giterrors.WithStack(err)
 			}
 		}
 	}
@@ -206,7 +207,7 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 	dexServerNamespace := &corev1.Namespace{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authRealm)}, dexServerNamespace); err != nil {
 		if !errors.IsNotFound(err) {
-			return err
+			return giterrors.WithStack(err)
 		}
 		dexServerNamespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -214,14 +215,14 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 			},
 		}
 		if err := r.Client.Create(context.TODO(), dexServerNamespace); err != nil {
-			return err
+			return giterrors.WithStack(err)
 		}
 	}
 	dexServerExists := true
 	dexServer := &identitatemdexserverv1alpha1.DexServer{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer); err != nil {
 		if !errors.IsNotFound(err) {
-			return err
+			return giterrors.WithStack(err)
 		}
 		dexServerExists = false
 		dexServer = &identitatemdexserverv1alpha1.DexServer{
@@ -239,11 +240,11 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 	switch dexServerExists {
 	case true:
 		r.Log.V(1).Info("createDexServer update dexServer", "Name", dexServer.Name, "Namespace", dexServer.Namespace)
-		return r.Client.Update(context.TODO(), dexServer)
+		return giterrors.WithStack(r.Client.Update(context.TODO(), dexServer))
 	case false:
 		r.Log.V(1).Info("createDexServer create dexServer", "Name", dexServer.Name, "Namespace", dexServer.Namespace)
 		if err := r.Client.Create(context.TODO(), dexServer); err != nil {
-			return err
+			return giterrors.WithStack(err)
 		}
 		dexServer.Status.RelatedObjects =
 			[]identitatemdexserverv1alpha1.RelatedObjectReference{
@@ -254,7 +255,7 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 				},
 			}
 		if err := r.Status().Update(context.TODO(), dexServer); err != nil {
-			return err
+			return giterrors.WithStack(err)
 		}
 	}
 	r.Log.Info("after update", "dexServer", dexServer)
@@ -273,14 +274,14 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 		if err := r.Client.Get(context.TODO(),
 			client.ObjectKey{Name: authRealm.Spec.CertificatesSecretRef.Name, Namespace: authRealm.Namespace},
 			certSecret); err != nil {
-			return err
+			return giterrors.WithStack(err)
 		}
 		//Copy the secret from the authrealm to the dexserver namespace
 		dexServerCertSecret := &corev1.Secret{}
 		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: certSecret.Name, Namespace: dexServer.Namespace},
 			dexServerCertSecret); err != nil {
 			if !errors.IsNotFound(err) {
-				return err
+				return giterrors.WithStack(err)
 			}
 			dexServerCertSecret = &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -291,12 +292,12 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 				Data: certSecret.Data,
 			}
 			if err := r.Client.Create(context.TODO(), dexServerCertSecret); err != nil {
-				return err
+				return giterrors.WithStack(err)
 			}
 		} else {
 			dexServerCertSecret.Data = certSecret.Data
 			if err := r.Client.Update(context.TODO(), dexServerCertSecret); err != nil {
-				return err
+				return giterrors.WithStack(err)
 			}
 		}
 		dexServer.Spec.IngressCertificateRef = corev1.LocalObjectReference{
@@ -353,14 +354,14 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			cs = append(cs, *c)
 			r.Log.Info("genrated intermediate connextors", "cs", cs)
 		default:
-			return nil, fmt.Errorf("unsupported provider type %s", idp.Type)
+			return nil, giterrors.WithStack(fmt.Errorf("unsupported provider type %s", idp.Type))
 		}
 	}
 	if len(cs) == 0 {
-		return nil, fmt.Errorf("no identityProvider defined in %s/%s", authRealm.Name, authRealm.Name)
+		return nil, giterrors.WithStack(fmt.Errorf("no identityProvider defined in %s/%s", authRealm.Name, authRealm.Name))
 	}
 	r.Log.Info("genrated connectors", "cs", cs)
-	return cs, err
+	return cs, giterrors.WithStack(err)
 }
 
 func (r *AuthRealmReconciler) deleteAuthRealmNamespace(authRealm *identitatemv1alpha1.AuthRealm) error {
@@ -369,10 +370,10 @@ func (r *AuthRealmReconciler) deleteAuthRealmNamespace(authRealm *identitatemv1a
 		if errors.IsNotFound(err) {
 			return nil
 		}
-		return err
+		return giterrors.WithStack(err)
 	}
 	if err := r.Client.Delete(context.TODO(), ns); err != nil {
-		return err
+		return giterrors.WithStack(err)
 	}
 	return r.deleteDexOperator(authRealm)
 }

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	ocinfrav1 "github.com/openshift/api/config/v1"
+	giterrors "github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -30,7 +31,7 @@ func GetKubeAPIServerAddress(client client.Client) (string, error) {
 	infraConfig := &ocinfrav1.Infrastructure{}
 
 	if err := client.Get(context.TODO(), infrastructureConfigNameNsN(), infraConfig); err != nil {
-		return "", err
+		return "", giterrors.WithStack(err)
 	}
 
 	return infraConfig.Status.APIServerURL, nil
@@ -43,12 +44,12 @@ func GetAppsURL(c client.Client, withPort bool) (string, string, error) {
 	}
 	u, err := url.Parse(apiServerURL)
 	if err != nil {
-		return "", "", err
+		return "", "", giterrors.WithStack(err)
 	}
 
 	host, port, err := net.SplitHostPort(u.Host)
 	if err != nil {
-		return u.Scheme, "", err
+		return u.Scheme, "", giterrors.WithStack(err)
 	}
 
 	host = strings.Replace(host, "api", "apps", 1)

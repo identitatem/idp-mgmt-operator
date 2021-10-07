@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 
+	giterrors "github.com/pkg/errors"
+
 	ocinfrav1 "github.com/openshift/api/config/v1"
 	// corev1 "k8s.io/api/core/v1"
 
@@ -90,7 +92,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
+		return reconcile.Result{}, giterrors.WithStack(err)
 	}
 
 	r.Log.Info("running Reconcile for PlacementDecision")
@@ -103,7 +105,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", helpers.PlacementDecisionFinalizer)
 		controllerutil.RemoveFinalizer(instance, helpers.PlacementDecisionFinalizer)
 		if err := r.Client.Update(context.TODO(), instance); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{}, giterrors.WithStack(err)
 		}
 		return reconcile.Result{}, nil
 	}
@@ -112,7 +114,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	r.Log.Info("add PlacementDecision finalizer", "Finalizer:", helpers.PlacementDecisionFinalizer)
 	controllerutil.AddFinalizer(instance, helpers.PlacementDecisionFinalizer)
 	if err := r.Client.Update(context.TODO(), instance); err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, giterrors.WithStack(err)
 	}
 
 	//Check if the placementDecision is linked to a strategy
@@ -141,7 +143,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			Namespace: instance.GetNamespace(),
 		}, placement)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, giterrors.WithStack(err)
 	}
 
 	//Add finalizer to the placement, it will be removed once the ns is deleted
@@ -219,7 +221,7 @@ func (r *PlacementDecisionReconciler) isLinkedToStrategy(placementDecision *clus
 		//No further processing
 		return false, nil
 	}
-	return true, err
+	return true, giterrors.WithStack(err)
 }
 
 func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) error {
@@ -255,7 +257,7 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 	if err := r.Client.List(context.TODO(), placementDecisions, client.MatchingLabels{
 		clusterv1alpha1.PlacementLabel: placementDecision.GetLabels()[clusterv1alpha1.PlacementLabel],
 	}, client.InNamespace(placementDecision.Namespace)); err != nil {
-		return err
+		return giterrors.WithStack(err)
 	}
 
 	//Remove the finalizers when there is no other placementDecisions for that placement.
@@ -268,7 +270,7 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 				Namespace: placementDecision.GetNamespace(),
 			}, placement)
 		if err != nil {
-			return err
+			return giterrors.WithStack(err)
 		}
 
 		//All resources are cleaned, finalizers on authrealm and strategy can be removed

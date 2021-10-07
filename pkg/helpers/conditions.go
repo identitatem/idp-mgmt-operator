@@ -5,6 +5,8 @@ package helpers
 import (
 	"context"
 
+	giterrors "github.com/pkg/errors"
+
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,5 +30,5 @@ func mergeStatusConditions(conditions []metav1.Condition, newConditions ...metav
 
 func UpdateAuthRealmStatusConditions(c client.Client, authRealm *identitatemv1alpha1.AuthRealm, newConditions ...metav1.Condition) error {
 	authRealm.Status.Conditions = mergeStatusConditions(authRealm.Status.Conditions, newConditions...)
-	return c.Status().Update(context.TODO(), authRealm)
+	return giterrors.WithStack(c.Status().Update(context.TODO(), authRealm))
 }

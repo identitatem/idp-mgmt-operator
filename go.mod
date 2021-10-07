@@ -12,6 +12,7 @@ require (
 	github.com/open-cluster-management/multicloud-operators-foundation v1.0.0-2021-09-22-22-06-10.0.20210923102123-b296cd01e3f7
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 	github.com/openshift/generic-admission-server v1.14.1-0.20210422140326-da96454c926d
+	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	k8s.io/api v0.22.1
