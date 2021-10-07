@@ -200,9 +200,9 @@ publish: bundle bundle-build bundle-push catalog-build catalog-push
 .PHONY: bundle
 ## Generate bundle manifests and metadata, patch the webhook deployment name, then validate generated files [NOTE: validate bundle is skipped for now].
 bundle: manifests kustomize yq/install operatorsdk
-	operator-sdk generate kustomize manifests --interactive=false -q
+	${OPERATOR_SDK} generate kustomize manifests --interactive=false -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION)
+	kustomize build config/manifests | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
 	@WEBHOOK_DEPLOYMENT_NAME=`${YQ} e '.spec.template.spec.serviceAccountName' config/webhook/webhook.yaml` \
 		${YQ} e '.spec.webhookdefinitions[0].deploymentName = env(WEBHOOK_DEPLOYMENT_NAME)' -i bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
 
