@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	giterrors "github.com/pkg/errors"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
@@ -26,7 +27,7 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 	clientSecret := &corev1.Secret{}
 	if err := r.Get(context.TODO(), client.ObjectKey{Name: idp.Name, Namespace: decision.ClusterName}, clientSecret); err != nil {
 		if !errors.IsNotFound(err) {
-			return nil, err
+			return nil, giterrors.WithStack(err)
 		}
 		clientSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -38,7 +39,7 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 			},
 		}
 		if err := r.Create(context.TODO(), clientSecret); err != nil {
-			return nil, err
+			return nil, giterrors.WithStack(err)
 		}
 	}
 	return clientSecret, nil
@@ -53,7 +54,7 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 	clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: idp.Name, Namespace: decision.ClusterName}, clusterOAuth); err != nil {
 		if !errors.IsNotFound(err) {
-			return err
+			return giterrors.WithStack(err)
 		}
 		clusterOAuthExists = false
 		clusterOAuth = &identitatemv1alpha1.ClusterOAuth{
@@ -122,9 +123,9 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 
 	switch clusterOAuthExists {
 	case true:
-		return r.Client.Update(context.TODO(), clusterOAuth)
+		return giterrors.WithStack(r.Client.Update(context.TODO(), clusterOAuth))
 	case false:
-		return r.Client.Create(context.Background(), clusterOAuth)
+		return giterrors.WithStack(r.Client.Create(context.Background(), clusterOAuth))
 	}
 	return nil
 }
@@ -134,21 +135,21 @@ func (r *PlacementDecisionReconciler) GetStrategyFromPlacementDecision(placement
 	if placementName, ok := placementDecision.GetLabels()[clusterv1alpha1.PlacementLabel]; ok {
 		return r.GetStrategyFromPlacement(placementName, placementDecision.Namespace)
 	}
-	return nil, fmt.Errorf("placementDecision %s has no label %s", placementDecision.Name, clusterv1alpha1.PlacementLabel)
+	return nil, giterrors.WithStack(fmt.Errorf("placementDecision %s has no label %s", placementDecision.Name, clusterv1alpha1.PlacementLabel))
 }
 
 func (r *PlacementDecisionReconciler) GetStrategyFromPlacement(placementName, placementNamespace string) (*identitatemv1alpha1.Strategy, error) {
 	r.Log.Info("GetStrategyFromPlacement", "placementName", placementName, "placementNamespace", placementNamespace)
 	strategies := &identitatemv1alpha1.StrategyList{}
 	if err := r.List(context.TODO(), strategies, &client.ListOptions{Namespace: placementNamespace}); err != nil {
-		return nil, err
+		return nil, giterrors.WithStack(err)
 	}
 	for _, strategy := range strategies.Items {
 		if strategy.Spec.PlacementRef.Name == placementName {
 			return &strategy, nil
 		}
 	}
-	return nil, errors.NewNotFound(identitatemv1alpha1.Resource("strategies"), placementName)
+	return nil, giterrors.WithStack(errors.NewNotFound(identitatemv1alpha1.Resource("strategies"), placementName))
 }
 
 func inPlacementDecision(clusterName string, placementDecisions *clusterv1alpha1.PlacementDecisionList) bool {

@@ -7,10 +7,12 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	giterrors "github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -73,7 +75,7 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
+		return reconcile.Result{}, giterrors.WithStack(err)
 	}
 
 	//if deletetimestamp then delete dex namespace
@@ -83,7 +85,7 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 		controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
 		if err := r.Client.Update(context.TODO(), instance); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{}, giterrors.WithStack(err)
 		}
 		return reconcile.Result{}, nil
 	}
@@ -94,7 +96,7 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	r.Log.Info("Process", "Name", instance.GetName(), "Namespace", instance.GetNamespace())
 
 	if err := r.Client.Update(context.TODO(), instance); err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, giterrors.WithStack(err)
 	}
 
 	//Synchronize Dex CR
@@ -164,17 +166,17 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	files := []string{"crd/bases/identityconfig.identitatem.io_authrealms.yaml",
 		"crd/bases/identityconfig.identitatem.io_strategies.yaml"}
 	if _, err := applier.ApplyDirectly(readerIDPMgmtOperator, nil, false, "", files...); err != nil {
-		return err
+		return giterrors.WithStack(err)
 	}
 
 	if err := identitatemv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		return err
+		return giterrors.WithStack(err)
 	}
 	if err := identitatemdexserverv1lapha1.AddToScheme(mgr.GetScheme()); err != nil {
-		return err
+		return giterrors.WithStack(err)
 	}
 	if err := appsv1.AddToScheme(mgr.GetScheme()); err != nil {
-		return err
+		return giterrors.WithStack(err)
 	}
 	if err := r.installDexOperatorCRDs(); err != nil {
 		return err

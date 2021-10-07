@@ -9,6 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	giterrors "github.com/pkg/errors"
 )
 
 func GetAuthrealmFromStrategy(c client.Client, strategy *identitatemv1alpha1.Strategy) (*identitatemv1alpha1.AuthRealm, error) {
@@ -21,7 +22,7 @@ func GetAuthrealmFromStrategy(c client.Client, strategy *identitatemv1alpha1.Str
 		}
 	}
 	if err := c.Get(context.TODO(), client.ObjectKey{Name: ownerRef.Name, Namespace: strategy.Namespace}, authRealm); err != nil {
-		return nil, err
+		return nil, giterrors.WithStack(err)
 	}
 	return authRealm, nil
 }

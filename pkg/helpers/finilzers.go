@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-logr/logr"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	giterrors "github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -33,10 +34,10 @@ func RemovePlacementDecisionFinalizer(c client.Client, log logr.Logger, strategy
 		// case identitatemv1alpha1.GrcStrategyType:
 		// controllerutil.RemoveFinalizer(obj, placementDecisionGRCFinalizer)
 	default:
-		return fmt.Errorf("strategy type %s not supported", strategy.Spec.Type)
+		return giterrors.WithStack(fmt.Errorf("strategy type %s not supported", strategy.Spec.Type))
 	}
 
-	return c.Update(context.TODO(), obj)
+	return giterrors.WithStack(c.Update(context.TODO(), obj))
 
 }
 

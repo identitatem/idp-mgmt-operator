@@ -16,6 +16,7 @@ import (
 
 	dexoperatorv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	giterrors "github.com/pkg/errors"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 
@@ -102,7 +103,7 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 	dexClient := &dexoperatorv1alpha1.DexClient{}
 	if err := r.Client.Get(context.TODO(), helpers.DexClientObjectKey(authRealm, decision, idp), dexClient); err != nil {
 		if !errors.IsNotFound(err) {
-			return err
+			return giterrors.WithStack(err)
 		}
 		dexClientExists = false
 		dexClient = &dexoperatorv1alpha1.DexClient{
@@ -129,22 +130,22 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 	mc := &clusterv1.ManagedCluster{}
 	err := r.Client.Get(context.TODO(), client.ObjectKey{Name: decision.ClusterName}, mc)
 	if err != nil {
-		return err
+		return giterrors.WithStack(err)
 	}
 
 	if len(mc.Spec.ManagedClusterClientConfigs) == 0 ||
 		mc.Spec.ManagedClusterClientConfigs[0].URL == "" {
-		return fmt.Errorf("api url not found for cluster %s", decision.ClusterName)
+		return giterrors.WithStack(fmt.Errorf("api url not found for cluster %s", decision.ClusterName))
 	}
 
 	u, err := url.Parse(mc.Spec.ManagedClusterClientConfigs[0].URL)
 	if err != nil {
-		return err
+		return giterrors.WithStack(err)
 	}
 
 	host, _, err := net.SplitHostPort(u.Host)
 	if err != nil {
-		return err
+		return giterrors.WithStack(err)
 	}
 
 	host = strings.Replace(host, "api", "apps", 1)
@@ -153,10 +154,10 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 	dexClient.Spec.RedirectURIs = []string{redirectURI}
 	switch dexClientExists {
 	case true:
-		return r.Client.Update(context.TODO(), dexClient)
+		return giterrors.WithStack(r.Client.Update(context.TODO(), dexClient))
 	case false:
 		if err := r.Client.Create(context.Background(), dexClient); err != nil {
-			return err
+			return giterrors.WithStack(err)
 		}
 		dexClient.Status.RelatedObjects =
 			[]dexoperatorv1alpha1.RelatedObjectReference{
@@ -167,7 +168,7 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 				},
 			}
 		if err := r.Status().Update(context.TODO(), dexClient); err != nil {
-			return err
+			return giterrors.WithStack(err)
 		}
 
 	}
@@ -184,7 +185,7 @@ func (r *PlacementDecisionReconciler) deleteConfig(authRealm *identitatemv1alpha
 	dexClient := &dexoperatorv1alpha1.DexClient{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: helpers.DexServerNamespace(authRealm)}, dexClient); err == nil {
 		if err := r.Delete(context.TODO(), dexClient); err != nil && !errors.IsNotFound(err) {
-			return err
+			return giterrors.WithStack(err)
 		}
 	}
 	//Delete ClientSecret
@@ -192,7 +193,7 @@ func (r *PlacementDecisionReconciler) deleteConfig(authRealm *identitatemv1alpha
 	clientSecret := &corev1.Secret{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: idp.Name, Namespace: clusterName}, clientSecret); err == nil {
 		if err := r.Delete(context.TODO(), clientSecret); err != nil && !errors.IsNotFound(err) {
-			return err
+			return giterrors.WithStack(err)
 		}
 	}
 	//Delete clusterOAuth
@@ -200,7 +201,7 @@ func (r *PlacementDecisionReconciler) deleteConfig(authRealm *identitatemv1alpha
 	clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: idp.Name, Namespace: clusterName}, clusterOAuth); err == nil {
 		if err := r.Delete(context.TODO(), clusterOAuth); err != nil && !errors.IsNotFound(err) {
-			return err
+			return giterrors.WithStack(err)
 		}
 	}
 	return nil
