@@ -22,16 +22,16 @@ import (
 
 func (r *PlacementDecisionReconciler) createClientSecret(
 	decision clusterv1alpha1.ClusterDecision,
-	idp openshiftconfigv1.IdentityProvider) (*corev1.Secret, error) {
-	r.Log.Info("create clientSecret for", "cluster", decision.ClusterName, "identityProvider", idp.Name)
+	authRealm *identitatemv1alpha1.AuthRealm) (*corev1.Secret, error) {
+	r.Log.Info("create clientSecret for", "cluster", decision.ClusterName, "identityProvider", authRealm.Name)
 	clientSecret := &corev1.Secret{}
-	if err := r.Get(context.TODO(), client.ObjectKey{Name: idp.Name, Namespace: decision.ClusterName}, clientSecret); err != nil {
+	if err := r.Get(context.TODO(), client.ObjectKey{Name: authRealm.Name, Namespace: decision.ClusterName}, clientSecret); err != nil {
 		if !errors.IsNotFound(err) {
 			return nil, giterrors.WithStack(err)
 		}
 		clientSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      idp.Name,
+				Name:      authRealm.Name,
 				Namespace: decision.ClusterName,
 			},
 			Data: map[string][]byte{
@@ -47,26 +47,25 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 
 func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv1alpha1.AuthRealm,
 	decision clusterv1alpha1.ClusterDecision,
-	idp openshiftconfigv1.IdentityProvider,
 	clientSecret *corev1.Secret) error {
-	r.Log.Info("create clusterOAuth for", "cluster", decision.ClusterName, "identityProvider", idp.Name)
+	r.Log.Info("create clusterOAuth for", "cluster", decision.ClusterName, "authRealm", authRealm.Name)
 	clusterOAuthExists := true
 	clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: idp.Name, Namespace: decision.ClusterName}, clusterOAuth); err != nil {
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: authRealm.Name, Namespace: decision.ClusterName}, clusterOAuth); err != nil {
 		if !errors.IsNotFound(err) {
 			return giterrors.WithStack(err)
 		}
 		clusterOAuthExists = false
 		clusterOAuth = &identitatemv1alpha1.ClusterOAuth{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:       idp.Name,
+				Name:       authRealm.Name,
 				Namespace:  decision.ClusterName,
 				Finalizers: []string{helpers.ClusterOAuthFinalizer},
 			},
 			Spec: identitatemv1alpha1.ClusterOAuthSpec{
 				OAuth: &openshiftconfigv1.OAuth{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      idp.Name,
+						Name:      authRealm.Name,
 						Namespace: decision.ClusterName,
 					},
 					Spec: openshiftconfigv1.OAuthSpec{
@@ -84,7 +83,7 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 
 	clusterOAuth.Spec.OAuth.Spec.IdentityProviders[0] = openshiftconfigv1.IdentityProvider{
 		Name:          authRealm.Name,
-		MappingMethod: idp.MappingMethod,
+		MappingMethod: authRealm.Spec.IdentityProviders[0].MappingMethod,
 		IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 			Type: openshiftconfigv1.IdentityProviderTypeOpenID,
 			OpenID: &openshiftconfigv1.OpenIDIdentityProvider{
@@ -101,7 +100,7 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 						"name",
 					},
 				},
-				ClientID: decision.ClusterName,
+				ClientID: authRealm.Name,
 				ClientSecret: openshiftconfigv1.SecretNameReference{
 					Name: clientSecret.Name,
 				},

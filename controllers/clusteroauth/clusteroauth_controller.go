@@ -285,8 +285,8 @@ func (r *ClusterOAuthReconciler) generateManifestWork(clusterOAuth *identitatemv
 			//Look for secret for Identity Provider and if found, add to manifest work
 			secret := &corev1.Secret{}
 
-			r.Log.Info("retrieving client secret", "name", idp.OpenID.ClientSecret.Name, "namespace", clusterOAuth.Namespace)
-			if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: clusterOAuth.Namespace, Name: idp.OpenID.ClientSecret.Name}, secret); err != nil {
+			r.Log.Info("retrieving client secret", "name", clusterOAuth.Name, "namespace", clusterOAuth.Namespace)
+			if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: clusterOAuth.Namespace, Name: clusterOAuth.Name}, secret); err != nil {
 				return err
 			}
 			//add secret to manifest
