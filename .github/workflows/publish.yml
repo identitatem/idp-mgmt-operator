@@ -4,7 +4,7 @@ name: Go
 
 on:
   push:
-    branches: [ main, release-*, add-bundle ]
+    branches: [ main, release-* ]
 
 jobs:
   test:
