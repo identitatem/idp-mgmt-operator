@@ -12,7 +12,7 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions: {}
   description: Operator to Manage IDP Configurations at the Multicluster Scale
-  displayName: IDP Management Operator
+  displayName: Identity Configuration Management for Kubernetes
   icon:
     - base64data: ""
       mediatype: ""
@@ -384,15 +384,15 @@ spec:
   keywords:
     - idp-mgmt-operator
   links:
-    - name: IDP Management Operator
+    - name: Identity Configuration Management for Kubernetes
       url: https://github.com/identitatem
   maintainers:
-    - email: your@email.com
-      name: Maintainer Name
+    - email: acm-contact@redhat.com
+      name: Red Hat
   maturity: alpha
   provider:
-    name: Provider Name
-    url: https://your.domain
+    name: Red Hat
+    url: https://github.com/identitatem
   version: 0.0.1
   webhookdefinitions:
     - admissionReviewVersions:

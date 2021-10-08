@@ -5,8 +5,6 @@ name: Go
 on:
   push:
     branches: [ main, release-*, add-bundle ]
-  pull_request:
-    branches: [ main, release-* ]
 
 jobs:
   test:
