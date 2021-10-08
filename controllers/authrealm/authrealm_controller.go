@@ -21,7 +21,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -84,15 +83,15 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if err := r.deleteAuthRealmNamespace(instance); err != nil {
 			return reconcile.Result{}, err
 		}
-		controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
-		if err := r.Client.Update(context.TODO(), instance); err != nil {
-			return ctrl.Result{}, giterrors.WithStack(err)
-		}
+		// controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
+		// if err := r.Client.Update(context.TODO(), instance); err != nil {
+		// 	return ctrl.Result{}, giterrors.WithStack(err)
+		// }
 		return reconcile.Result{}, nil
 	}
 
 	//Add finalizer, it will be removed once the ns is deleted
-	controllerutil.AddFinalizer(instance, helpers.AuthrealmFinalizer)
+	// controllerutil.AddFinalizer(instance, helpers.AuthrealmFinalizer)
 
 	r.Log.Info("Process", "Name", instance.GetName(), "Namespace", instance.GetNamespace())
 

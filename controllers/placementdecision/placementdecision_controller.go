@@ -188,7 +188,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 func (r *PlacementDecisionReconciler) AddPlacementDecisionFinalizer(strategy *identitatemv1alpha1.Strategy, obj client.Object) error {
 	switch strategy.Spec.Type {
 	case identitatemv1alpha1.BackplaneStrategyType:
-		controllerutil.AddFinalizer(obj, helpers.PlacementDecisionBackplaneFinalizer)
+		// controllerutil.AddFinalizer(obj, helpers.PlacementDecisionBackplaneFinalizer)
 		// case identitatemv1alpha1.GrcStrategyType:
 		// controllerutil.AddFinalizer(obj, placementDecisionGRCFinalizer)
 	default:
@@ -277,12 +277,12 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, placement); err != nil {
 			return err
 		}
-		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, strategy); err != nil {
-			return err
-		}
-		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, authRealm); err != nil {
-			return err
-		}
+		// if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, strategy); err != nil {
+		// 	return err
+		// }
+		// if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, authRealm); err != nil {
+		// 	return err
+		// }
 	}
 	return nil
 }
