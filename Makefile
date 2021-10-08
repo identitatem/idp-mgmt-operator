@@ -46,6 +46,11 @@ OS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(shell uname -m | sed 's/x86_64/amd64/g')
 
 
+# Credentials for Bundle Push
+DOCKER_USER ?=
+DOCKER_PASS ?=
+
+
 
 #### UTILITIES #####
 
@@ -197,6 +202,12 @@ endif
 publish: bundle bundle-build bundle-push catalog-build catalog-push
 
 
+.PHONY: docker-login
+## Log in to the docker registry for ${BUNDLE_IMG}
+docker-login:
+	docker login ${BUNDLE_IMG} -u ${DOCKER_USER} -p ${DOCKER_PASS}
+
+
 .PHONY: bundle
 ## Generate bundle manifests and metadata, patch the webhook deployment name, then validate generated files [NOTE: validate bundle is skipped for now].
 bundle: manifests kustomize yq/install operatorsdk
@@ -213,7 +224,7 @@ bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 
-.PHONY: bundle-push
+.PHONY: bundle-push docker-login
 ## Push the bundle image.
 bundle-push:
 	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
@@ -228,7 +239,7 @@ catalog-build: opm
 	$(OPM) index add --container-tool docker --mode semver --tag $(CATALOG_IMG) --bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
 
 
-.PHONY: catalog-push
+.PHONY: catalog-push docker-login
 ## Push a catalog image.
 catalog-push:
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
