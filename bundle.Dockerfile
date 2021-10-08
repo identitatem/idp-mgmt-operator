@@ -1,3 +1,4 @@
+# Copyright Red Hat
 FROM scratch
 
 # Core bundle labels.

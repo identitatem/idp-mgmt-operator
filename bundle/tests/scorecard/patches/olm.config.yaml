@@ -1,3 +1,4 @@
+# Copyright Red Hat
 - op: add
   path: /stages/0/tests/-
   value:
