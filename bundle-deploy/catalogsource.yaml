@@ -1,0 +1,15 @@
+# Copyright Red Hat
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: __CATALOG_DEPLOY_NAMESPACE__
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: idp-mgmt-config-catalog
+  namespace: __CATALOG_DEPLOY_NAMESPACE__
+spec:
+  sourceType: grpc
+  image: __CATALOG_IMG__
+  displayName: IDP Management Operator Catalog

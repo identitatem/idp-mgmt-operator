@@ -13,6 +13,15 @@ dex operator.
 
 `make functional-test-full`
 
+# Build a Bundle and Catalog
+
+You can build and push an operator bundle and installable catalog for this operator, which will allow you to apply a CatalogSource to your cluster and install via the OperatorHub UI or via an Operator Subscription object.  
+
+To build and publish a bundle and catalog:
+1. [IMPORTANT] Use your own registry.  If you want to use your own registry, create to repos in your quay.io org (your user org) named `idp-mgmt-operator-bundle` and `idp-mgmt-operator-catalog` and, if so, `export IMAGE_TAG_BASE=quay.io/\<your-user\>/idp-mgmt-operator`.  **If you don’t do this, you need push permissions to identitatem - and you’ll push straight to the source identitatem org.**
+2. `export` DOCKER_USER and DOCKER_PASS equal to a docker user and password that will allow you to push to the quay repositories outlined in step 1.
+3. run `make publish` - this should acquire any dependencies and push to quay!
+
 # Installing
 
 ## Prereqs
@@ -102,6 +111,8 @@ NOTE: You will need to return to the GitHub OAuth a little bit later to correct 
 
 ## Install the operator
 
+### Install the operator from this repo
+
 1. Clone this repo
 
 ```bash
@@ -134,6 +145,36 @@ Check using the following command:
 ```bash
 oc get pods -n idp-mgmt-config
 ```
+
+### Install the operator from a Catalog
+
+**NOTE**: To install via the catalog, you must be on OpenShift 4.8.12 or newer due to [this OLM bug](https://bugzilla.redhat.com/show_bug.cgi?id=1969902) - a backport to OCP 4.7 is in progress.
+
+If you built an operator bundle and catalog as [documented earlier](#build-a-bundle-and-catalog), or if you wish to use the latest published operator bundle and catalog to deploy:
+1. Login to Red Hat Advanced Cluster Management or Multi Cluster Engine hub
+2. Verify you are logged into the hub cluster
+
+```bash
+oc cluster-info
+```
+
+3. From the idp-mgmt-operator directory run `make deploy-catalog` - this will create a CatalogSource on your cluster.  
+4. Create a subscription to the operator via the OperatorHub UI or by applying a subscription to the Operator - which looks something like:
+```
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: idp-mgmt-operator
+  namespace: idp-mgmt-config
+spec:
+  channel: alpha
+  installPlanApproval: Automatic
+  name: idp-mgmt-operator
+  source: idp-mgmt-config-catalog
+  sourceNamespace: idp-mgmt-config
+  startingCSV: idp-mgmt-operator.v0.0.1
+```
+5. Wait for the operator to install - then move on to the next step!
 
 ## Create an AuthRealm, ManagedClusterSet, etc
 

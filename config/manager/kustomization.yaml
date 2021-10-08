@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: idp-mgmt-operator
-  newTag: redirect_url
+  newTag: add-bundle

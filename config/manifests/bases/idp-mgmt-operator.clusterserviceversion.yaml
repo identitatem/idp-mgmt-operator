@@ -1,0 +1,42 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: idp-mgmt-operator.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions: {}
+  description: Operator to Manage IDP Configurations at the Multicluster Scale
+  displayName: Identity Configuration Management for Kubernetes
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - idp-mgmt-operator
+  links:
+  - name: Identity Configuration Management for Kubernetes
+    url: https://github.com/identitatem
+  maintainers:
+  - email: acm-contact@redhat.com
+    name: Red Hat
+  maturity: alpha
+  provider:
+    name: Red Hat
+    url: https://github.com/identitatem
+  version: 0.0.0
