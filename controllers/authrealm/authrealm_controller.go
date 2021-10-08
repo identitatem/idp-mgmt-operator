@@ -184,7 +184,7 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	authRealmPredicate := predicate.Predicate(predicate.Funcs{
 		GenericFunc: func(e event.GenericEvent) bool { return false },
-		DeleteFunc:  func(e event.DeleteEvent) bool { return false },
+		DeleteFunc:  func(e event.DeleteEvent) bool { return true },
 		CreateFunc:  func(e event.CreateEvent) bool { return true },
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			authRealmOld := e.ObjectOld.(*identitatemv1alpha1.AuthRealm)
