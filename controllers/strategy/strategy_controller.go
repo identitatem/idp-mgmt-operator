@@ -189,7 +189,7 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 			Spec: placement.Spec,
 		}
 		// Set owner reference for cleanup
-		err = controllerutil.SetOwnerReference(strategy, placementStrategy, r.Scheme)
+		err = controllerutil.SetControllerReference(strategy, placementStrategy, r.Scheme)
 		if err != nil {
 			return nil, false, err
 		}

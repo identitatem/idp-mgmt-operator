@@ -216,6 +216,6 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			return req
 		})).
 		//TODO change to watch with mapping
-		Owns(&identitatemdexserverv1lapha1.DexServer{}).
+		// Owns(&identitatemdexserverv1lapha1.DexServer{}).
 		Complete(r)
 }
