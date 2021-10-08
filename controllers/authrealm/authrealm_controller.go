@@ -191,8 +191,8 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			authRealmNew := e.ObjectNew.(*identitatemv1alpha1.AuthRealm)
 			// only handle the Finalizer and Spec changes
 			return !equality.Semantic.DeepEqual(e.ObjectOld.GetFinalizers(), e.ObjectNew.GetFinalizers()) ||
-				!equality.Semantic.DeepEqual(authRealmOld.Spec, authRealmNew.Spec)
-
+				!equality.Semantic.DeepEqual(authRealmOld.Spec, authRealmNew.Spec) ||
+				authRealmOld.DeletionTimestamp != authRealmNew.DeletionTimestamp
 		},
 	})
 	return ctrl.NewControllerManagedBy(mgr).

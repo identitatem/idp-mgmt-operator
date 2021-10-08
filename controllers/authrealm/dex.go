@@ -365,15 +365,16 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 }
 
 func (r *AuthRealmReconciler) deleteAuthRealmNamespace(authRealm *identitatemv1alpha1.AuthRealm) error {
+	r.Log.Info("delete DexServer ns", "namespace", helpers.DexServerNamespace(authRealm))
 	ns := &corev1.Namespace{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authRealm)}, ns); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
+		if !errors.IsNotFound(err) {
+			return giterrors.WithStack(err)
 		}
-		return giterrors.WithStack(err)
 	}
 	if err := r.Client.Delete(context.TODO(), ns); err != nil {
 		return giterrors.WithStack(err)
 	}
+	r.Log.Info("deleted DexServer ns", "namespace", helpers.DexServerNamespace(authRealm))
 	return r.deleteDexOperator(authRealm)
 }
