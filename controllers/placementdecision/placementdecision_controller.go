@@ -146,7 +146,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, giterrors.WithStack(err)
 	}
 
-	Add finalizer to the placement, it will be removed once the ns is deleted
+	// Add finalizer to the placement, it will be removed once the ns is deleted
 	r.Log.Info("add PlacementDecision finalizer on placement",
 		"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
 		"namespace", placement.GetNamespace(),
