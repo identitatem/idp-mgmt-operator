@@ -146,7 +146,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, giterrors.WithStack(err)
 	}
 
-	//Add finalizer to the placement, it will be removed once the ns is deleted
+	Add finalizer to the placement, it will be removed once the ns is deleted
 	r.Log.Info("add PlacementDecision finalizer on placement",
 		"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
 		"namespace", placement.GetNamespace(),
@@ -156,13 +156,13 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	//Add finalizer to the strategy, it will be removed once the ns is deleted
-	r.Log.Info("add PlacementDecision finalizer on strategy",
-		"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
-		"namespace", strategy.GetNamespace(),
-		"name", strategy.GetName())
-	if err := r.AddPlacementDecisionFinalizer(strategy, strategy); err != nil {
-		return reconcile.Result{}, err
-	}
+	// r.Log.Info("add PlacementDecision finalizer on strategy",
+	// 	"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
+	// 	"namespace", strategy.GetNamespace(),
+	// 	"name", strategy.GetName())
+	// if err := r.AddPlacementDecisionFinalizer(strategy, strategy); err != nil {
+	// 	return reconcile.Result{}, err
+	// }
 
 	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
 	if err != nil {
@@ -170,13 +170,13 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	//Add finalizer to the authrealm, it will be removed once the ns is deleted
-	r.Log.Info("add PlacementDecision finalizer on authrealm",
-		"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
-		"namespace", authRealm.GetNamespace(),
-		"name", authRealm.GetName())
-	if err := r.AddPlacementDecisionFinalizer(strategy, authRealm); err != nil {
-		return reconcile.Result{}, err
-	}
+	// r.Log.Info("add PlacementDecision finalizer on authrealm",
+	// 	"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
+	// 	"namespace", authRealm.GetNamespace(),
+	// 	"name", authRealm.GetName())
+	// if err := r.AddPlacementDecisionFinalizer(strategy, authRealm); err != nil {
+	// 	return reconcile.Result{}, err
+	// }
 
 	if err := r.processPlacementDecision(authRealm, instance); err != nil {
 		return reconcile.Result{}, err
