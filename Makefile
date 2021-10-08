@@ -205,7 +205,7 @@ publish: bundle bundle-build bundle-push catalog-build catalog-push
 .PHONY: docker-login
 ## Log in to the docker registry for ${BUNDLE_IMG}
 docker-login:
-	docker login ${BUNDLE_IMG} -u ${DOCKER_USER} -p ${DOCKER_PASS}
+	@docker login ${BUNDLE_IMG} -u ${DOCKER_USER} -p ${DOCKER_PASS}
 
 
 .PHONY: bundle
@@ -224,9 +224,9 @@ bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 
-.PHONY: bundle-push docker-login
+.PHONY: bundle-push
 ## Push the bundle image.
-bundle-push:
+bundle-push: docker-login
 	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
 
 
@@ -239,9 +239,9 @@ catalog-build: opm
 	$(OPM) index add --container-tool docker --mode semver --tag $(CATALOG_IMG) --bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
 
 
-.PHONY: catalog-push docker-login
+.PHONY: catalog-push
 ## Push a catalog image.
-catalog-push:
+catalog-push: docker-login
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
 
