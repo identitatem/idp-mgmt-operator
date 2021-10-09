@@ -204,7 +204,8 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			dexServer := o.(*identitatemdexserverv1lapha1.DexServer)
 			req := make([]reconcile.Request, 0)
 			for _, relatedObject := range dexServer.Status.RelatedObjects {
-				if relatedObject.Kind == "AuthRealm" {
+				if dexServer.DeletionTimestamp.IsZero() &&
+					relatedObject.Kind == "AuthRealm" {
 					req = append(req, reconcile.Request{
 						NamespacedName: types.NamespacedName{
 							Name:      relatedObject.Name,

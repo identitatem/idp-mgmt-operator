@@ -152,6 +152,7 @@ func (r *StrategyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return reconcile.Result{}, err
 		}
 	case false:
+		controllerutil.SetControllerReference(authRealm, placementStrategy, r.Scheme)
 		if err := r.Client.Create(context.Background(), placementStrategy); err != nil {
 			return reconcile.Result{}, err
 		}

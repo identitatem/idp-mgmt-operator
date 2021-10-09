@@ -330,7 +330,8 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			dexClient := o.(*dexoperatorv1alpha1.DexClient)
 			req := make([]reconcile.Request, 0)
 			for _, relatedObject := range dexClient.Status.RelatedObjects {
-				if relatedObject.Kind == "PlacementDecision" {
+				if dexClient.DeletionTimestamp.IsZero() &&
+					relatedObject.Kind == "PlacementDecision" {
 					req = append(req, reconcile.Request{
 						NamespacedName: types.NamespacedName{
 							Name:      relatedObject.Name,
