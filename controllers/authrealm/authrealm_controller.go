@@ -21,6 +21,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -45,7 +46,7 @@ type AuthRealmReconciler struct {
 	Scheme             *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,authrealms/status,strategies},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,authrealms/status,authrealms/finalizers,strategies},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexservers,dexservers/status,dexclients,dexclients/status},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources={namespaces,secrets,serviceaccounts,configmaps},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="apps",resources={deployments},verbs=get;list;watch;create;update;patch;delete
@@ -83,10 +84,10 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if err := r.deleteAuthRealmNamespace(instance); err != nil {
 			return reconcile.Result{}, err
 		}
-		// controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
-		// if err := r.Client.Update(context.TODO(), instance); err != nil {
-		// 	return ctrl.Result{}, giterrors.WithStack(err)
-		// }
+		controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
+		if err := r.Client.Update(context.TODO(), instance); err != nil {
+			return ctrl.Result{}, giterrors.WithStack(err)
+		}
 		return reconcile.Result{}, nil
 	}
 
@@ -215,6 +216,6 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			return req
 		})).
 		//TODO change to watch with mapping
-		// Owns(&identitatemdexserverv1lapha1.DexServer{}).
+		Owns(&identitatemdexserverv1lapha1.DexServer{}).
 		Complete(r)
 }

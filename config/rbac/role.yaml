@@ -159,6 +159,7 @@ rules:
   - identityconfig.identitatem.io
   resources:
   - authrealms
+  - authrealms/finalizers
   - authrealms/status
   - strategies
   verbs:

@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -101,20 +102,20 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		if err := r.deletePlacementDecision(instance); err != nil {
 			return reconcile.Result{}, err
 		}
-		// r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", helpers.PlacementDecisionFinalizer)
-		// controllerutil.RemoveFinalizer(instance, helpers.PlacementDecisionFinalizer)
-		// if err := r.Client.Update(context.TODO(), instance); err != nil {
-		// 	return ctrl.Result{}, giterrors.WithStack(err)
-		// }
+		r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", helpers.PlacementDecisionFinalizer)
+		controllerutil.RemoveFinalizer(instance, helpers.PlacementDecisionFinalizer)
+		if err := r.Client.Update(context.TODO(), instance); err != nil {
+			return ctrl.Result{}, giterrors.WithStack(err)
+		}
 		return reconcile.Result{}, nil
 	}
 
 	//Add finalizer
 	r.Log.Info("add PlacementDecision finalizer", "Finalizer:", helpers.PlacementDecisionFinalizer)
-	// controllerutil.AddFinalizer(instance, helpers.PlacementDecisionFinalizer)
-	// if err := r.Client.Update(context.TODO(), instance); err != nil {
-	// 	return reconcile.Result{}, giterrors.WithStack(err)
-	// }
+	controllerutil.AddFinalizer(instance, helpers.PlacementDecisionFinalizer)
+	if err := r.Client.Update(context.TODO(), instance); err != nil {
+		return reconcile.Result{}, giterrors.WithStack(err)
+	}
 
 	//Check if the placementDecision is linked to a strategy
 	ok, err := r.isLinkedToStrategy(instance)
@@ -149,18 +150,18 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
 		"namespace", placement.GetNamespace(),
 		"name", placement.GetName())
-	// if err := r.AddPlacementDecisionFinalizer(strategy, placement); err != nil {
-	// 	return reconcile.Result{}, err
-	// }
+	if err := r.AddPlacementDecisionFinalizer(strategy, placement); err != nil {
+		return reconcile.Result{}, err
+	}
 
 	//Add finalizer to the strategy, it will be removed once the ns is deleted
-	// r.Log.Info("add PlacementDecision finalizer on strategy",
-	// 	"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
-	// 	"namespace", strategy.GetNamespace(),
-	// 	"name", strategy.GetName())
-	// if err := r.AddPlacementDecisionFinalizer(strategy, strategy); err != nil {
-	// 	return reconcile.Result{}, err
-	// }
+	r.Log.Info("add PlacementDecision finalizer on strategy",
+		"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
+		"namespace", strategy.GetNamespace(),
+		"name", strategy.GetName())
+	if err := r.AddPlacementDecisionFinalizer(strategy, strategy); err != nil {
+		return reconcile.Result{}, err
+	}
 
 	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
 	if err != nil {
@@ -168,13 +169,13 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	//Add finalizer to the authrealm, it will be removed once the ns is deleted
-	// r.Log.Info("add PlacementDecision finalizer on authrealm",
-	// 	"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
-	// 	"namespace", authRealm.GetNamespace(),
-	// 	"name", authRealm.GetName())
-	// if err := r.AddPlacementDecisionFinalizer(strategy, authRealm); err != nil {
-	// 	return reconcile.Result{}, err
-	// }
+	r.Log.Info("add PlacementDecision finalizer on authrealm",
+		"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
+		"namespace", authRealm.GetNamespace(),
+		"name", authRealm.GetName())
+	if err := r.AddPlacementDecisionFinalizer(strategy, authRealm); err != nil {
+		return reconcile.Result{}, err
+	}
 
 	if err := r.processPlacementDecision(authRealm, instance); err != nil {
 		return reconcile.Result{}, err
@@ -186,9 +187,9 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 func (r *PlacementDecisionReconciler) AddPlacementDecisionFinalizer(strategy *identitatemv1alpha1.Strategy, obj client.Object) error {
 	switch strategy.Spec.Type {
 	case identitatemv1alpha1.BackplaneStrategyType:
-		// controllerutil.AddFinalizer(obj, helpers.PlacementDecisionBackplaneFinalizer)
-		// case identitatemv1alpha1.GrcStrategyType:
-		// controllerutil.AddFinalizer(obj, placementDecisionGRCFinalizer)
+		controllerutil.AddFinalizer(obj, helpers.PlacementDecisionBackplaneFinalizer)
+	// case identitatemv1alpha1.GrcStrategyType:
+	// 	controllerutil.AddFinalizer(obj, placementDecisionGRCFinalizer)
 	default:
 		return fmt.Errorf("strategy type %s not supported", strategy.Spec.Type)
 	}
@@ -275,12 +276,12 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, placement); err != nil {
 			return err
 		}
-		// if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, strategy); err != nil {
-		// 	return err
-		// }
-		// if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, authRealm); err != nil {
-		// 	return err
-		// }
+		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, strategy); err != nil {
+			return err
+		}
+		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, authRealm); err != nil {
+			return err
+		}
 	}
 	return nil
 }

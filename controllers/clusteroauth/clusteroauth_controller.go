@@ -21,6 +21,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/ghodss/yaml"
@@ -114,11 +115,11 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		if result, err := r.unmanagedCluster(instance); err != nil {
 			return result, err
 		}
-		// r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", helpers.ClusterOAuthFinalizer)
-		// controllerutil.RemoveFinalizer(instance, helpers.ClusterOAuthFinalizer)
-		// if err := r.Client.Update(context.TODO(), instance); err != nil {
-		// 	return ctrl.Result{}, err
-		// }
+		r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", helpers.ClusterOAuthFinalizer)
+		controllerutil.RemoveFinalizer(instance, helpers.ClusterOAuthFinalizer)
+		if err := r.Client.Update(context.TODO(), instance); err != nil {
+			return ctrl.Result{}, err
+		}
 		return reconcile.Result{}, nil
 	}
 
