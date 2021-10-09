@@ -376,5 +376,19 @@ func (r *AuthRealmReconciler) processAuthRealmDeletion(authRealm *identitatemv1a
 		return giterrors.WithStack(err)
 	}
 	r.Log.Info("deleted DexServer ns", "namespace", helpers.DexServerNamespace(authRealm))
+	r.Log.Info("delete Strategy", "name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType))
+	st := &identitatemv1alpha1.Strategy{}
+	if err := r.Client.Get(context.TODO(),
+		client.ObjectKey{Name: helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType), Namespace: authRealm.Namespace},
+		st); err != nil {
+		if !errors.IsNotFound(err) {
+			return giterrors.WithStack(err)
+		}
+	}
+	if err := r.Client.Delete(context.TODO(), st); err != nil {
+		return giterrors.WithStack(err)
+	}
+	r.Log.Info("deleted Strategy", "name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType))
+	r.Log.Info("delete DexOperator")
 	return r.deleteDexOperator(authRealm)
 }
