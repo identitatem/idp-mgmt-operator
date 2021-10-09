@@ -19,7 +19,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -102,20 +101,20 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		if err := r.deletePlacementDecision(instance); err != nil {
 			return reconcile.Result{}, err
 		}
-		r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", helpers.PlacementDecisionFinalizer)
-		controllerutil.RemoveFinalizer(instance, helpers.PlacementDecisionFinalizer)
-		if err := r.Client.Update(context.TODO(), instance); err != nil {
-			return ctrl.Result{}, giterrors.WithStack(err)
-		}
+		// r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", helpers.PlacementDecisionFinalizer)
+		// controllerutil.RemoveFinalizer(instance, helpers.PlacementDecisionFinalizer)
+		// if err := r.Client.Update(context.TODO(), instance); err != nil {
+		// 	return ctrl.Result{}, giterrors.WithStack(err)
+		// }
 		return reconcile.Result{}, nil
 	}
 
 	//Add finalizer
 	r.Log.Info("add PlacementDecision finalizer", "Finalizer:", helpers.PlacementDecisionFinalizer)
-	controllerutil.AddFinalizer(instance, helpers.PlacementDecisionFinalizer)
-	if err := r.Client.Update(context.TODO(), instance); err != nil {
-		return reconcile.Result{}, giterrors.WithStack(err)
-	}
+	// controllerutil.AddFinalizer(instance, helpers.PlacementDecisionFinalizer)
+	// if err := r.Client.Update(context.TODO(), instance); err != nil {
+	// 	return reconcile.Result{}, giterrors.WithStack(err)
+	// }
 
 	//Check if the placementDecision is linked to a strategy
 	ok, err := r.isLinkedToStrategy(instance)
@@ -133,7 +132,6 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	//Search the placement corresponding to the placementDecision
 	r.Log.Info("search Placement",
-		"finalizer", helpers.PlacementDecisionFinalizer,
 		"namespace", instance.GetNamespace(),
 		"name", instance.GetLabels()[clusterv1alpha1.PlacementLabel])
 	placement := &clusterv1alpha1.Placement{}
@@ -151,9 +149,9 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
 		"namespace", placement.GetNamespace(),
 		"name", placement.GetName())
-	if err := r.AddPlacementDecisionFinalizer(strategy, placement); err != nil {
-		return reconcile.Result{}, err
-	}
+	// if err := r.AddPlacementDecisionFinalizer(strategy, placement); err != nil {
+	// 	return reconcile.Result{}, err
+	// }
 
 	//Add finalizer to the strategy, it will be removed once the ns is deleted
 	// r.Log.Info("add PlacementDecision finalizer on strategy",
