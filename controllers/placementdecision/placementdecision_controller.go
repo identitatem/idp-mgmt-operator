@@ -99,7 +99,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	//if deletetimestamp then delete dex namespace
 	if instance.DeletionTimestamp != nil {
-		if err := r.deletePlacementDecision(instance); err != nil {
+		if err := r.processPlacementDecisionDeletion(instance); err != nil {
 			return reconcile.Result{}, err
 		}
 		r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", helpers.PlacementDecisionFinalizer)
@@ -132,27 +132,27 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	//Search the placement corresponding to the placementDecision
-	r.Log.Info("search Placement",
-		"namespace", instance.GetNamespace(),
-		"name", instance.GetLabels()[clusterv1alpha1.PlacementLabel])
-	placement := &clusterv1alpha1.Placement{}
-	err = r.Get(context.TODO(),
-		client.ObjectKey{
-			Name:      instance.GetLabels()[clusterv1alpha1.PlacementLabel],
-			Namespace: instance.GetNamespace(),
-		}, placement)
-	if err != nil {
-		return reconcile.Result{}, giterrors.WithStack(err)
-	}
+	// r.Log.Info("search Placement",
+	// 	"namespace", instance.GetNamespace(),
+	// 	"name", instance.GetLabels()[clusterv1alpha1.PlacementLabel])
+	// placement := &clusterv1alpha1.Placement{}
+	// err = r.Get(context.TODO(),
+	// 	client.ObjectKey{
+	// 		Name:      instance.GetLabels()[clusterv1alpha1.PlacementLabel],
+	// 		Namespace: instance.GetNamespace(),
+	// 	}, placement)
+	// if err != nil {
+	// 	return reconcile.Result{}, giterrors.WithStack(err)
+	// }
 
 	// Add finalizer to the placement, it will be removed once the ns is deleted
-	r.Log.Info("add PlacementDecision finalizer on placement",
-		"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
-		"namespace", placement.GetNamespace(),
-		"name", placement.GetName())
-	if err := r.AddPlacementDecisionFinalizer(strategy, placement); err != nil {
-		return reconcile.Result{}, err
-	}
+	// r.Log.Info("add PlacementDecision finalizer on placement",
+	// 	"finalizer", helpers.PlacementDecisionBackplaneFinalizer,
+	// 	"namespace", placement.GetNamespace(),
+	// 	"name", placement.GetName())
+	// if err := r.AddPlacementDecisionFinalizer(strategy, placement); err != nil {
+	// 	return reconcile.Result{}, err
+	// }
 
 	//Add finalizer to the strategy, it will be removed once the ns is deleted
 	r.Log.Info("add PlacementDecision finalizer on strategy",
@@ -223,7 +223,7 @@ func (r *PlacementDecisionReconciler) isLinkedToStrategy(placementDecision *clus
 	return true, giterrors.WithStack(err)
 }
 
-func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) error {
+func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placementDecision *clusterv1alpha1.PlacementDecision) error {
 	r.Log.Info("start deletion of PlacementDecision",
 		"namespace", placementDecision.Namespace,
 		"name", placementDecision.Name)
@@ -262,20 +262,19 @@ func (r *PlacementDecisionReconciler) deletePlacementDecision(placementDecision 
 	//Remove the finalizers when there is no other placementDecisions for that placement.
 	if len(placementDecisions.Items) == 1 {
 		//Search the placement corresponding to the placementDecision
-		placement := &clusterv1alpha1.Placement{}
-		err := r.Get(context.TODO(),
-			client.ObjectKey{
-				Name:      placementDecision.GetLabels()[clusterv1alpha1.PlacementLabel],
-				Namespace: placementDecision.GetNamespace(),
-			}, placement)
-		if err != nil {
-			return giterrors.WithStack(err)
-		}
+		// placement := &clusterv1alpha1.Placement{}
+		// if err := r.Get(context.TODO(),
+		// 	client.ObjectKey{
+		// 		Name:      placementDecision.GetLabels()[clusterv1alpha1.PlacementLabel],
+		// 		Namespace: placementDecision.GetNamespace(),
+		// 	}, placement); err != nil {
+		// 	return giterrors.WithStack(err)
+		// }
 
 		//All resources are cleaned, finalizers on authrealm and strategy can be removed
-		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, placement); err != nil {
-			return err
-		}
+		// if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, placement); err != nil {
+		// 	return err
+		// }
 		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, strategy); err != nil {
 			return err
 		}
