@@ -364,7 +364,7 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 	return cs, giterrors.WithStack(err)
 }
 
-func (r *AuthRealmReconciler) deleteAuthRealmNamespace(authRealm *identitatemv1alpha1.AuthRealm) error {
+func (r *AuthRealmReconciler) processAuthRealmDeletion(authRealm *identitatemv1alpha1.AuthRealm) error {
 	r.Log.Info("delete DexServer ns", "namespace", helpers.DexServerNamespace(authRealm))
 	ns := &corev1.Namespace{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authRealm)}, ns); err != nil {

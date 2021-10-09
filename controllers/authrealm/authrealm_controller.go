@@ -81,7 +81,7 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	//if deletetimestamp then delete dex namespace
 	if instance.DeletionTimestamp != nil {
-		if err := r.deleteAuthRealmNamespace(instance); err != nil {
+		if err := r.processAuthRealmDeletion(instance); err != nil {
 			return reconcile.Result{}, err
 		}
 		controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
