@@ -35,3 +35,6 @@
 /_output
 kind_kubeconfig.yaml
 kind_kubeconfig_internal.yaml
+
+/operator-sdk
+/yq
