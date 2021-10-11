@@ -23,25 +23,36 @@ spec:
         control-plane: controller-manager
     spec:
       containers:
-      - args:
-        - manager
-        - --enable-leader-election
-        - --
-        - -v 5
-        env:
-        - name: RELATED_IMAGE_DEX_OPERATOR
-          value: "quay.io/identitatem/dex-operator@sha256:2b13763d838ee90427ab23ad44df53e5dabaf37fa575ba548bd61efecc7bba82"
-        - name: RELATED_IMAGE_DEX_SERVER
-          value: quay.io/dexidp/dex:v2.28.1
-        image: quay.io/identitatem/idp-mgmt-operator:latest
-        name: manager
-        imagePullPolicy: Always
-        resources:
-          limits:
-            cpu: 300m
-            memory: 500Mi
-          requests:
-            cpu: 300m
-            memory: 500Mi
+        - args:
+            - manager
+            - --enable-leader-election
+            - --
+            - -v 4
+          env:
+            - name: RELATED_IMAGE_DEX_OPERATOR
+              value: "quay.io/identitatem/dex-operator@sha256:2b13763d838ee90427ab23ad44df53e5dabaf37fa575ba548bd61efecc7bba82"
+            - name: RELATED_IMAGE_DEX_SERVER
+              value: quay.io/dexidp/dex:v2.28.1
+          image: quay.io/identitatem/idp-mgmt-operator:latest
+          livenessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /healthz
+              port: 8081
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            failureThreshold: 30
+            periodSeconds: 10
+          name: manager
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: 300m
+              memory: 500Mi
+            requests:
+              cpu: 300m
+              memory: 500Mi
       serviceAccountName: idp-mgmt-operator-controller-manager
       terminationGracePeriodSeconds: 10

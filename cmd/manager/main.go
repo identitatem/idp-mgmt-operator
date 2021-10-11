@@ -12,6 +12,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
@@ -30,6 +31,7 @@ var (
 
 type managerOptions struct {
 	metricsAddr          string
+	probeAddr            string
 	enableLeaderElection bool
 }
 
@@ -51,6 +53,7 @@ func NewManager() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&o.metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	cmd.Flags().StringVar(&o.probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	cmd.Flags().BoolVar(&o.enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -62,11 +65,12 @@ func (o *managerOptions) run() {
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: o.metricsAddr,
-		Port:               9443,
-		LeaderElection:     o.enableLeaderElection,
-		LeaderElectionID:   "628f2987.identitatem.io",
+		Scheme:                 scheme,
+		MetricsBindAddress:     o.metricsAddr,
+		Port:                   9443,
+		HealthProbeBindAddress: o.probeAddr,
+		LeaderElection:         o.enableLeaderElection,
+		LeaderElectionID:       "628f2987.identitatem.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -123,6 +127,17 @@ func (o *managerOptions) run() {
 		Log:                ctrl.Log.WithName("controllers").WithName("ClusterOAuth"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ClusterOAuth")
+		os.Exit(1)
+	}
+
+	// add healthz/readyz check handler
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to add healthz check handler ")
+		os.Exit(1)
+	}
+
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to add readyz check handler ")
 		os.Exit(1)
 	}
 
