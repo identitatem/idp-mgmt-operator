@@ -212,13 +212,10 @@ docker-login:
 ## Generate bundle manifests and metadata, patch the webhook deployment name, then validate generated files [NOTE: validate bundle is skipped for now].
 bundle: manifests kustomize yq/install operatorsdk
 	${OPERATOR_SDK} generate kustomize manifests --interactive=false -q
-	cp config/manager/kustomization.yaml config/manager/kustomization.yaml.tmp
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	cp config/webhook/kustomization.yaml config/webhook/kustomization.yaml.tmp
-	${YQ} e 'del(.resources[2])'  -i config/webhook/kustomization.yaml
+	cp -R config /tmp
+	cd /tmp/config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
+	${YQ} e 'del(.resources[2])'  -i /tmp/config/webhook/kustomization.yaml
 	kustomize build config/manifests | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
-	mv config/webhook/kustomization.yaml.tmp config/webhook/kustomization.yaml
-	mv config/manager/kustomization.yaml.tmp config/manager/kustomization.yaml
 	@WEBHOOK_DEPLOYMENT_NAME=`${YQ} e '.spec.template.spec.serviceAccountName' config/webhook/webhook.yaml` \
 		${YQ} e '.spec.webhookdefinitions[0].deploymentName = env(WEBHOOK_DEPLOYMENT_NAME)' -i bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
 
