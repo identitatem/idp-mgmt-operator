@@ -10,6 +10,7 @@ metadata:
   name: idp-mgmt-config-catalog
   namespace: __CATALOG_DEPLOY_NAMESPACE__
 spec:
+  displayName: identity configuration management for Kubernetes Catalog
+  publisher: Red Hat
   sourceType: grpc
   image: __CATALOG_IMG__
-  displayName: IDP Management Operator Catalog
