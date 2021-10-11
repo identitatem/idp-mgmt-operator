@@ -215,8 +215,8 @@ bundle: manifests kustomize yq/install operatorsdk
 	cp -R config /tmp
 	cd /tmp/config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	${YQ} e 'del(.resources[2])'  -i /tmp/config/webhook/kustomization.yaml
-	kustomize build config/manifests | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
-	@WEBHOOK_DEPLOYMENT_NAME=`${YQ} e '.spec.template.spec.serviceAccountName' config/webhook/webhook.yaml` \
+	kustomize build /tmp/config/manifests | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
+	@WEBHOOK_DEPLOYMENT_NAME=`${YQ} e '.spec.template.spec.serviceAccountName' /tmp/config/webhook/webhook.yaml` \
 		${YQ} e '.spec.webhookdefinitions[0].deploymentName = env(WEBHOOK_DEPLOYMENT_NAME)' -i bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
 
 
