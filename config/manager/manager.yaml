@@ -27,7 +27,7 @@ spec:
             - manager
             - --enable-leader-election
             - --
-            - -v 4
+            - -v 5
           env:
             - name: RELATED_IMAGE_DEX_OPERATOR
               value: "quay.io/identitatem/dex-operator@sha256:2b13763d838ee90427ab23ad44df53e5dabaf37fa575ba548bd61efecc7bba82"
