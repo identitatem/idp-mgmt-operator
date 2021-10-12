@@ -9,7 +9,7 @@ on:
 name: Create Release
 
 jobs:
-  test:
+  release:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -19,7 +19,7 @@ jobs:
       with:
         go-version: 1.16
 
-    - name: Install Dependencies and Publish
+    - name: Publish a release tagged image
       env:
         DOCKER_USER: ${{ secrets.DOCKER_USER }}
         DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
