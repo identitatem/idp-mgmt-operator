@@ -64,6 +64,8 @@ func (o *managerOptions) run() {
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
+	setupLog.Info("Setup Manager")
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     o.metricsAddr,
@@ -76,6 +78,8 @@ func (o *managerOptions) run() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+
+	setupLog.Info("Add AuthRealm reconciler")
 
 	if err = (&authrealm.AuthRealmReconciler{
 		Client:             mgr.GetClient(),
@@ -91,6 +95,7 @@ func (o *managerOptions) run() {
 
 	//This manager is in charge of creating a Placement per strategy
 	//based on the strategy and authrealm
+	setupLog.Info("Add Strategy reconciler")
 	if err = (&strategy.StrategyReconciler{
 		Client:             mgr.GetClient(),
 		KubeClient:         kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
@@ -104,6 +109,7 @@ func (o *managerOptions) run() {
 	}
 
 	//This manager creates the DexClient and ClusterOAuth based on placementDecision
+	setupLog.Info("Add DexClient reconciler")
 	if err = (&placementdecision.PlacementDecisionReconciler{
 		Client:             mgr.GetClient(),
 		KubeClient:         kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
@@ -118,6 +124,7 @@ func (o *managerOptions) run() {
 
 	//This manager consolidate all ClusterOAuth into one OAUth and
 	//send it to the managedcluster using the available strategy
+	setupLog.Info("Add ClusterOAuth reconciler")
 	if err = (&clusteroauth.ClusterOAuthReconciler{
 		Client:             mgr.GetClient(),
 		KubeClient:         kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
@@ -131,11 +138,13 @@ func (o *managerOptions) run() {
 	}
 
 	// add healthz/readyz check handler
+	setupLog.Info("Add health check")
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to add healthz check handler ")
 		os.Exit(1)
 	}
 
+	setupLog.Info("Add ready check")
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to add readyz check handler ")
 		os.Exit(1)
@@ -143,7 +152,7 @@ func (o *managerOptions) run() {
 
 	// +kubebuilder:scaffold:builder
 
-	setupLog.Info("starting manager")
+	setupLog.Info("Starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)

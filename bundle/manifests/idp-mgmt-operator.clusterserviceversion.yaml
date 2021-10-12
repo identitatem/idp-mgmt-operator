@@ -332,8 +332,18 @@ spec:
                       httpGet:
                         path: /healthz
                         port: 8081
-                        scheme: HTTPS
+                        scheme: HTTP
+                      initialDelaySeconds: 15
+                      periodSeconds: 20
                     name: manager
+                    readinessProbe:
+                      failureThreshold: 5
+                      httpGet:
+                        path: /readyz
+                        port: 8081
+                        scheme: HTTP
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
                     resources:
                       limits:
                         cpu: 300m
@@ -341,12 +351,6 @@ spec:
                       requests:
                         cpu: 300m
                         memory: 500Mi
-                    startupProbe:
-                      failureThreshold: 30
-                      httpGet:
-                        path: /healthz
-                        port: 8081
-                      periodSeconds: 10
                 serviceAccountName: idp-mgmt-operator-controller-manager
                 terminationGracePeriodSeconds: 10
         - name: idp-mgmt-operator-webhook-service

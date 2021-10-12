@@ -26,6 +26,7 @@ spec:
         - args:
             - manager
             - --enable-leader-election
+            - "--health-probe-bind-address=:8081"
             - --
             - -v 5
           env:
@@ -36,15 +37,18 @@ spec:
           image: quay.io/identitatem/idp-mgmt-operator:latest
           livenessProbe:
             httpGet:
-              scheme: HTTPS
+              scheme: HTTP
               path: /healthz
               port: 8081
-          startupProbe:
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          readinessProbe:
             httpGet:
-              path: /healthz
+              scheme: HTTP
+              path: /readyz
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 20
+            periodSeconds: 20
           name: manager
           imagePullPolicy: Always
           resources:
