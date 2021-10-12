@@ -40,15 +40,15 @@ spec:
               scheme: HTTP
               path: /healthz
               port: 8081
-            initialDelaySeconds: 20
+            initialDelaySeconds: 15
             periodSeconds: 20
           readinessProbe:
             httpGet:
               scheme: HTTP
               path: /readyz
               port: 8081
-            initialDelaySeconds: 20
-            periodSeconds: 20
+            initialDelaySeconds: 5
+            periodSeconds: 10
           name: manager
           imagePullPolicy: Always
           resources:
