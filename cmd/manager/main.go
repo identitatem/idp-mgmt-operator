@@ -12,6 +12,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
@@ -30,6 +31,7 @@ var (
 
 type managerOptions struct {
 	metricsAddr          string
+	probeAddr            string
 	enableLeaderElection bool
 }
 
@@ -51,6 +53,7 @@ func NewManager() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&o.metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	cmd.Flags().StringVar(&o.probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	cmd.Flags().BoolVar(&o.enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -61,17 +64,22 @@ func (o *managerOptions) run() {
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
+	setupLog.Info("Setup Manager")
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: o.metricsAddr,
-		Port:               9443,
-		LeaderElection:     o.enableLeaderElection,
-		LeaderElectionID:   "628f2987.identitatem.io",
+		Scheme:                 scheme,
+		MetricsBindAddress:     o.metricsAddr,
+		Port:                   9443,
+		HealthProbeBindAddress: o.probeAddr,
+		LeaderElection:         o.enableLeaderElection,
+		LeaderElectionID:       "628f2987.identitatem.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+
+	setupLog.Info("Add AuthRealm reconciler")
 
 	if err = (&authrealm.AuthRealmReconciler{
 		Client:             mgr.GetClient(),
@@ -87,6 +95,7 @@ func (o *managerOptions) run() {
 
 	//This manager is in charge of creating a Placement per strategy
 	//based on the strategy and authrealm
+	setupLog.Info("Add Strategy reconciler")
 	if err = (&strategy.StrategyReconciler{
 		Client:             mgr.GetClient(),
 		KubeClient:         kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
@@ -100,6 +109,7 @@ func (o *managerOptions) run() {
 	}
 
 	//This manager creates the DexClient and ClusterOAuth based on placementDecision
+	setupLog.Info("Add DexClient reconciler")
 	if err = (&placementdecision.PlacementDecisionReconciler{
 		Client:             mgr.GetClient(),
 		KubeClient:         kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
@@ -114,6 +124,7 @@ func (o *managerOptions) run() {
 
 	//This manager consolidate all ClusterOAuth into one OAUth and
 	//send it to the managedcluster using the available strategy
+	setupLog.Info("Add ClusterOAuth reconciler")
 	if err = (&clusteroauth.ClusterOAuthReconciler{
 		Client:             mgr.GetClient(),
 		KubeClient:         kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
@@ -126,9 +137,22 @@ func (o *managerOptions) run() {
 		os.Exit(1)
 	}
 
+	// add healthz/readyz check handler
+	setupLog.Info("Add health check")
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to add healthz check handler ")
+		os.Exit(1)
+	}
+
+	setupLog.Info("Add ready check")
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to add readyz check handler ")
+		os.Exit(1)
+	}
+
 	// +kubebuilder:scaffold:builder
 
-	setupLog.Info("starting manager")
+	setupLog.Info("Starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)

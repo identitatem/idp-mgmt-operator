@@ -328,7 +328,22 @@ spec:
                         value: quay.io/dexidp/dex:v2.28.1
                     image: quay.io/identitatem/idp-mgmt-operator:latest
                     imagePullPolicy: Always
+                    livenessProbe:
+                      httpGet:
+                        path: /healthz
+                        port: 8081
+                        scheme: HTTP
+                      initialDelaySeconds: 15
+                      periodSeconds: 20
                     name: manager
+                    readinessProbe:
+                      failureThreshold: 5
+                      httpGet:
+                        path: /readyz
+                        port: 8081
+                        scheme: HTTP
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
                     resources:
                       limits:
                         cpu: 300m
