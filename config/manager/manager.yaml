@@ -21,7 +21,29 @@ spec:
     metadata:
       labels:
         control-plane: controller-manager
+        idp-antiaffinity-selector: idp-mgmt-operator-controller
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: idp-antiaffinity-selector
+                      operator: In
+                      values:
+                        - idp-mgmt-operator-controller
+                topologyKey: topology.kubernetes.io/zone
+              weight: 70
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: idp-antiaffinity-selector
+                      operator: In
+                      values:
+                        - idp-mgmt-operator-controller
+                topologyKey: kubernetes.io/hostname
+              weight: 35
       containers:
         - args:
             - manager
@@ -60,3 +82,10 @@ spec:
               memory: 500Mi
       serviceAccountName: idp-mgmt-operator-controller-manager
       terminationGracePeriodSeconds: 10
+      tolerations:
+        - key: node-role.kubernetes.io/infra
+          operator: Exists
+          effect: NoSchedule
+        - key: dedicated
+          operator: Exists
+          effect: NoSchedule
