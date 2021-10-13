@@ -31,4 +31,5 @@ jobs:
         export VERSION=${GITHUB_REF##*/}
         export IMG_TAG=${GITHUB_REF##*/}
         export IMG=quay.io/identitatem/idp-mgmt-operator:${GITHUB_REF##*/}
+        export KUBEBUILDER_ASSETS=$HOME/kubebuilder/bin; 
         make publish-release
