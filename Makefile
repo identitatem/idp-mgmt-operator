@@ -16,7 +16,7 @@ IMG_TAG = latest
 endif
 
 # Image URL to use all building/pushing image targets
-IMG ?= ${PROJECT_NAME}:${IMG_TAG}
+export IMG ?= ${PROJECT_NAME}:${IMG_TAG}
 IMG_COVERAGE ?= ${PROJECT_NAME}-coverage:${IMG_TAG}
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:crdVersions=v1"
@@ -202,6 +202,11 @@ endif
 publish: bundle bundle-build bundle-push catalog-build catalog-push
 
 
+.PHONY: publish-release
+## Upodate, build, and push the bundle on a semver release tag, then build and push the catalog.
+publish-release: docker-login docker-build docker-push bundle bundle-build bundle-push catalog-build catalog-push
+
+
 .PHONY: docker-login
 ## Log in to the docker registry for ${BUNDLE_IMG}
 docker-login:
@@ -218,6 +223,7 @@ bundle: manifests kustomize yq/install operatorsdk
 	kustomize build /tmp/config/manifests | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
 	@WEBHOOK_DEPLOYMENT_NAME=`${YQ} e '.spec.template.spec.serviceAccountName' /tmp/config/webhook/webhook.yaml` \
 		${YQ} e '.spec.webhookdefinitions[0].deploymentName = env(WEBHOOK_DEPLOYMENT_NAME)' -i bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
+	@${YQ} e '.spec.install.spec.deployments[].spec.template.spec.containers[].image = env(IMG)' -i bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
 
 
 .PHONY: bundle-build

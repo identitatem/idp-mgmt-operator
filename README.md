@@ -22,6 +22,21 @@ To build and publish a bundle and catalog:
 2. `export` DOCKER_USER and DOCKER_PASS equal to a docker user and password that will allow you to push to the quay repositories outlined in step 1.
 3. run `make publish` - this should acquire any dependencies and push to quay!
 
+# Tagging and Generating a Release
+
+We have a GitHub action defined to generate a tagged bundle and catalog image when a SemVer GitHub tag is created on this repo.  To create a new release that will generate a versioned Bundle/Catalog:
+
+1. `git tag <semver-tag>`
+2. `git push --tags`
+3. Wait for the [GitHub Action to complete](https://github.com/identitatem/idp-mgmt-operator/actions).
+4. The action will create and push an [idp-mgmt-operator-bundle](https://quay.io/repository/identitatem/idp-mgmt-operator-bundle) and [idp-mgmt-operator-catalog](https://quay.io/repository/identitatem/idp-mgmt-operator-catalog) image and push to quay, tagged with the same SemVer tag you applied to the GitHub repo to generate that release.  
+
+In order to deploy this version - follow the Catalog deploy method but set:
+```
+VERSION=<semver-tag>
+IMG_TAG=<semver-tag>
+```
+
 # Installing
 
 ## Prereqs
