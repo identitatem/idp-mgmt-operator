@@ -25,13 +25,6 @@ export GITHUB_APP_CLIENT_SECRET=${GITHUB_APP_CLIENT_SECRET:-"githubappclientsecr
 export GITHUB_APP_CLIENT_ORG=${GITHUB_APP_CLIENT_ORG:-"githubappclientorg"}
 export ROUTE_SUBDOMAIN=${ROUTE_SUBDOMAIN:-"testdomain"}
 
-
-export LDAP_BIND_PASSWORD=${LDAP_BIND_PASSWORD:-"admin"}
-
-export LDAP_HOST=${LDAP_HOST:-"adf558f301d884463a9d44329fbafc4c-145647244.us-east-1.elb.amazonaws.com:636"}
-export LDAP_BIND_DN=${DEXSERVER_LDAP_BIND_DN:-"cn=Manager,dc=example,dc=com"}
-export LDAP_USERSEARCH_BASEDN=${DEXSERVER_LDAP_USERSEARCH_BASEDN:-"dc=example,dc=com"}
-
 export THE_FILENAME=/tmp/${NAME}".yaml"
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -87,15 +80,6 @@ metadata:
 data:
   clientSecret: ${GITHUB_APP_CLIENT_SECRET_B64}
 type: Opaque
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ${NAME}-ldap-secret
-  namespace: ${NS}
-type: Opaque
-stringData:
-  bindPW: ${LDAP_BIND_PASSWORD}
 ---
 apiVersion: identityconfig.identitatem.io/v1alpha1
 kind: AuthRealm
