@@ -268,7 +268,7 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 	if err != nil {
 		return err
 	}
-	dexServer.Spec.Issuer = fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Spec.RouteSubDomain, host)
+	dexServer.Spec.Issuer = fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Name+"-"+authRealm.Spec.RouteSubDomain, host)
 	if len(authRealm.Spec.CertificatesSecretRef.Name) != 0 {
 		certSecret := &corev1.Secret{}
 		if err := r.Client.Get(context.TODO(),
@@ -347,7 +347,7 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			//TODO set LDAP
 			c := &identitatemdexserverv1alpha1.ConnectorSpec{
 				Type: identitatemdexserverv1alpha1.ConnectorTypeLDAP,
-				Name: "openldap",
+				Name: "ldap",
 				Id:   "ldap",
 				LDAP: identitatemdexserverv1alpha1.LDAPConfigSpec{
 					Host:   idp.LDAP.URL,
@@ -360,12 +360,12 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 					InsecureSkipVerify: idp.LDAP.Insecure,
 					UsernamePrompt:     "Email Address",
 					UserSearch: identitatemdexserverv1alpha1.UserSearchSpec{
-						BaseDN:    "dc=example,dc=com",
-						Filter:    "(objectClass=person)",
-						Username:  "mail",
-						IDAttr:    "DN",
-						EmailAttr: "mail",
-						NameAttr:  "cn",
+						BaseDN:    authRealm.Spec.LDAPExtraConfigs[idp.Name].BaseDN,
+						Filter:    authRealm.Spec.LDAPExtraConfigs[idp.Name].Filter,
+						Username:  idp.LDAP.Attributes.PreferredUsername[0],
+						IDAttr:    idp.LDAP.Attributes.ID[0],
+						EmailAttr: idp.LDAP.Attributes.Email[0],
+						NameAttr:  idp.LDAP.Attributes.Name[0],
 					},
 				},
 			}

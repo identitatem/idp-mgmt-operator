@@ -115,7 +115,7 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 					"federated:id",
 					"offline_access",
 				},
-				Issuer: fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Spec.RouteSubDomain, host),
+				Issuer: fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Name+"-"+authRealm.Spec.RouteSubDomain, host),
 			},
 		},
 	}
