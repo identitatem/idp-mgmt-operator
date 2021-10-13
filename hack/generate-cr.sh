@@ -125,7 +125,7 @@ printf "\n${BLUE}Before using the generated YAML:${CLEAR}\n\n"
 printf "${BLUE}1) Ensure there is an entry in GitHub under Settings > Developer Settings > OAuth Apps${CLEAR}\n"
 printf "${BLUE}for Client ID ${GREEN}${GITHUB_APP_CLIENT_ID}${BLUE} which contains:${CLEAR}\n"
 printf "    - ${GREEN}Homepage URL:${YELLOW} https://console-openshift-console.${APPS}${CLEAR}\n"
-printf "    - ${GREEN}Authorization callback URL:${YELLOW} https://${ROUTE_SUBDOMAIN}.${APPS}/callback${CLEAR}\n"
+printf "    - ${GREEN}Authorization callback URL:${YELLOW} https://${NAME}-${ROUTE_SUBDOMAIN}.${APPS}/callback${CLEAR}\n"
 printf "${BLUE}prior to running the ${GREEN}oc apply${BLUE} command shown below.\n\n${CLEAR}"
 
 printf "${BLUE}2) Add the following labels to any managed cluster you want in the cluster set ${GREEN}${NAME}-clusterset${BLUE}:${CLEAR}\n"
