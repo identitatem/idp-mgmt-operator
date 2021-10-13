@@ -55,7 +55,7 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 	//Create DexServer CR
 	if err := r.createDexServer(authRealm); err != nil {
 		r.Log.Info("Update status create dexServer CR failure",
-			"name", helpers.DexServerName(),
+			"name", authRealm.Name,
 			"namespace", helpers.DexServerNamespace(authRealm),
 			"error", err.Error())
 		cond := metav1.Condition{
@@ -63,7 +63,7 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 			Status: metav1.ConditionFalse,
 			Reason: "AuthRealmAppliedFailed",
 			Message: fmt.Sprintf("failed to create dexServer name: %s namespace: %s error: %s",
-				helpers.DexServerName(),
+				authRealm.Name,
 				helpers.DexServerNamespace(authRealm),
 				err.Error()),
 		}
