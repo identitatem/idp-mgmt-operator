@@ -27,4 +27,5 @@ jobs:
       run: |
         export VERSION=${GITHUB_REF##*/}
         export IMG_TAG=${GITHUB_REF##*/}
-        make publish
+        export IMG=quay.io/identitatem/idp-mgmt-operator:${GITHUB_REF##*/}
+        make publish-release

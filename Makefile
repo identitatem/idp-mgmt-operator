@@ -202,6 +202,11 @@ endif
 publish: bundle bundle-build bundle-push catalog-build catalog-push
 
 
+.PHONY: publish-release
+## Upodate, build, and push the bundle on a semver release tag, then build and push the catalog.
+publish-release: docker-build docker-push bundle bundle-build bundle-push catalog-build catalog-push
+
+
 .PHONY: docker-login
 ## Log in to the docker registry for ${BUNDLE_IMG}
 docker-login:
