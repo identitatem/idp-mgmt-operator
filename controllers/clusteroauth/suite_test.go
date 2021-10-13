@@ -154,13 +154,14 @@ var _ = AfterSuite(func() {
 
 var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 	AuthRealmName := "my-authrealm"
-	StrategyName := AuthRealmName + "-backplane"
-	ClusterOAuthName1 := StrategyName + "-1"
-	ClusterOAuthName2 := StrategyName + "-2"
+	AuthRealmName2 := "my-authrealm" + "-2"
+	//StrategyName := AuthRealmName + "-backplane"
+	//ClusterOAuthName1 := StrategyName + "-1"
+	//ClusterOAuthName2 := StrategyName + "-2"
 	ClusterName := "my-cluster"
-	MyIDPName1 := "my-idp" + "-1"
-	MyIDPName2 := "my-idp" + "-2"
-	MyIDPName3 := "my-idp" + "-3"
+	//MyIDPName1 := "my-idp" + "-1"
+	// MyIDPName2 := "my-idp" + "-2"
+	// MyIDPName3 := "my-idp" + "-3"
 
 	It("process a ClusterOAuth CR", func() {
 		By(fmt.Sprintf("creation of cluster namespace %s", ClusterName), func() {
@@ -181,7 +182,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 					Kind:       "Secret",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      MyIDPName1,
+					Name:      AuthRealmName,
 					Namespace: ClusterName,
 				},
 			}
@@ -190,14 +191,14 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		})
 
-		By(fmt.Sprintf("creation of ClusterOAuth for mangaed cluster %s", ClusterName), func() {
+		By(fmt.Sprintf("creation of ClusterOAuth for managed cluster %s", ClusterName), func() {
 			clusterOAuth := &identitatemv1alpha1.ClusterOAuth{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: identitatemv1alpha1.SchemeGroupVersion.String(),
 					Kind:       "ClusterOAuth",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      ClusterOAuthName1,
+					Name:      AuthRealmName,
 					Namespace: ClusterName,
 				},
 				Spec: identitatemv1alpha1.ClusterOAuthSpec{
@@ -210,7 +211,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 						Spec: openshiftconfigv1.OAuthSpec{
 							IdentityProviders: []openshiftconfigv1.IdentityProvider{
 								{
-									Name:          MyIDPName1,
+									Name:          secret1.Name,
 									MappingMethod: openshiftconfigv1.MappingMethodClaim,
 									IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 										Type: openshiftconfigv1.IdentityProviderTypeGitHub,
@@ -240,7 +241,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 				Scheme:        scheme.Scheme,
 			}
 			req := ctrl.Request{}
-			req.Name = ClusterOAuthName1
+			req.Name = AuthRealmName
 			req.Namespace = ClusterName
 
 			_, err := r.Reconcile(context.TODO(), req)
@@ -263,7 +264,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 				Scheme:        scheme.Scheme,
 			}
 			req := ctrl.Request{}
-			req.Name = ClusterOAuthName1
+			req.Name = AuthRealmName
 			req.Namespace = ClusterName
 			_, err := r.Reconcile(context.TODO(), req)
 			//Not nil because waiting for the managedclusterview status.result
@@ -301,7 +302,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 				Scheme:        scheme.Scheme,
 			}
 			req := ctrl.Request{}
-			req.Name = ClusterOAuthName1
+			req.Name = AuthRealmName
 			req.Namespace = ClusterName
 			_, err := r.Reconcile(context.TODO(), req)
 			Expect(err).To(BeNil())
@@ -323,7 +324,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 				Scheme:        scheme.Scheme,
 			}
 			req := ctrl.Request{}
-			req.Name = ClusterOAuthName1
+			req.Name = AuthRealmName
 			req.Namespace = ClusterName
 			_, err := r.Reconcile(context.TODO(), req)
 			Expect(err).To(BeNil())
@@ -337,7 +338,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 					Kind:       "Secret",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      MyIDPName2,
+					Name:      AuthRealmName2,
 					Namespace: ClusterName,
 				},
 			}
@@ -346,22 +347,22 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		})
 
-		var secret3 *corev1.Secret
-		By(fmt.Sprintf("creation of IDP secret 3 in cluster namespace %s", ClusterName), func() {
-			secret3 = &corev1.Secret{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: corev1.SchemeGroupVersion.String(),
-					Kind:       "Secret",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      MyIDPName3,
-					Namespace: ClusterName,
-				},
-			}
-			err := k8sClient.Create(context.TODO(), secret3)
-			Expect(err).To(BeNil())
+		// var secret3 *corev1.Secret
+		// By(fmt.Sprintf("creation of IDP secret 3 in cluster namespace %s", ClusterName), func() {
+		// 	secret3 = &corev1.Secret{
+		// 		TypeMeta: metav1.TypeMeta{
+		// 			APIVersion: corev1.SchemeGroupVersion.String(),
+		// 			Kind:       "Secret",
+		// 		},
+		// 		ObjectMeta: metav1.ObjectMeta{
+		// 			Name:      MyIDPName3,
+		// 			Namespace: ClusterName,
+		// 		},
+		// 	}
+		// 	err := k8sClient.Create(context.TODO(), secret3)
+		// 	Expect(err).To(BeNil())
 
-		})
+		// })
 
 		By(fmt.Sprintf("creation of ClusterOAuth 2 for mangaed cluster %s", ClusterName), func() {
 			clusterOAuth := &identitatemv1alpha1.ClusterOAuth{
@@ -370,7 +371,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 					Kind:       "ClusterOAuth",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      ClusterOAuthName2,
+					Name:      AuthRealmName2,
 					Namespace: ClusterName,
 				},
 				Spec: identitatemv1alpha1.ClusterOAuthSpec{
@@ -383,27 +384,14 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 						Spec: openshiftconfigv1.OAuthSpec{
 							IdentityProviders: []openshiftconfigv1.IdentityProvider{
 								{
-									Name:          MyIDPName2,
+									Name:          secret2.Name,
 									MappingMethod: openshiftconfigv1.MappingMethodClaim,
 									IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 										Type: openshiftconfigv1.IdentityProviderTypeGitHub,
 										OpenID: &openshiftconfigv1.OpenIDIdentityProvider{
-											ClientID: "me2",
+											ClientID: secret2.Name,
 											ClientSecret: openshiftconfigv1.SecretNameReference{
 												Name: secret2.Name,
-											},
-										},
-									},
-								},
-								{
-									Name:          MyIDPName3,
-									MappingMethod: openshiftconfigv1.MappingMethodClaim,
-									IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
-										Type: openshiftconfigv1.IdentityProviderTypeGitHub,
-										OpenID: &openshiftconfigv1.OpenIDIdentityProvider{
-											ClientID: "me3",
-											ClientSecret: openshiftconfigv1.SecretNameReference{
-												Name: secret3.Name,
 											},
 										},
 									},
@@ -426,7 +414,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 				Scheme:        scheme.Scheme,
 			}
 			req := ctrl.Request{}
-			req.Name = ClusterOAuthName2
+			req.Name = AuthRealmName2
 			req.Namespace = ClusterName
 			_, err := r.Reconcile(context.TODO(), req)
 			Expect(err).To(BeNil())
@@ -442,7 +430,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 			// should find manifest for OAuth 1 and manifest for Secret 1
 			// AND
 			// should find manifest for OAuth 2 and manifest for Secret 2 and Secret 3 and an aggregated role
-			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(5))
+			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(4))
 		})
 
 	})

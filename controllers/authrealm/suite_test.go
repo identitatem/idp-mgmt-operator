@@ -407,7 +407,10 @@ var _ = Describe("Process AuthRealm: ", func() {
 										Name: AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeLDAP),
 									},
 									Attributes: openshiftconfigv1.LDAPAttributeMapping{
-										ID: []string{},
+										ID:                []string{"id"},
+										PreferredUsername: []string{"mail"},
+										Name:              []string{"name"},
+										Email:             []string{"mail"},
 									},
 								},
 							},
@@ -422,7 +425,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 			req.Name = AuthRealmName + "-1"
 			req.Namespace = AuthRealmNameSpace
 			_, err := r.Reconcile(context.TODO(), req)
-			Expect(err).ShouldNot(BeNil())
+			Expect(err).Should(BeNil())
 		})
 	})
 	It("process AuthRealm CR without identityProviders", func() {
