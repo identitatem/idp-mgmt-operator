@@ -32,7 +32,7 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 	r.Log.Info("syncDexCRs", "AuthRealm.Name", authRealm.Name, "AuthRealm.Namespace", authRealm.Namespace)
 	//TODO this test should maybe be in a webhook to avoid the creation of an invalid CR
 	if len(authRealm.Spec.IdentityProviders) < 1 {
-		return fmt.Errorf("the identityproviders array of the authrealm %s can have one and only one element", authRealm.Name)
+		return giterrors.WithStack(fmt.Errorf("the identityproviders array of the authrealm %s can have one and only one element", authRealm.Name))
 	}
 
 	// Create namespace and Install the dex-operator

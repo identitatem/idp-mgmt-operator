@@ -347,23 +347,6 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		})
 
-		// var secret3 *corev1.Secret
-		// By(fmt.Sprintf("creation of IDP secret 3 in cluster namespace %s", ClusterName), func() {
-		// 	secret3 = &corev1.Secret{
-		// 		TypeMeta: metav1.TypeMeta{
-		// 			APIVersion: corev1.SchemeGroupVersion.String(),
-		// 			Kind:       "Secret",
-		// 		},
-		// 		ObjectMeta: metav1.ObjectMeta{
-		// 			Name:      MyIDPName3,
-		// 			Namespace: ClusterName,
-		// 		},
-		// 	}
-		// 	err := k8sClient.Create(context.TODO(), secret3)
-		// 	Expect(err).To(BeNil())
-
-		// })
-
 		By(fmt.Sprintf("creation of ClusterOAuth 2 for mangaed cluster %s", ClusterName), func() {
 			clusterOAuth := &identitatemv1alpha1.ClusterOAuth{
 				TypeMeta: metav1.TypeMeta{
