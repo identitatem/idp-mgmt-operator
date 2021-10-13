@@ -204,7 +204,7 @@ publish: bundle bundle-build bundle-push catalog-build catalog-push
 
 .PHONY: publish-release
 ## Upodate, build, and push the bundle on a semver release tag, then build and push the catalog.
-publish-release: docker-build docker-push bundle bundle-build bundle-push catalog-build catalog-push
+publish-release: docker-login docker-build docker-push bundle bundle-build bundle-push catalog-build catalog-push
 
 
 .PHONY: docker-login
