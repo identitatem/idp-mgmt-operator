@@ -442,29 +442,29 @@ var _ = Describe("Strategy", func() {
 			}, 30, 1).Should(BeNil())
 		})
 
-		By(fmt.Sprintf("Checking client secret %s", MyIDPName), func() {
+		By(fmt.Sprintf("Checking client secret %s", AuthRealmName), func() {
 			Eventually(func() error {
 				clientSecret := &corev1.Secret{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: MyIDPName, Namespace: ClusterName}, clientSecret)
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: ClusterName}, clientSecret)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err
 					}
-					logf.Log.Info("ClientSecret", "Name", MyIDPName, "Namespace", ClusterName)
+					logf.Log.Info("ClientSecret", "Name", AuthRealmName, "Namespace", ClusterName)
 					return err
 				}
 				return nil
 			}, 30, 1).Should(BeNil())
 		})
-		By(fmt.Sprintf("Checking clusterOAuth %s", MyIDPName), func() {
+		By(fmt.Sprintf("Checking clusterOAuth %s", AuthRealmName), func() {
 			Eventually(func() error {
 				clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: MyIDPName, Namespace: ClusterName}, clusterOAuth)
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: ClusterName}, clusterOAuth)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err
 					}
-					logf.Log.Info("clusterOAuth", "Name", MyIDPName, "Namespace", ClusterName)
+					logf.Log.Info("clusterOAuth", "Name", AuthRealmName, "Namespace", ClusterName)
 					return err
 				}
 				return nil
@@ -514,15 +514,15 @@ var _ = Describe("Strategy", func() {
 				return nil
 			}, 30, 1).Should(BeNil())
 		})
-		By(fmt.Sprintf("Checking DexClient %s", ClusterName), func() {
+		By(fmt.Sprintf("Checking DexClient %s", AuthRealmName), func() {
 			Eventually(func() error {
 				dexClient := &dexv1alpha1.DexClient{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: ClusterName, Namespace: helpers.DexServerNamespace(authRealm)}, dexClient)
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: helpers.DexServerNamespace(authRealm)}, dexClient)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err
 					}
-					logf.Log.Info("DexClient", "Name", ClusterName, "Namespace", helpers.DexServerNamespace(authRealm))
+					logf.Log.Info("DexClient", "Name", AuthRealmName, "Namespace", helpers.DexServerNamespace(authRealm))
 					return err
 				}
 				return nil
@@ -532,30 +532,30 @@ var _ = Describe("Strategy", func() {
 			err := clientSetCluster.ClusterV1alpha1().PlacementDecisions(AuthRealmNameSpace).Delete(context.TODO(), StrategyName, metav1.DeleteOptions{})
 			Expect(err).To(BeNil())
 		})
-		By(fmt.Sprintf("Checking client secret deletion %s", MyIDPName), func() {
+		By(fmt.Sprintf("Checking client secret deletion %s", AuthRealmName), func() {
 			Eventually(func() error {
 				clientSecret := &corev1.Secret{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: MyIDPName, Namespace: ClusterName}, clientSecret)
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: ClusterName}, clientSecret)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err
 					}
 					return nil
 				}
-				return fmt.Errorf("clientSecret %s still exist", MyIDPName)
+				return fmt.Errorf("clientSecret %s still exist", AuthRealmName)
 			}, 30, 1).Should(BeNil())
 		})
-		By(fmt.Sprintf("Checking clusteroauth deletion %s", MyIDPName), func() {
+		By(fmt.Sprintf("Checking clusteroauth deletion %s", AuthRealmName), func() {
 			Eventually(func() error {
 				clientSecret := &identitatemv1alpha1.ClusterOAuth{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: MyIDPName, Namespace: ClusterName}, clientSecret)
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: ClusterName}, clientSecret)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err
 					}
 					return nil
 				}
-				return fmt.Errorf("clusteroauth %s still exist", MyIDPName)
+				return fmt.Errorf("clusteroauth %s still exist", AuthRealmName)
 			}, 30, 1).Should(BeNil())
 		})
 		By(fmt.Sprintf("Checking manifestwork deletion %s", helpers.ManifestWorkOAuthName()), func() {
@@ -572,17 +572,17 @@ var _ = Describe("Strategy", func() {
 				return fmt.Errorf("manifestwork %s still exist", MyIDPName)
 			}, 30, 1).Should(BeNil())
 		})
-		By(fmt.Sprintf("Checking DexClient deletion %s", ClusterName), func() {
+		By(fmt.Sprintf("Checking DexClient deletion %s", AuthRealmName), func() {
 			Eventually(func() error {
 				dexClient := &dexv1alpha1.DexClient{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: ClusterName, Namespace: AuthRealmName}, dexClient)
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: AuthRealmName}, dexClient)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err
 					}
 					return nil
 				}
-				return fmt.Errorf("DexClient %s still exist", ClusterName)
+				return fmt.Errorf("DexClient %s still exist", AuthRealmName)
 
 			}, 30, 1).Should(BeNil())
 		})
