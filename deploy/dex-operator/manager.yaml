@@ -15,7 +15,29 @@ spec:
     metadata:
       labels:
         control-plane: dex-operator
+        idp-antiaffinity-selector: dex-operator
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: idp-antiaffinity-selector
+                      operator: In
+                      values:
+                        - dex-operator
+                topologyKey: topology.kubernetes.io/zone
+              weight: 70
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: idp-antiaffinity-selector
+                      operator: In
+                      values:
+                        - dex-operator
+                topologyKey: kubernetes.io/hostname
+              weight: 35
       securityContext:
         runAsNonRoot: true
       containers:
@@ -50,3 +72,11 @@ spec:
             memory: 500Mi
       serviceAccountName: dex-operator-manager
       terminationGracePeriodSeconds: 10
+      tolerations:
+        - key: node-role.kubernetes.io/infra
+          operator: Exists
+          effect: NoSchedule
+        - key: dedicated
+          operator: Exists
+          effect: NoSchedule
+      

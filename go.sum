@@ -412,6 +412,7 @@ github.com/denisenkom/go-mssqldb v0.0.0-20190412130859-3b1d194e553a/go.mod h1:zA
 github.com/denisenkom/go-mssqldb v0.0.0-20190515213511-eb9f6a1743f3/go.mod h1:zAg7JM8CkOJ43xKXIj7eRO9kmWm/TW578qo+oDO6tuM=
 github.com/denisenkom/go-mssqldb v0.0.0-20191001013358-cfbb681360f0/go.mod h1:xbL0rPBG9cCiLr28tMa8zpbdarY27NDyej4t/EjAShU=
 github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba/go.mod h1:dV8lFg6daOBZbT6/BDGIz6Y3WFGn8juu6G+CQ6LHtl0=
+github.com/dexidp/dex/api/v2 v2.0.0/go.mod h1:k5arBJT1QYvpsEY3sEd0NXJp3hKWKuUUfzJ3BlcqPdM=
 github.com/dgrijalva/jwt-go v0.0.0-20170104182250-a601269ab70c/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=
@@ -1079,8 +1080,8 @@ github.com/huandu/xstrings v1.3.2 h1:L18LIDzqlW6xN2rEkpdV8+oL/IXWJ1APd+vsdYy4Wdw
 github.com/huandu/xstrings v1.3.2/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365/go.mod h1:SK73tn/9oHe+/Y0h39VT4UCxmurVJkR5NA7kMEAOgSE=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
-github.com/identitatem/dex-operator v0.0.4-0.20211008164336-e4a31c8bee5b h1:Kx7ZYruI5e2Oc2P1BptluEr/2Y79D+PUxymFqUQSZxo=
-github.com/identitatem/dex-operator v0.0.4-0.20211008164336-e4a31c8bee5b/go.mod h1:mvT4JigYxc6XPf5Q0zZCGY1N22PD4y8QGwakgwL+3ZA=
+github.com/identitatem/dex-operator v0.0.4-0.20211013123900-f82f0bdb9d0d h1:bencsRHPhbFb/T7jcCrhdiF8ebFUgB9y8/V08RP2ThU=
+github.com/identitatem/dex-operator v0.0.4-0.20211013123900-f82f0bdb9d0d/go.mod h1:/C4mn5lzhuwulKDdrFZQ9dL1faDAs7ysks+RfilsXLI=
 github.com/identitatem/idp-client-api v0.0.0-20211005193004-91f8e0799cab h1:q9EgcumWambwtmhox/l6nXWEbOKI1cXe1nn0RAydpkw=
 github.com/identitatem/idp-client-api v0.0.0-20211005193004-91f8e0799cab/go.mod h1:w+IQrF6VckNFIR4BdFCj11HELl5NQe8/RE+G4TiQJ7k=
 github.com/imdario/mergo v0.0.0-20171009183408-7fe0c75c13ab/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
