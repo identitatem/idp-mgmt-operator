@@ -64,3 +64,5 @@ replace (
 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205
 	sigs.k8s.io/cluster-api-provider-openstack => github.com/openshift/cluster-api-provider-openstack v0.0.0-20201116051540-155384b859c5
 )
+
+replace github.com/identitatem/dex-operator => github.com/itdove/dex-operator v0.0.4-0.20211014095131-a9ea89603a4d
