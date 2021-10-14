@@ -64,7 +64,7 @@ Here is a summary of the commands you need to run:
 1. Clone the repo and setup AWS account environment variables
 
 ```bash
-export AWS_ACCESS_KEY={your AWS Key}
+export AWS_ACCESS_KEY_ID={your AWS Key ID}
 export AWS_SECRET_ACCESS_KEY={your AWS Secret Key}
 cd /tmp
 git clone https://github.com/acmesh-official/acme.sh.git
