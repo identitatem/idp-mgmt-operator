@@ -58,16 +58,15 @@ func DexClientName(
 	decision clusterv1alpha1.ClusterDecision,
 	idp openshiftconfigv1.IdentityProvider,
 ) string {
-	return decision.ClusterName
+	return idp.Name
 }
 
 func DexClientObjectKey(
 	authRealm *identitatemv1alpha1.AuthRealm,
 	decision clusterv1alpha1.ClusterDecision,
-	idp openshiftconfigv1.IdentityProvider,
 ) client.ObjectKey {
 	return client.ObjectKey{
-		Name:      DexClientName(decision, idp),
+		Name:      authRealm.Name,
 		Namespace: DexServerNamespace(authRealm),
 	}
 }

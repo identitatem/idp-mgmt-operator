@@ -1080,10 +1080,10 @@ github.com/huandu/xstrings v1.3.2 h1:L18LIDzqlW6xN2rEkpdV8+oL/IXWJ1APd+vsdYy4Wdw
 github.com/huandu/xstrings v1.3.2/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365/go.mod h1:SK73tn/9oHe+/Y0h39VT4UCxmurVJkR5NA7kMEAOgSE=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
-github.com/identitatem/dex-operator v0.0.4-0.20211013123900-f82f0bdb9d0d h1:bencsRHPhbFb/T7jcCrhdiF8ebFUgB9y8/V08RP2ThU=
-github.com/identitatem/dex-operator v0.0.4-0.20211013123900-f82f0bdb9d0d/go.mod h1:/C4mn5lzhuwulKDdrFZQ9dL1faDAs7ysks+RfilsXLI=
-github.com/identitatem/idp-client-api v0.0.0-20211005193004-91f8e0799cab h1:q9EgcumWambwtmhox/l6nXWEbOKI1cXe1nn0RAydpkw=
-github.com/identitatem/idp-client-api v0.0.0-20211005193004-91f8e0799cab/go.mod h1:w+IQrF6VckNFIR4BdFCj11HELl5NQe8/RE+G4TiQJ7k=
+github.com/identitatem/dex-operator v0.0.4-0.20211014121413-ac9fddf3b792 h1:Q5X8hJMNWte3T8vzvfs7Wf1A23BmqrtKhBszWwjUFU4=
+github.com/identitatem/dex-operator v0.0.4-0.20211014121413-ac9fddf3b792/go.mod h1:/C4mn5lzhuwulKDdrFZQ9dL1faDAs7ysks+RfilsXLI=
+github.com/identitatem/idp-client-api v0.0.0-20211013014310-8d06d8024e0f h1:alEODktIujPARxbg0Zy0xvbsUscvSTBfbJtadmu3Edo=
+github.com/identitatem/idp-client-api v0.0.0-20211013014310-8d06d8024e0f/go.mod h1:w+IQrF6VckNFIR4BdFCj11HELl5NQe8/RE+G4TiQJ7k=
 github.com/imdario/mergo v0.0.0-20171009183408-7fe0c75c13ab/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
 github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
 github.com/imdario/mergo v0.3.6/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=

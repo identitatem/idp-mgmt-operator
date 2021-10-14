@@ -31,7 +31,7 @@ const (
 func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthRealm) error {
 	r.Log.Info("syncDexCRs", "AuthRealm.Name", authRealm.Name, "AuthRealm.Namespace", authRealm.Namespace)
 	//TODO this test should maybe be in a webhook to avoid the creation of an invalid CR
-	if len(authRealm.Spec.IdentityProviders) != 1 {
+	if len(authRealm.Spec.IdentityProviders) < 1 {
 		return giterrors.WithStack(fmt.Errorf("the identityproviders array of the authrealm %s can have one and only one element", authRealm.Name))
 	}
 
@@ -55,7 +55,7 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 	//Create DexServer CR
 	if err := r.createDexServer(authRealm); err != nil {
 		r.Log.Info("Update status create dexServer CR failure",
-			"name", helpers.DexServerName(),
+			"name", authRealm.Name,
 			"namespace", helpers.DexServerNamespace(authRealm),
 			"error", err.Error())
 		cond := metav1.Condition{
@@ -63,7 +63,7 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 			Status: metav1.ConditionFalse,
 			Reason: "AuthRealmAppliedFailed",
 			Message: fmt.Sprintf("failed to create dexServer name: %s namespace: %s error: %s",
-				helpers.DexServerName(),
+				authRealm.Name,
 				helpers.DexServerNamespace(authRealm),
 				err.Error()),
 		}
@@ -202,7 +202,7 @@ func (r *AuthRealmReconciler) installDexOperatorCRDs() error {
 }
 
 func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.AuthRealm) error {
-	r.Log.Info("createDexServer", "Name", helpers.DexServerName(), "Namespace", helpers.DexServerNamespace(authRealm))
+	r.Log.Info("createDexServer", "Name", authRealm.Name, "Namespace", helpers.DexServerNamespace(authRealm))
 	//Create namespace if not exists
 	dexServerNamespace := &corev1.Namespace{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authRealm)}, dexServerNamespace); err != nil {
@@ -220,14 +220,14 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 	}
 	dexServerExists := true
 	dexServer := &identitatemdexserverv1alpha1.DexServer{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer); err != nil {
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: authRealm.Name, Namespace: helpers.DexServerNamespace(authRealm)}, dexServer); err != nil {
 		if !errors.IsNotFound(err) {
 			return giterrors.WithStack(err)
 		}
 		dexServerExists = false
 		dexServer = &identitatemdexserverv1alpha1.DexServer{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      helpers.DexServerName(),
+				Name:      authRealm.Name,
 				Namespace: helpers.DexServerNamespace(authRealm),
 			},
 		}
@@ -268,7 +268,7 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 	if err != nil {
 		return err
 	}
-	dexServer.Spec.Issuer = fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Spec.RouteSubDomain, host)
+	dexServer.Spec.Issuer = fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Name+"-"+authRealm.Spec.RouteSubDomain, host)
 	if len(authRealm.Spec.CertificatesSecretRef.Name) != 0 {
 		certSecret := &corev1.Secret{}
 		if err := r.Client.Get(context.TODO(),
@@ -324,8 +324,8 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			r.Log.Info("create connector for GitHub")
 			c := &identitatemdexserverv1alpha1.ConnectorSpec{
 				Type: identitatemdexserverv1alpha1.ConnectorTypeGitHub,
-				Name: authRealm.Name,
-				Id:   authRealm.Name,
+				Name: "github",
+				Id:   "github",
 				GitHub: identitatemdexserverv1alpha1.GitHubConfigSpec{
 					ClientID: idp.GitHub.ClientID,
 					ClientSecretRef: corev1.SecretReference{
@@ -347,11 +347,31 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			//TODO set LDAP
 			c := &identitatemdexserverv1alpha1.ConnectorSpec{
 				Type: identitatemdexserverv1alpha1.ConnectorTypeLDAP,
-				Name: authRealm.Name,
-				Id:   authRealm.Name,
+				Name: "ldap",
+				Id:   "ldap",
+				LDAP: identitatemdexserverv1alpha1.LDAPConfigSpec{
+					Host:   idp.LDAP.URL,
+					BindDN: idp.LDAP.BindDN,
+					BindPWRef: corev1.SecretReference{
+						Name:      idp.LDAP.BindPassword.Name,
+						Namespace: authRealm.Namespace,
+					},
+					InsecureNoSSL:      false,
+					InsecureSkipVerify: idp.LDAP.Insecure,
+					UsernamePrompt:     "Email Address",
+					UserSearch: identitatemdexserverv1alpha1.UserSearchSpec{
+						BaseDN:    authRealm.Spec.LDAPExtraConfigs[idp.Name].BaseDN,
+						Filter:    authRealm.Spec.LDAPExtraConfigs[idp.Name].Filter,
+						Username:  idp.LDAP.Attributes.PreferredUsername[0],
+						IDAttr:    idp.LDAP.Attributes.ID[0],
+						EmailAttr: idp.LDAP.Attributes.Email[0],
+						NameAttr:  idp.LDAP.Attributes.Name[0],
+					},
+				},
 			}
-			r.Log.Info("genrated connextor", "c.LDAP", c.LDAP)
+			r.Log.Info("genrated connector", "c.LDAP", c.LDAP)
 			cs = append(cs, *c)
+			fmt.Println("cs: ", cs)
 			r.Log.Info("genrated intermediate connextors", "cs", cs)
 		default:
 			return nil, giterrors.WithStack(fmt.Errorf("unsupported provider type %s", idp.Type))
