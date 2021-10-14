@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v0.4.0
-	github.com/identitatem/dex-operator v0.0.4-0.20211013123900-f82f0bdb9d0d
+	github.com/identitatem/dex-operator v0.0.4-0.20211014121413-ac9fddf3b792
 	github.com/identitatem/idp-client-api v0.0.0-20211013014310-8d06d8024e0f
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.14.0
@@ -64,5 +64,3 @@ replace (
 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205
 	sigs.k8s.io/cluster-api-provider-openstack => github.com/openshift/cluster-api-provider-openstack v0.0.0-20201116051540-155384b859c5
 )
-
-replace github.com/identitatem/dex-operator => github.com/itdove/dex-operator v0.0.4-0.20211014095131-a9ea89603a4d
