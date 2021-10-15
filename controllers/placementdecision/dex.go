@@ -186,10 +186,10 @@ func (r *PlacementDecisionReconciler) deleteConfig(authRealm *identitatemv1alpha
 	r.Log.Info("delete configuruartion for idp", "name", idp.Name)
 	//Delete DexClient
 	r.Log.Info("get dexclient", "namespace", authRealm.Name, "name", dexClientName)
-	dexClient := &dexoperatorv1alpha1.DexClient{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: helpers.DexServerNamespace(authRealm)}, dexClient); err != nil {
-		return giterrors.WithStack(err)
-	}
+	// dexClient := &dexoperatorv1alpha1.DexClient{}
+	// if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: helpers.DexServerNamespace(authRealm)}, dexClient); err != nil {
+	// 	return giterrors.WithStack(err)
+	// }
 	// if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: helpers.DexServerNamespace(authRealm)}, dexClient); err == nil {
 	// 	if err := r.Delete(context.TODO(), dexClient); err != nil && !errors.IsNotFound(err) {
 	// 		return giterrors.WithStack(err)
@@ -204,7 +204,7 @@ func (r *PlacementDecisionReconciler) deleteConfig(authRealm *identitatemv1alpha
 		}
 	}
 	//Delete clusterOAuth
-	r.Log.Info("delete clusterOAuth", "Namespace", dexClient.GetLabels()[helpers.ClusterNameLabel], "Name", authRealm.Name)
+	r.Log.Info("delete clusterOAuth", "Namespace", clusterName, "Name", idp.Name)
 	clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: idp.Name, Namespace: clusterName}, clusterOAuth); err == nil {
 		if err := r.Delete(context.TODO(), clusterOAuth); err != nil && !errors.IsNotFound(err) {

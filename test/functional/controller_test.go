@@ -558,37 +558,36 @@ var _ = Describe("Strategy", func() {
 			_, err = clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).
 				UpdateStatus(context.TODO(), placement, metav1.UpdateOptions{})
 		})
-		// By(fmt.Sprintf("Checking client secret deletion %s", AuthRealmName), func() {
-		// 	Eventually(func() error {
-		// 		clientSecret := &corev1.Secret{}
-		// 		err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: ClusterName}, clientSecret)
-		// 		if err != nil {
-		// 			if !errors.IsNotFound(err) {
-		// 				return err
-		// 			}
-		// 			return nil
-		// 		}
-		// 		return fmt.Errorf("clientSecret %s in ns %s still exist", AuthRealmName, ClusterName)
-		// 	}, 30, 1).Should(BeNil())
-		// })
-		// By(fmt.Sprintf("Checking clusteroauth deletion %s", AuthRealmName), func() {
-		// 	Eventually(func() error {
-		// 		clientSecret := &identitatemv1alpha1.ClusterOAuth{}
-		// 		err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: ClusterName}, clientSecret)
-		// 		if err != nil {
-		// 			if !errors.IsNotFound(err) {
-		// 				return err
-		// 			}
-		// 			return nil
-		// 		}
-		// 		return fmt.Errorf("clusteroauth %s still exist", AuthRealmName)
-		// 	}, 30, 1).Should(BeNil())
-		// })
+		By(fmt.Sprintf("Checking client secret deletion %s", AuthRealmName), func() {
+			Eventually(func() error {
+				clientSecret := &corev1.Secret{}
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: ClusterName}, clientSecret)
+				if err != nil {
+					if !errors.IsNotFound(err) {
+						return err
+					}
+					return nil
+				}
+				return fmt.Errorf("clientSecret %s in ns %s still exist", AuthRealmName, ClusterName)
+			}, 30, 1).Should(BeNil())
+		})
+		By(fmt.Sprintf("Checking clusteroauth deletion %s", AuthRealmName), func() {
+			Eventually(func() error {
+				clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: ClusterName}, clusterOAuth)
+				if err != nil {
+					if !errors.IsNotFound(err) {
+						return err
+					}
+					return nil
+				}
+				return fmt.Errorf("clusteroauth %s still exist", AuthRealmName)
+			}, 30, 1).Should(BeNil())
+		})
 		By(fmt.Sprintf("Checking manifestwork deletion %s", helpers.ManifestWorkOAuthName()), func() {
 			Eventually(func() error {
-				//TODO read manifest work and not clusterOauth
-				clientSecret := &identitatemv1alpha1.ClusterOAuth{}
-				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkOAuthName(), Namespace: ClusterName}, clientSecret)
+				mw := &clusterv1.ManagedCluster{}
+				err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkOAuthName(), Namespace: ClusterName}, mw)
 				if err != nil {
 					if !errors.IsNotFound(err) {
 						return err
