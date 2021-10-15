@@ -4,7 +4,6 @@ package placementdecision
 
 import (
 	"context"
-	"fmt"
 
 	giterrors "github.com/pkg/errors"
 
@@ -143,17 +142,17 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	return ctrl.Result{}, nil
 }
 
-func (r *PlacementDecisionReconciler) AddPlacementDecisionFinalizer(strategy *identitatemv1alpha1.Strategy, obj client.Object) error {
-	switch strategy.Spec.Type {
-	case identitatemv1alpha1.BackplaneStrategyType:
-		controllerutil.AddFinalizer(obj, helpers.PlacementDecisionBackplaneFinalizer)
-	default:
-		return fmt.Errorf("strategy type %s not supported", strategy.Spec.Type)
-	}
+// func (r *PlacementDecisionReconciler) AddPlacementDecisionFinalizer(strategy *identitatemv1alpha1.Strategy, obj client.Object) error {
+// 	switch strategy.Spec.Type {
+// 	case identitatemv1alpha1.BackplaneStrategyType:
+// 		controllerutil.AddFinalizer(obj, helpers.PlacementDecisionBackplaneFinalizer)
+// 	default:
+// 		return fmt.Errorf("strategy type %s not supported", strategy.Spec.Type)
+// 	}
 
-	return r.Client.Update(context.TODO(), obj)
+// 	return r.Client.Update(context.TODO(), obj)
 
-}
+// }
 
 //DV
 //processPlacementDecision generates resources for the Backplane strategy
@@ -219,14 +218,14 @@ func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placement
 	}
 
 	//Remove the finalizers when there is no other placementDecisions for that placement.
-	if len(placementDecisions.Items) == 1 {
-		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, strategy); err != nil {
-			return err
-		}
-		if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, authRealm); err != nil {
-			return err
-		}
-	}
+	// if len(placementDecisions.Items) == 1 {
+	// 	if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, strategy); err != nil {
+	// 		return err
+	// 	}
+	// 	if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, authRealm); err != nil {
+	// 		return err
+	// 	}
+	// }
 	return nil
 }
 

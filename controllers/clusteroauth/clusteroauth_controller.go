@@ -114,8 +114,8 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		if result, err := r.unmanagedCluster(instance); err != nil {
 			return result, err
 		}
-		r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", helpers.ClusterOAuthFinalizer)
-		controllerutil.RemoveFinalizer(instance, helpers.ClusterOAuthFinalizer)
+		r.Log.Info("remove Placement finalizer", "Finalizer:", helpers.AuthrealmFinalizer)
+		controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
 		if err := r.Client.Update(context.TODO(), instance); err != nil {
 			return ctrl.Result{}, err
 		}
