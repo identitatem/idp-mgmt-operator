@@ -101,7 +101,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		if err := r.processPlacementDecisionDeletion(instance); err != nil {
 			return reconcile.Result{}, err
 		}
-		r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", helpers.AuthrealmFinalizer)
+		r.Log.Info("remove finalizer", "Finalizer:", helpers.AuthrealmFinalizer, "name", instance.Name, "namespace", instance.Namespace)
 		controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
 		if err := r.Client.Update(context.TODO(), instance); err != nil {
 			return ctrl.Result{}, giterrors.WithStack(err)
@@ -110,7 +110,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	//Add finalizer
-	r.Log.Info("add PlacementDecision finalizer", "Finalizer:", helpers.AuthrealmFinalizer)
+	r.Log.Info("add finalizer", "Finalizer:", helpers.AuthrealmFinalizer, "name", instance.Name, "namespace", instance.Namespace)
 	controllerutil.AddFinalizer(instance, helpers.AuthrealmFinalizer)
 	if err := r.Client.Update(context.TODO(), instance); err != nil {
 		return reconcile.Result{}, giterrors.WithStack(err)

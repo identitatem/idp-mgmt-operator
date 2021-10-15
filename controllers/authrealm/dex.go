@@ -399,15 +399,18 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 func (r *AuthRealmReconciler) processAuthRealmDeletion(authRealm *identitatemv1alpha1.AuthRealm) error {
 	r.Log.Info("delete DexServer ns", "namespace", helpers.DexServerNamespace(authRealm))
 	ns := &corev1.Namespace{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authRealm)}, ns); err != nil {
-		if !errors.IsNotFound(err) {
+	err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authRealm)}, ns)
+	switch {
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), ns); err != nil {
 			return giterrors.WithStack(err)
 		}
+	case !errors.IsNotFound(err):
+		return giterrors.WithStack(err)
 	}
-	r.Log.Info("deleted DexServer ns", "namespace", helpers.DexServerNamespace(authRealm))
 	r.Log.Info("delete Strategy", "name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType))
 	st := &identitatemv1alpha1.Strategy{}
-	err := r.Client.Get(context.TODO(),
+	err = r.Client.Get(context.TODO(),
 		client.ObjectKey{Name: helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType), Namespace: authRealm.Namespace},
 		st)
 	switch {
