@@ -101,12 +101,23 @@ func (r *StrategyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		if err != nil {
 			return reconcile.Result{}, err
 		}
+		controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
+		if err := r.Client.Update(context.TODO(), instance); err != nil {
+			return ctrl.Result{}, giterrors.WithStack(err)
+		}
 		return reconcile.Result{}, nil
 	}
 
 	r.Log.Info("Instance", "instance", instance)
 	r.Log.Info("Running Reconcile for Strategy.", "Name: ", instance.GetName(), " Namespace:", instance.GetNamespace())
 
+	controllerutil.AddFinalizer(instance, helpers.AuthrealmFinalizer)
+
+	r.Log.Info("Process", "Name", instance.GetName(), "Namespace", instance.GetNamespace())
+
+	if err := r.Client.Update(context.TODO(), instance); err != nil {
+		return ctrl.Result{}, giterrors.WithStack(err)
+	}
 	// Get the AuthRealm Placement bits we need to help create a new Placement
 
 	r.Log.Info("Searching for AuthRealm in ownerRefs", "strategy", instance.Name)
@@ -186,9 +197,7 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 		placementStrategy = &clusterv1alpha1.Placement{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: strategy.Namespace,
-				//DV The name is given by the authrealm as the user will define the binding with the clusterset
-				//Name:      req.Name,
-				Name: placementStrategyName,
+				Name:      placementStrategyName,
 			},
 			//DV move below
 			Spec: placement.Spec,
