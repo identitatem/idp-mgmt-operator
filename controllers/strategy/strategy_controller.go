@@ -211,20 +211,21 @@ func (r *StrategyReconciler) processStrategyDeletion(strategy *identitatemv1alph
 	//Delete strategyPlacement
 	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
 	if err != nil {
-		return err
-	}
-	pl := &clusterv1alpha1.Placement{}
-	if err := r.Client.Get(context.TODO(),
-		client.ObjectKey{Name: getPlacementStrategyName(strategy, authRealm), Namespace: strategy.Namespace},
-		pl); err != nil {
-		if !errors.IsNotFound(err) {
-			return giterrors.WithStack(err)
-		}
-	}
-	if err := r.Client.Delete(context.TODO(), pl); err != nil {
 		return giterrors.WithStack(err)
 	}
-	return nil
+	pl := &clusterv1alpha1.Placement{}
+	err = r.Client.Get(context.TODO(),
+		client.ObjectKey{Name: getPlacementStrategyName(strategy, authRealm), Namespace: strategy.Namespace},
+		pl)
+	switch {
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), pl); err != nil {
+			return giterrors.WithStack(err)
+		}
+	case errors.IsNotFound(err):
+		return nil
+	}
+	return err
 }
 
 // SetupWithManager sets up the controller with the Manager.
