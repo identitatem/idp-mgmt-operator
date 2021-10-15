@@ -46,7 +46,7 @@ type AuthRealmReconciler struct {
 	Scheme             *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,authrealms/status,strategies},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,authrealms/status,authrealms/finalizers,strategies},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexservers,dexservers/status,dexclients,dexclients/status},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources={namespaces,secrets,serviceaccounts,configmaps},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="apps",resources={deployments},verbs=get;list;watch;create;update;patch;delete
@@ -81,7 +81,7 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	//if deletetimestamp then delete dex namespace
 	if instance.DeletionTimestamp != nil {
-		if err := r.deleteAuthRealmNamespace(instance); err != nil {
+		if err := r.processAuthRealmDeletion(instance); err != nil {
 			return reconcile.Result{}, err
 		}
 		controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
@@ -184,14 +184,15 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	authRealmPredicate := predicate.Predicate(predicate.Funcs{
 		GenericFunc: func(e event.GenericEvent) bool { return false },
-		DeleteFunc:  func(e event.DeleteEvent) bool { return false },
+		DeleteFunc:  func(e event.DeleteEvent) bool { return true },
 		CreateFunc:  func(e event.CreateEvent) bool { return true },
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			authRealmOld := e.ObjectOld.(*identitatemv1alpha1.AuthRealm)
 			authRealmNew := e.ObjectNew.(*identitatemv1alpha1.AuthRealm)
 			// only handle the Finalizer and Spec changes
 			return !equality.Semantic.DeepEqual(e.ObjectOld.GetFinalizers(), e.ObjectNew.GetFinalizers()) ||
-				!equality.Semantic.DeepEqual(authRealmOld.Spec, authRealmNew.Spec)
+				!equality.Semantic.DeepEqual(authRealmOld.Spec, authRealmNew.Spec) ||
+				authRealmOld.DeletionTimestamp != authRealmNew.DeletionTimestamp
 
 		},
 	})
@@ -204,7 +205,7 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			dexServer := o.(*identitatemdexserverv1lapha1.DexServer)
 			req := make([]reconcile.Request, 0)
 			for _, relatedObject := range dexServer.Status.RelatedObjects {
-				if relatedObject.Kind == "AuthRealm" {
+				if dexServer.DeletionTimestamp.IsZero() && relatedObject.Kind == "AuthRealm" {
 					req = append(req, reconcile.Request{
 						NamespacedName: types.NamespacedName{
 							Name:      relatedObject.Name,

@@ -6,8 +6,6 @@ import (
 	"fmt"
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
-	openshiftconfigv1 "github.com/openshift/api/config/v1"
-	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -55,18 +53,30 @@ func DexServerNamespace(authRealm *identitatemv1alpha1.AuthRealm) string {
 }
 
 func DexClientName(
-	decision clusterv1alpha1.ClusterDecision,
-	idp openshiftconfigv1.IdentityProvider,
+	authRealm *identitatemv1alpha1.AuthRealm,
+	clusterName string,
 ) string {
-	return idp.Name
+	return fmt.Sprintf("%s-%s", clusterName, authRealm.Name)
+}
+
+func ClientSecretName(
+	authRealm *identitatemv1alpha1.AuthRealm,
+) string {
+	return authRealm.Name
+}
+
+func ClusterOAuthName(
+	authRealm *identitatemv1alpha1.AuthRealm,
+) string {
+	return authRealm.Name
 }
 
 func DexClientObjectKey(
 	authRealm *identitatemv1alpha1.AuthRealm,
-	decision clusterv1alpha1.ClusterDecision,
+	clusterName string,
 ) client.ObjectKey {
 	return client.ObjectKey{
-		Name:      authRealm.Name,
+		Name:      DexClientName(authRealm, clusterName),
 		Namespace: DexServerNamespace(authRealm),
 	}
 }

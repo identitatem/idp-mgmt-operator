@@ -9,6 +9,7 @@ import (
 	// "time"
 
 	ocinfrav1 "github.com/openshift/api/config/v1"
+	giterrors "github.com/pkg/errors"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -96,12 +97,27 @@ func (r *StrategyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	if instance.DeletionTimestamp != nil {
+		err := r.processStrategyDeletion(instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
+		if err := r.Client.Update(context.TODO(), instance); err != nil {
+			return ctrl.Result{}, giterrors.WithStack(err)
+		}
 		return reconcile.Result{}, nil
 	}
 
 	r.Log.Info("Instance", "instance", instance)
 	r.Log.Info("Running Reconcile for Strategy.", "Name: ", instance.GetName(), " Namespace:", instance.GetNamespace())
 
+	controllerutil.AddFinalizer(instance, helpers.AuthrealmFinalizer)
+
+	r.Log.Info("Process", "Name", instance.GetName(), "Namespace", instance.GetNamespace())
+
+	if err := r.Client.Update(context.TODO(), instance); err != nil {
+		return ctrl.Result{}, giterrors.WithStack(err)
+	}
 	// Get the AuthRealm Placement bits we need to help create a new Placement
 
 	r.Log.Info("Searching for AuthRealm in ownerRefs", "strategy", instance.Name)
@@ -181,15 +197,13 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 		placementStrategy = &clusterv1alpha1.Placement{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: strategy.Namespace,
-				//DV The name is given by the authrealm as the user will define the binding with the clusterset
-				//Name:      req.Name,
-				Name: placementStrategyName,
+				Name:      placementStrategyName,
 			},
 			//DV move below
 			Spec: placement.Spec,
 		}
 		// Set owner reference for cleanup
-		err = controllerutil.SetOwnerReference(strategy, placementStrategy, r.Scheme)
+		err = controllerutil.SetControllerReference(strategy, placementStrategy, r.Scheme)
 		if err != nil {
 			return nil, false, err
 		}
@@ -200,6 +214,27 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 func getPlacementStrategyName(strategy *identitatemv1alpha1.Strategy,
 	authRealm *identitatemv1alpha1.AuthRealm) string {
 	return fmt.Sprintf("%s-%s", authRealm.Spec.PlacementRef.Name, strategy.Spec.Type)
+}
+
+func (r *StrategyReconciler) processStrategyDeletion(strategy *identitatemv1alpha1.Strategy) error {
+	//Delete strategyPlacement
+	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
+	if err != nil {
+		return giterrors.WithStack(err)
+	}
+	pl := &clusterv1alpha1.Placement{}
+	err = r.Client.Get(context.TODO(),
+		client.ObjectKey{Name: getPlacementStrategyName(strategy, authRealm), Namespace: strategy.Namespace},
+		pl)
+	switch {
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), pl); err != nil {
+			return giterrors.WithStack(err)
+		}
+	case errors.IsNotFound(err):
+		return nil
+	}
+	return err
 }
 
 // SetupWithManager sets up the controller with the Manager.

@@ -8,9 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	//"fmt"
+	giterrors "github.com/pkg/errors"
 
-	//"github.com/prometheus/common/log"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -115,12 +114,20 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		if result, err := r.unmanagedCluster(instance); err != nil {
 			return result, err
 		}
-		r.Log.Info("remove PlacementDecision finalizer", "Finalizer:", helpers.ClusterOAuthFinalizer)
-		controllerutil.RemoveFinalizer(instance, helpers.ClusterOAuthFinalizer)
+		r.Log.Info("remove finalizer", "Finalizer:", helpers.AuthrealmFinalizer, "name", instance.Name, "namespace", instance.Namespace)
+		controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
 		if err := r.Client.Update(context.TODO(), instance); err != nil {
 			return ctrl.Result{}, err
 		}
 		return reconcile.Result{}, nil
+	}
+
+	controllerutil.AddFinalizer(instance, helpers.AuthrealmFinalizer)
+
+	r.Log.Info("Process", "Name", instance.GetName(), "Namespace", instance.GetNamespace())
+
+	if err := r.Client.Update(context.TODO(), instance); err != nil {
+		return ctrl.Result{}, giterrors.WithStack(err)
 	}
 
 	r.Log.Info("generateManagedClusterViewForOAuth for", "name", instance.Name, "namespace", instance.Namespace)
