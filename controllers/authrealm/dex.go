@@ -155,27 +155,38 @@ func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.A
 	if nbFound == 1 {
 		//Delete dex-operator ns
 		ns := &corev1.Namespace{}
-		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexOperatorNamespace()}, ns); err == nil {
-			err := r.Client.Delete(context.TODO(), ns)
-			if err != nil {
+		err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexOperatorNamespace()}, ns)
+		switch {
+		case err == nil:
+			if err := r.Client.Delete(context.TODO(), ns); err != nil {
 				return giterrors.WithStack(err)
 			}
+		case !errors.IsNotFound(err):
+			return giterrors.WithStack(err)
 		}
+
 		//Delete clusterRoleBinding
 		crb := &rbacv1.ClusterRoleBinding{}
-		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "dex-operator-rolebinding"}, crb); err == nil {
-			err := r.Client.Delete(context.TODO(), crb)
-			if err != nil {
+		err = r.Client.Get(context.TODO(), client.ObjectKey{Name: "dex-operator-rolebinding"}, crb)
+		switch {
+		case err == nil:
+			if err := r.Client.Delete(context.TODO(), crb); err != nil {
 				return giterrors.WithStack(err)
 			}
+		case !errors.IsNotFound(err):
+			return giterrors.WithStack(err)
 		}
+
 		//Delete clusterRole
 		cr := &rbacv1.ClusterRole{}
-		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "dex-operator-manager-role"}, cr); err == nil {
-			err := r.Client.Delete(context.TODO(), cr)
-			if err != nil {
+		err = r.Client.Get(context.TODO(), client.ObjectKey{Name: "dex-operator-manager-role"}, cr)
+		switch {
+		case err == nil:
+			if err := r.Client.Delete(context.TODO(), cr); err != nil {
 				return giterrors.WithStack(err)
 			}
+		case !errors.IsNotFound(err):
+			return giterrors.WithStack(err)
 		}
 	}
 	return nil
@@ -396,14 +407,15 @@ func (r *AuthRealmReconciler) processAuthRealmDeletion(authRealm *identitatemv1a
 	r.Log.Info("deleted DexServer ns", "namespace", helpers.DexServerNamespace(authRealm))
 	r.Log.Info("delete Strategy", "name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType))
 	st := &identitatemv1alpha1.Strategy{}
-	if err := r.Client.Get(context.TODO(),
+	err := r.Client.Get(context.TODO(),
 		client.ObjectKey{Name: helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType), Namespace: authRealm.Namespace},
-		st); err != nil {
-		if !errors.IsNotFound(err) {
+		st)
+	switch {
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), st); err != nil {
 			return giterrors.WithStack(err)
 		}
-	}
-	if err := r.Client.Delete(context.TODO(), st); err != nil {
+	case !errors.IsNotFound(err):
 		return giterrors.WithStack(err)
 	}
 	r.Log.Info("deleted Strategy", "name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType))
