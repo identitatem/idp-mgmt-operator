@@ -4,6 +4,7 @@ package placementdecision
 
 import (
 	"context"
+	"fmt"
 
 	giterrors "github.com/pkg/errors"
 
@@ -201,6 +202,9 @@ func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placement
 		return err
 	}
 
+	r.Log.Info("search placementdecisions in ns and label",
+		"namespace", placement.Namespace,
+		"label", fmt.Sprintf("%s=%s", clusterv1alpha1.PlacementLabel, placement.Name))
 	placementDecisions := &clusterv1alpha1.PlacementDecisionList{}
 	if err := r.Client.List(context.TODO(), placementDecisions, client.MatchingLabels{
 		clusterv1alpha1.PlacementLabel: placement.Name,

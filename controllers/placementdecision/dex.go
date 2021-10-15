@@ -183,6 +183,7 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 func (r *PlacementDecisionReconciler) deleteConfig(authRealm *identitatemv1alpha1.AuthRealm,
 	dexClientName, clusterName string,
 	idp openshiftconfigv1.IdentityProvider) error {
+	r.Log.Info("delete configuruartion for idp", "name", idp.Name)
 	//Delete DexClient
 	r.Log.Info("get dexclient", "namespace", authRealm.Name, "name", dexClientName)
 	dexClient := &dexoperatorv1alpha1.DexClient{}
