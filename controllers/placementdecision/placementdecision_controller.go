@@ -213,10 +213,8 @@ func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placement
 	}
 	for _, placementDecision := range placementDecisions.Items {
 		for _, decision := range placementDecision.Status.Decisions {
-			for _, idp := range authRealm.Spec.IdentityProviders {
-				if err := r.deleteConfig(authRealm, helpers.DexClientName(decision, idp), decision.ClusterName, idp); err != nil {
-					return err
-				}
+			if err := r.deleteConfig(authRealm, helpers.DexClientName(authRealm, decision.ClusterName), decision.ClusterName); err != nil {
+				return err
 			}
 		}
 	}
