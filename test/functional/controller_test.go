@@ -401,7 +401,7 @@ var _ = Describe("Strategy", func() {
 			})
 		})
 	})
-	It("process a PlacementDecision", func() {
+	It("process a Placement", func() {
 		var placementStrategy *clusterv1alpha1.Placement
 		By("Checking placement strategy", func() {
 			var err error
@@ -411,7 +411,7 @@ var _ = Describe("Strategy", func() {
 		})
 
 		var placementDecision *clusterv1alpha1.PlacementDecision
-		By("Create Placement Decision CR", func() {
+		By("Create Placement Decision CR with the cluster in it", func() {
 			placementDecision = &clusterv1alpha1.PlacementDecision{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      StrategyName,
@@ -440,6 +440,17 @@ var _ = Describe("Strategy", func() {
 					UpdateStatus(context.TODO(), placementDecision, metav1.UpdateOptions{})
 				return err
 			}, 30, 1).Should(BeNil())
+		})
+
+		By("Update Placement CR", func() {
+			placement, err := clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).
+				Get(context.TODO(), PlacementStrategyName, metav1.GetOptions{})
+			Expect(err).To(BeNil())
+			Expect(len(placement.Spec.Predicates)).Should(Equal(1))
+
+			placement.Status.NumberOfSelectedClusters = 1
+			_, err = clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).
+				UpdateStatus(context.TODO(), placement, metav1.UpdateOptions{})
 		})
 
 		By(fmt.Sprintf("Checking client secret %s", AuthRealmName), func() {
@@ -528,9 +539,24 @@ var _ = Describe("Strategy", func() {
 				return nil
 			}, 30, 1).Should(BeNil())
 		})
-		By("Deleting the placementdecision", func() {
-			err := clientSetCluster.ClusterV1alpha1().PlacementDecisions(AuthRealmNameSpace).Delete(context.TODO(), StrategyName, metav1.DeleteOptions{})
+		By("Remove cluster from placementdecision", func() {
+			placementDecision, err := clientSetCluster.ClusterV1alpha1().PlacementDecisions(AuthRealmNameSpace).Get(context.TODO(), StrategyName, metav1.GetOptions{})
 			Expect(err).To(BeNil())
+
+			placementDecision.Status.Decisions = []clusterv1alpha1.ClusterDecision{}
+			_, err = clientSetCluster.ClusterV1alpha1().PlacementDecisions(AuthRealmNameSpace).
+				UpdateStatus(context.TODO(), placementDecision, metav1.UpdateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By("Remove the cluster from placement", func() {
+			placement, err := clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).
+				Get(context.TODO(), PlacementStrategyName, metav1.GetOptions{})
+			Expect(err).To(BeNil())
+			Expect(len(placement.Spec.Predicates)).Should(Equal(1))
+
+			placement.Status.NumberOfSelectedClusters = 0
+			_, err = clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).
+				UpdateStatus(context.TODO(), placement, metav1.UpdateOptions{})
 		})
 		// By(fmt.Sprintf("Checking client secret deletion %s", AuthRealmName), func() {
 		// 	Eventually(func() error {
@@ -542,7 +568,7 @@ var _ = Describe("Strategy", func() {
 		// 			}
 		// 			return nil
 		// 		}
-		// 		return fmt.Errorf("clientSecret %s still exist", AuthRealmName)
+		// 		return fmt.Errorf("clientSecret %s in ns %s still exist", AuthRealmName, ClusterName)
 		// 	}, 30, 1).Should(BeNil())
 		// })
 		// By(fmt.Sprintf("Checking clusteroauth deletion %s", AuthRealmName), func() {
@@ -583,19 +609,6 @@ var _ = Describe("Strategy", func() {
 					return nil
 				}
 				return fmt.Errorf("DexClient %s still exist", AuthRealmName)
-
-			}, 30, 1).Should(BeNil())
-		})
-		By(fmt.Sprintf("Checking PlacementDecision deletion %s", StrategyName), func() {
-			Eventually(func() error {
-				_, err := clientSetCluster.ClusterV1alpha1().PlacementDecisions(AuthRealmNameSpace).Get(context.TODO(), StrategyName, metav1.GetOptions{})
-				if err != nil {
-					if !errors.IsNotFound(err) {
-						return err
-					}
-					return nil
-				}
-				return fmt.Errorf("PlacementDecision %s still exist", StrategyName)
 
 			}, 30, 1).Should(BeNil())
 		})

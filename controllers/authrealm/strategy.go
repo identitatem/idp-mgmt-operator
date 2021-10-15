@@ -30,7 +30,7 @@ func (r *AuthRealmReconciler) createStrategy(t identitatemv1alpha1.StrategyType,
 			},
 		}
 
-		if err := controllerutil.SetOwnerReference(authRealm, strategy, r.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(authRealm, strategy, r.Scheme); err != nil {
 			return err
 		}
 		if err := r.Client.Create(context.TODO(), strategy); err != nil {

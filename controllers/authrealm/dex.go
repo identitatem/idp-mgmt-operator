@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	identitatemdexserverv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
+	dexoperatorv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	dexoperatorconfig "github.com/identitatem/dex-operator/config"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/deploy"
@@ -139,6 +139,7 @@ func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.
 
 	return nil
 }
+
 func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.AuthRealm) error {
 	r.Log.Info("deleteDexOperator", "Name", authRealm.Name, "Namespace", authRealm.Name)
 	authRealms := &identitatemv1alpha1.AuthRealmList{}
@@ -219,13 +220,13 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 		}
 	}
 	dexServerExists := true
-	dexServer := &identitatemdexserverv1alpha1.DexServer{}
+	dexServer := &dexoperatorv1alpha1.DexServer{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: authRealm.Name, Namespace: helpers.DexServerNamespace(authRealm)}, dexServer); err != nil {
 		if !errors.IsNotFound(err) {
 			return giterrors.WithStack(err)
 		}
 		dexServerExists = false
-		dexServer = &identitatemdexserverv1alpha1.DexServer{
+		dexServer = &dexoperatorv1alpha1.DexServer{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      authRealm.Name,
 				Namespace: helpers.DexServerNamespace(authRealm),
@@ -247,7 +248,7 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 			return giterrors.WithStack(err)
 		}
 		dexServer.Status.RelatedObjects =
-			[]identitatemdexserverv1alpha1.RelatedObjectReference{
+			[]dexoperatorv1alpha1.RelatedObjectReference{
 				{
 					Kind:      "AuthRealm",
 					Name:      authRealm.Name,
@@ -262,7 +263,7 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 	return nil
 }
 
-func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.AuthRealm, dexServer *identitatemdexserverv1alpha1.DexServer) error {
+func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.AuthRealm, dexServer *dexoperatorv1alpha1.DexServer) error {
 	r.Log.Info("updateDexServer", "Name", dexServer.Name, "Namespace", dexServer.Namespace)
 	uScheme, host, err := helpers.GetAppsURL(r.Client, false)
 	if err != nil {
@@ -314,19 +315,19 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 }
 
 func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1.AuthRealm,
-	dexServer *identitatemdexserverv1alpha1.DexServer) (cs []identitatemdexserverv1alpha1.ConnectorSpec, err error) {
+	dexServer *dexoperatorv1alpha1.DexServer) (cs []dexoperatorv1alpha1.ConnectorSpec, err error) {
 	r.Log.Info("createDexConnectors", "Name", dexServer.Name, "Namespace", dexServer.Namespace)
 
-	cs = make([]identitatemdexserverv1alpha1.ConnectorSpec, 0)
+	cs = make([]dexoperatorv1alpha1.ConnectorSpec, 0)
 	for _, idp := range authRealm.Spec.IdentityProviders {
 		switch idp.Type {
 		case openshiftconfigv1.IdentityProviderTypeGitHub:
 			r.Log.Info("create connector for GitHub")
-			c := &identitatemdexserverv1alpha1.ConnectorSpec{
-				Type: identitatemdexserverv1alpha1.ConnectorTypeGitHub,
+			c := &dexoperatorv1alpha1.ConnectorSpec{
+				Type: dexoperatorv1alpha1.ConnectorTypeGitHub,
 				Name: "github",
 				Id:   "github",
-				GitHub: identitatemdexserverv1alpha1.GitHubConfigSpec{
+				GitHub: dexoperatorv1alpha1.GitHubConfigSpec{
 					ClientID: idp.GitHub.ClientID,
 					ClientSecretRef: corev1.SecretReference{
 						Name:      idp.GitHub.ClientSecret.Name,
@@ -335,7 +336,7 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 					RedirectURI: dexServer.Spec.Issuer + "/callback",
 				},
 			}
-			c.GitHub.Orgs = make([]identitatemdexserverv1alpha1.Org, len(idp.GitHub.Organizations))
+			c.GitHub.Orgs = make([]dexoperatorv1alpha1.Org, len(idp.GitHub.Organizations))
 			for i, org := range idp.GitHub.Organizations {
 				c.GitHub.Orgs[i].Name = org
 			}
@@ -345,11 +346,11 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 		case openshiftconfigv1.IdentityProviderTypeLDAP:
 			r.Log.Info("create connector for LDAP")
 			//TODO set LDAP
-			c := &identitatemdexserverv1alpha1.ConnectorSpec{
-				Type: identitatemdexserverv1alpha1.ConnectorTypeLDAP,
+			c := &dexoperatorv1alpha1.ConnectorSpec{
+				Type: dexoperatorv1alpha1.ConnectorTypeLDAP,
 				Name: "ldap",
 				Id:   "ldap",
-				LDAP: identitatemdexserverv1alpha1.LDAPConfigSpec{
+				LDAP: dexoperatorv1alpha1.LDAPConfigSpec{
 					Host:   idp.LDAP.URL,
 					BindDN: idp.LDAP.BindDN,
 					BindPWRef: corev1.SecretReference{
@@ -359,7 +360,7 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 					InsecureNoSSL:      false,
 					InsecureSkipVerify: idp.LDAP.Insecure,
 					UsernamePrompt:     "Email Address",
-					UserSearch: identitatemdexserverv1alpha1.UserSearchSpec{
+					UserSearch: dexoperatorv1alpha1.UserSearchSpec{
 						BaseDN:    authRealm.Spec.LDAPExtraConfigs[idp.Name].BaseDN,
 						Filter:    authRealm.Spec.LDAPExtraConfigs[idp.Name].Filter,
 						Username:  idp.LDAP.Attributes.PreferredUsername[0],
@@ -384,16 +385,28 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 	return cs, giterrors.WithStack(err)
 }
 
-func (r *AuthRealmReconciler) deleteAuthRealmNamespace(authRealm *identitatemv1alpha1.AuthRealm) error {
+func (r *AuthRealmReconciler) processAuthRealmDeletion(authRealm *identitatemv1alpha1.AuthRealm) error {
+	r.Log.Info("delete DexServer ns", "namespace", helpers.DexServerNamespace(authRealm))
 	ns := &corev1.Namespace{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authRealm)}, ns); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
+		if !errors.IsNotFound(err) {
+			return giterrors.WithStack(err)
 		}
+	}
+	r.Log.Info("deleted DexServer ns", "namespace", helpers.DexServerNamespace(authRealm))
+	r.Log.Info("delete Strategy", "name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType))
+	st := &identitatemv1alpha1.Strategy{}
+	if err := r.Client.Get(context.TODO(),
+		client.ObjectKey{Name: helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType), Namespace: authRealm.Namespace},
+		st); err != nil {
+		if !errors.IsNotFound(err) {
+			return giterrors.WithStack(err)
+		}
+	}
+	if err := r.Client.Delete(context.TODO(), st); err != nil {
 		return giterrors.WithStack(err)
 	}
-	if err := r.Client.Delete(context.TODO(), ns); err != nil {
-		return giterrors.WithStack(err)
-	}
+	r.Log.Info("deleted Strategy", "name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType))
+	r.Log.Info("delete DexOperator")
 	return r.deleteDexOperator(authRealm)
 }

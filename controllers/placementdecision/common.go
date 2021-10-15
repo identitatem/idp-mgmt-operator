@@ -151,13 +151,19 @@ func (r *PlacementDecisionReconciler) GetStrategyFromPlacement(placementName, pl
 	return nil, giterrors.WithStack(errors.NewNotFound(identitatemv1alpha1.Resource("strategies"), placementName))
 }
 
-func inPlacementDecision(clusterName string, placementDecisions *clusterv1alpha1.PlacementDecisionList) bool {
+func (r *PlacementDecisionReconciler) inPlacementDecision(clusterName string, placement *clusterv1alpha1.Placement) (bool, error) {
+	placementDecisions := &clusterv1alpha1.PlacementDecisionList{}
+	if err := r.Client.List(context.TODO(), placementDecisions, client.MatchingLabels{
+		clusterv1alpha1.PlacementLabel: placement.Name,
+	}, client.InNamespace(placement.Namespace)); err != nil {
+		return false, giterrors.WithStack(err)
+	}
 	for _, placementDecision := range placementDecisions.Items {
 		for _, decision := range placementDecision.Status.Decisions {
 			if decision.ClusterName == clusterName {
-				return true
+				return true, nil
 			}
 		}
 	}
-	return false
+	return false, nil
 }

@@ -9,6 +9,7 @@ import (
 	// "time"
 
 	ocinfrav1 "github.com/openshift/api/config/v1"
+	giterrors "github.com/pkg/errors"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -96,6 +97,10 @@ func (r *StrategyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	if instance.DeletionTimestamp != nil {
+		err := r.processStrategyDeletion(instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 		return reconcile.Result{}, nil
 	}
 
@@ -189,7 +194,7 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 			Spec: placement.Spec,
 		}
 		// Set owner reference for cleanup
-		err = controllerutil.SetOwnerReference(strategy, placementStrategy, r.Scheme)
+		err = controllerutil.SetControllerReference(strategy, placementStrategy, r.Scheme)
 		if err != nil {
 			return nil, false, err
 		}
@@ -200,6 +205,26 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 func getPlacementStrategyName(strategy *identitatemv1alpha1.Strategy,
 	authRealm *identitatemv1alpha1.AuthRealm) string {
 	return fmt.Sprintf("%s-%s", authRealm.Spec.PlacementRef.Name, strategy.Spec.Type)
+}
+
+func (r *StrategyReconciler) processStrategyDeletion(strategy *identitatemv1alpha1.Strategy) error {
+	//Delete strategyPlacement
+	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
+	if err != nil {
+		return err
+	}
+	pl := &clusterv1alpha1.Placement{}
+	if err := r.Client.Get(context.TODO(),
+		client.ObjectKey{Name: getPlacementStrategyName(strategy, authRealm), Namespace: strategy.Namespace},
+		pl); err != nil {
+		if !errors.IsNotFound(err) {
+			return giterrors.WithStack(err)
+		}
+	}
+	if err := r.Client.Delete(context.TODO(), pl); err != nil {
+		return giterrors.WithStack(err)
+	}
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
