@@ -56,7 +56,7 @@ func DexClientName(
 	authRealm *identitatemv1alpha1.AuthRealm,
 	clusterName string,
 ) string {
-	return fmt.Sprintf("%s-%s", authRealm.Name, clusterName)
+	return fmt.Sprintf("%s-%s", clusterName, authRealm.Name)
 }
 
 func ClientSecretName(

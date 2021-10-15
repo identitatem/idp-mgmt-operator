@@ -31,7 +31,7 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 		}
 		clientSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      authRealm.Name,
+				Name:      helpers.ClientSecretName(authRealm, decision.ClusterName),
 				Namespace: decision.ClusterName,
 			},
 			Data: map[string][]byte{
@@ -58,7 +58,7 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 		clusterOAuthExists = false
 		clusterOAuth = &identitatemv1alpha1.ClusterOAuth{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      authRealm.Name,
+				Name:      helpers.ClusterOAuthName(authRealm, decision.ClusterName),
 				Namespace: decision.ClusterName,
 			},
 			Spec: identitatemv1alpha1.ClusterOAuthSpec{

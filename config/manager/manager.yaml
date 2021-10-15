@@ -56,7 +56,7 @@ spec:
               value: "quay.io/identitatem/dex-operator:latest"
             - name: RELATED_IMAGE_DEX_SERVER
               value: quay.io/dexidp/dex:v2.28.1
-          image: quay.io/identitatem/idp-mgmt-operator@sha256:8a428e35034729d5af373d2b9bd8acdd233332a9b876ba9160ce644c3e0fd04b
+          image: quay.io/identitatem/idp-mgmt-operator@sha256:fe2cc610264007157921f67308dd8b9b0cce92234af1194d82c05dc7405877ca
           livenessProbe:
             httpGet:
               scheme: HTTP
