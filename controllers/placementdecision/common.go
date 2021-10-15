@@ -25,13 +25,13 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 	authRealm *identitatemv1alpha1.AuthRealm) (*corev1.Secret, error) {
 	r.Log.Info("create clientSecret for", "cluster", decision.ClusterName, "identityProvider", authRealm.Name)
 	clientSecret := &corev1.Secret{}
-	if err := r.Get(context.TODO(), client.ObjectKey{Name: helpers.ClientSecretName(authRealm, decision.ClusterName), Namespace: decision.ClusterName}, clientSecret); err != nil {
+	if err := r.Get(context.TODO(), client.ObjectKey{Name: helpers.ClientSecretName(authRealm), Namespace: decision.ClusterName}, clientSecret); err != nil {
 		if !errors.IsNotFound(err) {
 			return nil, giterrors.WithStack(err)
 		}
 		clientSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      helpers.ClientSecretName(authRealm, decision.ClusterName),
+				Name:      helpers.ClientSecretName(authRealm),
 				Namespace: decision.ClusterName,
 			},
 			Data: map[string][]byte{
@@ -51,14 +51,14 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 	r.Log.Info("create clusterOAuth for", "cluster", decision.ClusterName, "authRealm", authRealm.Name)
 	clusterOAuthExists := true
 	clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ClusterOAuthName(authRealm, decision.ClusterName), Namespace: decision.ClusterName}, clusterOAuth); err != nil {
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ClusterOAuthName(authRealm), Namespace: decision.ClusterName}, clusterOAuth); err != nil {
 		if !errors.IsNotFound(err) {
 			return giterrors.WithStack(err)
 		}
 		clusterOAuthExists = false
 		clusterOAuth = &identitatemv1alpha1.ClusterOAuth{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      helpers.ClusterOAuthName(authRealm, decision.ClusterName),
+				Name:      helpers.ClusterOAuthName(authRealm),
 				Namespace: decision.ClusterName,
 			},
 			Spec: identitatemv1alpha1.ClusterOAuthSpec{

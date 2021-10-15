@@ -361,7 +361,7 @@ var _ = Describe("Process Strategy backplane: ", func() {
 		dexClientName := AuthRealmName
 		clientSecret := &corev1.Secret{}
 		By(fmt.Sprintf("Checking client secret %s", AuthRealmName), func() {
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ClientSecretName(authRealm, ClusterName), Namespace: ClusterName}, clientSecret)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ClientSecretName(authRealm), Namespace: ClusterName}, clientSecret)
 			Expect(err).To(BeNil())
 		})
 		By(fmt.Sprintf("Checking DexClient %s", dexClientName), func() {
@@ -376,7 +376,7 @@ var _ = Describe("Process Strategy backplane: ", func() {
 		})
 		By(fmt.Sprintf("Checking ClusterOAuth %s", dexClientName), func() {
 			clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ClusterOAuthName(authRealm, ClusterName), Namespace: ClusterName}, clusterOAuth)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.ClusterOAuthName(authRealm), Namespace: ClusterName}, clusterOAuth)
 			Expect(err).To(BeNil())
 			Expect(clusterOAuth.Spec.OAuth.Spec.IdentityProviders[0].OpenID.ClientID).To(Equal(AuthRealmName))
 			Expect(clusterOAuth.Spec.OAuth.Spec.IdentityProviders[0].OpenID.ClientSecret.Name).To(Equal(clientSecret.Name))

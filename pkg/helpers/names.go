@@ -61,16 +61,14 @@ func DexClientName(
 
 func ClientSecretName(
 	authRealm *identitatemv1alpha1.AuthRealm,
-	clusterName string,
 ) string {
-	return DexClientName(authRealm, clusterName)
+	return authRealm.Name
 }
 
 func ClusterOAuthName(
 	authRealm *identitatemv1alpha1.AuthRealm,
-	clusterName string,
 ) string {
-	return DexClientName(authRealm, clusterName)
+	return authRealm.Name
 }
 
 func DexClientObjectKey(
