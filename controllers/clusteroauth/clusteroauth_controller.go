@@ -402,6 +402,9 @@ func (r *ClusterOAuthReconciler) unmanagedCluster(clusterOAuth *identitatemv1alp
 		if err := r.checkManifestWorkOriginalOAuthApplied(clusterOAuth.Namespace); err != nil {
 			return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, err
 		}
+		if err := r.deleteOriginalOAuth(clusterOAuth.Namespace); err != nil {
+			return ctrl.Result{}, err
+		}
 		if err := r.deleteManifestWork(helpers.ManifestWorkOriginalOAuthName(), clusterOAuth.Namespace); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -506,6 +509,20 @@ func (r *ClusterOAuthReconciler) deleteManifestWork(name, ns string) error {
 		}
 	}
 	return nil
+}
+
+func (r *ClusterOAuthReconciler) deleteOriginalOAuth(ns string) error {
+	cm := &corev1.ConfigMap{}
+	r.Log.Info("check if configMap already exists", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", ns)
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: ns}, cm); err == nil {
+		if errors.IsNotFound(err) {
+			//nothing to do as already deleted
+			return nil
+		}
+		return giterrors.WithStack(err)
+	}
+
+	return r.Delete(context.TODO(), cm)
 }
 
 // SetupWithManager sets up the controller with the Manager.
