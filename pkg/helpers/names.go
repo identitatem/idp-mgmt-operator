@@ -10,13 +10,14 @@ import (
 )
 
 const (
-	manifestWorkOAuthName    string = "idp-oauth"
-	manifestWorkSecretName   string = "idp-secret"
-	managedClusterViewOAuth  string = "oauth-view"
-	configMapOriginalOAuth   string = "oauth-original"
-	dexServerName            string = "dex-server"
-	dexOperatorNamespace     string = "idp-mgmt-dex"
-	dexServerNamespacePrefix string = "idp-mgmt"
+	manifestWorkOAuthName         string = "idp-oauth"
+	manifestWorkOriginalOAuthName string = "idp-oauth-original"
+	manifestWorkSecretName        string = "idp-secret"
+	managedClusterViewOAuth       string = "oauth-view"
+	configMapOriginalOAuth        string = "oauth-original"
+	dexServerName                 string = "dex-server"
+	dexOperatorNamespace          string = "idp-mgmt-dex"
+	dexServerNamespacePrefix      string = "idp-mgmt"
 )
 
 const (
@@ -25,6 +26,10 @@ const (
 )
 
 func ManifestWorkOAuthName() string {
+	return manifestWorkOAuthName
+}
+
+func ManifestWorkOriginalOAuthName() string {
 	return manifestWorkOAuthName
 }
 

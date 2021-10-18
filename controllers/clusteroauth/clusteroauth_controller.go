@@ -344,8 +344,7 @@ func (r *ClusterOAuthReconciler) generateManifestWork(clusterOAuth *identitatemv
 	manifestWorkOAuth.Spec.Workload.Manifests = append(manifestWorkOAuth.Spec.Workload.Manifests, manifest)
 
 	// create manifest work for managed cluster
-	// (borrowed from https://github.com/open-cluster-management/endpoint-operator/blob/master/pkg/utils/utils.go)
-	if err := r.CreateOrUpdateManifestWork(manifestWorkOAuth, r.Client, manifestWorkOAuth, r.Scheme); err != nil {
+	if err := r.CreateOrUpdateManifestWork(manifestWorkOAuth); err != nil {
 		r.Log.Error(err, "Failed to create manifest work for component")
 		// Error reading the object - requeue the request.
 		return err
@@ -356,21 +355,18 @@ func (r *ClusterOAuthReconciler) generateManifestWork(clusterOAuth *identitatemv
 // CreateOrUpdateManifestWork creates a new ManifestWork or update an existing ManifestWork
 func (r *ClusterOAuthReconciler) CreateOrUpdateManifestWork(
 	manifestwork *manifestworkv1.ManifestWork,
-	client client.Client,
-	owner metav1.Object,
-	scheme *runtime.Scheme,
 ) error {
 
 	oldManifestwork := &manifestworkv1.ManifestWork{}
 
-	err := client.Get(
+	err := r.Get(
 		context.TODO(),
 		types.NamespacedName{Name: manifestwork.Name, Namespace: manifestwork.Namespace},
 		oldManifestwork,
 	)
 	if err == nil {
 		oldManifestwork.Spec.Workload = manifestwork.Spec.Workload
-		if err := client.Update(context.TODO(), oldManifestwork); err != nil {
+		if err := r.Update(context.TODO(), oldManifestwork); err != nil {
 			r.Log.Error(err, "Fail to update manifestwork")
 			return err
 		}
@@ -378,7 +374,7 @@ func (r *ClusterOAuthReconciler) CreateOrUpdateManifestWork(
 	}
 	if errors.IsNotFound(err) {
 		r.Log.Info("create manifestwork", "name", manifestwork.Name, "namespace", manifestwork.Namespace)
-		if err := client.Create(context.TODO(), manifestwork); err != nil {
+		if err := r.Create(context.TODO(), manifestwork); err != nil {
 			r.Log.Error(err, "Fail to create manifestwork")
 			return err
 		}
@@ -397,12 +393,18 @@ func (r *ClusterOAuthReconciler) unmanagedCluster(clusterOAuth *identitatemv1alp
 
 	if len(clusterOAuths.Items) == 1 {
 		r.Log.Info("delete for manifestwork", "name", helpers.ManifestWorkOAuthName(), "namespace", clusterOAuth.Namespace)
-		if err := r.deleteManifestWork(clusterOAuth); err != nil {
+		if err := r.deleteManifestWork(helpers.ManifestWorkOAuthName(), clusterOAuth.Namespace); err != nil {
 			return ctrl.Result{}, err
 		}
-		// if result, err := r.restoreOriginalOAuth(clusterOAuth); err != nil {
-		// 	return result, err
-		// }
+		if result, err := r.restoreOriginalOAuth(clusterOAuth); err != nil {
+			return result, err
+		}
+		if err := r.checkManifestWorkOriginalOAuthApplied(clusterOAuth.Namespace); err != nil {
+			return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, err
+		}
+		if err := r.deleteManifestWork(helpers.ManifestWorkOriginalOAuthName(), clusterOAuth.Namespace); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 	return ctrl.Result{}, nil
 }
@@ -425,22 +427,29 @@ func (r *ClusterOAuthReconciler) restoreOriginalOAuth(clusterOAuth *identitatemv
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	mw := &manifestworkv1.ManifestWork{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ManifestWorkOAuthName(), Namespace: clusterOAuth.Namespace}, mw); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	mw.Spec.Workload = manifestworkv1.ManifestsTemplate{
-		Manifests: []manifestworkv1.Manifest{
-			{RawExtension: runtime.RawExtension{Raw: jsonData}},
+	mw := &manifestworkv1.ManifestWork{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      helpers.ManifestWorkOriginalOAuthName(),
+			Namespace: clusterOAuth.GetNamespace(),
+			Annotations: map[string]string{
+				posthookAnnotation: "60",
+			},
+		},
+		Spec: manifestworkv1.ManifestWorkSpec{
+			DeleteOption: &manifestworkv1.DeleteOption{
+				PropagationPolicy: manifestworkv1.DeletePropagationPolicyTypeOrphan,
+			},
+			Workload: manifestworkv1.ManifestsTemplate{
+				Manifests: []manifestworkv1.Manifest{
+					{RawExtension: runtime.RawExtension{Raw: jsonData}},
+				},
+			},
 		},
 	}
 
-	if err := r.Update(context.TODO(), mw); err != nil {
+	if err := r.CreateOrUpdateManifestWork(mw); err != nil {
 		return ctrl.Result{}, err
 	}
-
-	//TODO create mananifestwork with orphan
 
 	//TODO wait manifestwork applied
 
@@ -449,27 +458,44 @@ func (r *ClusterOAuthReconciler) restoreOriginalOAuth(clusterOAuth *identitatemv
 	return ctrl.Result{}, nil
 }
 
-func (r *ClusterOAuthReconciler) deleteManifestWork(clusterOAuth *identitatemv1alpha1.ClusterOAuth) error {
+func (r *ClusterOAuthReconciler) checkManifestWorkOriginalOAuthApplied(ns string) error {
 	manifestWork := &manifestworkv1.ManifestWork{}
 	if err := r.Client.Get(
 		context.TODO(),
-		types.NamespacedName{Name: helpers.ManifestWorkOAuthName(), Namespace: clusterOAuth.Namespace},
+		types.NamespacedName{Name: helpers.ManifestWorkOriginalOAuthName(), Namespace: ns},
+		manifestWork,
+	); err != nil {
+		return err
+	}
+	for _, c := range manifestWork.Status.Conditions {
+		if c.Type == string(manifestworkv1.ManifestApplied) &&
+			c.Status == metav1.ConditionTrue {
+			return nil
+		}
+	}
+	return fmt.Errorf("manifestwork %s not yet Applied", helpers.ManifestWorkOriginalOAuthName())
+}
+
+func (r *ClusterOAuthReconciler) deleteManifestWork(name, ns string) error {
+	manifestWork := &manifestworkv1.ManifestWork{}
+	if err := r.Client.Get(
+		context.TODO(),
+		types.NamespacedName{Name: name, Namespace: ns},
 		manifestWork,
 	); err != nil {
 		if !errors.IsNotFound(err) {
 			return err
 		}
-	} else {
-		if manifestWork.DeletionTimestamp.IsZero() {
-			r.Log.Info("delete manifest", "name", manifestWork.Name, "namespace", manifestWork.Namespace)
-			err := r.Client.Delete(context.TODO(), manifestWork)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
+		return nil
+	}
+	if manifestWork.DeletionTimestamp.IsZero() {
+		r.Log.Info("delete manifest", "name", manifestWork.Name, "namespace", manifestWork.Namespace)
+		err := r.Client.Delete(context.TODO(), manifestWork)
+		if err != nil && !errors.IsNotFound(err) {
+			return err
 		}
 	}
 	return nil
-
 }
 
 // SetupWithManager sets up the controller with the Manager.

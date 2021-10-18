@@ -143,19 +143,6 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	return ctrl.Result{}, nil
 }
 
-// func (r *PlacementDecisionReconciler) AddPlacementDecisionFinalizer(strategy *identitatemv1alpha1.Strategy, obj client.Object) error {
-// 	switch strategy.Spec.Type {
-// 	case identitatemv1alpha1.BackplaneStrategyType:
-// 		controllerutil.AddFinalizer(obj, helpers.PlacementDecisionBackplaneFinalizer)
-// 	default:
-// 		return fmt.Errorf("strategy type %s not supported", strategy.Spec.Type)
-// 	}
-
-// 	return r.Client.Update(context.TODO(), obj)
-
-// }
-
-//DV
 //processPlacementDecision generates resources for the Backplane strategy
 func (r *PlacementDecisionReconciler) processPlacementDecision(
 	authRealm *identitatemv1alpha1.AuthRealm,
