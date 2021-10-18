@@ -14,7 +14,7 @@ const (
 	manifestWorkOriginalOAuthName string = "idp-oauth-original"
 	manifestWorkSecretName        string = "idp-secret"
 	managedClusterViewOAuth       string = "oauth-view"
-	configMapOriginalOAuth        string = "oauth-original"
+	configMapOriginalOAuth        string = "idp-oauth-original"
 	dexServerName                 string = "dex-server"
 	dexOperatorNamespace          string = "idp-mgmt-dex"
 	dexServerNamespacePrefix      string = "idp-mgmt"
