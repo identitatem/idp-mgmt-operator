@@ -30,7 +30,7 @@ func ManifestWorkOAuthName() string {
 }
 
 func ManifestWorkOriginalOAuthName() string {
-	return manifestWorkOAuthName
+	return manifestWorkOriginalOAuthName
 }
 
 func ManifestWorkSecretName() string {
