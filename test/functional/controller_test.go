@@ -573,6 +573,28 @@ var _ = Describe("Strategy", func() {
 				return fmt.Errorf("clientSecret %s in ns %s still exist", helpers.ClusterOAuthName(authRealm), ClusterName)
 			}, 30, 1).Should(BeNil())
 		})
+		By("Setting restore oauth manifestwork to Applied", func() {
+			gvr := schema.GroupVersionResource{Group: "work.open-cluster-management.io", Version: "v1", Resource: "manifestworks"}
+			u, err := dynamicClient.Resource(gvr).Namespace(ClusterName).Get(context.TODO(), helpers.ManifestWorkOriginalOAuthName(), metav1.GetOptions{})
+			Expect(err).To(BeNil())
+			mcv := &manifestworkv1.ManifestWork{}
+			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), mcv)
+			Expect(err).To(BeNil())
+			mcv.Status.Conditions = []metav1.Condition{
+				{
+					Type:               "Applied",
+					Status:             metav1.ConditionTrue,
+					Reason:             "AppliedManifestComplete",
+					Message:            "Apply manifest complete",
+					LastTransitionTime: metav1.Now(),
+				},
+			}
+			uc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mcv)
+			Expect(err).To(BeNil())
+			u.SetUnstructuredContent(uc)
+			_, err = dynamicClient.Resource(gvr).Namespace(ClusterName).UpdateStatus(context.TODO(), u, metav1.UpdateOptions{})
+			Expect(err).To(BeNil())
+		})
 		By(fmt.Sprintf("Checking clusteroauth deletion %s", AuthRealmName), func() {
 			Eventually(func() error {
 				clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
