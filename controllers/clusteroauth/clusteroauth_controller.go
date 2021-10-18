@@ -439,6 +439,24 @@ func (r *ClusterOAuthReconciler) restoreOriginalOAuth(clusterOAuth *identitatemv
 		},
 	}
 
+	//Add Aggregated role
+	r.Log.Info("add aggregated role")
+	aggregatedRoleYaml, err := idpmgmtconfig.GetScenarioResourcesReader().Asset("rbac/role-aggregated-clusterrole.yaml")
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	aggregatedRoleJson, err := yaml.YAMLToJSON(aggregatedRoleYaml)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	manifestAggregated := manifestworkv1.Manifest{
+		RawExtension: runtime.RawExtension{Raw: aggregatedRoleJson},
+	}
+
+	mw.Spec.Workload.Manifests = append(mw.Spec.Workload.Manifests, manifestAggregated)
+
 	if err := r.CreateOrUpdateManifestWork(mw); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -465,7 +483,7 @@ func (r *ClusterOAuthReconciler) checkManifestWorkOriginalOAuthApplied(ns string
 			return nil
 		}
 	}
-	return giterrors.WithStack(fmt.Errorf("manifestwork %s not yet Applied", helpers.ManifestWorkOriginalOAuthName()))
+	return fmt.Errorf("manifestwork %s not yet Applied", helpers.ManifestWorkOriginalOAuthName())
 }
 
 func (r *ClusterOAuthReconciler) deleteManifestWork(name, ns string) error {
