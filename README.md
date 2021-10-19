@@ -2,8 +2,7 @@
 
 # idp-mgmt-operator
 
-This operator is in charge to configure the idp client service. It will also install the
-dex operator.
+This operator is in charge of configuring the idp client service. It will also install the dex operator.
 
 # Run test
 
@@ -64,8 +63,8 @@ Here is a summary of the commands you need to run:
 1. Clone the repo and setup AWS account environment variables
 
 ```bash
-export AWS_ACCESS_KEY={your AWS Key}
-export AWS_SECRET_ACCESS_KEY={your AWS Secret Key}
+export AWS_ACCESS_KEY_ID={your AWS Access Key ID}
+export AWS_SECRET_ACCESS_KEY={your AWS Secret Access Key}
 cd /tmp
 git clone https://github.com/acmesh-official/acme.sh.git
 cd acme.sh
@@ -87,7 +86,7 @@ export WILDCARD=$(oc get ingresscontroller default -n openshift-ingress-operator
 4. Generate the certificate
 
 ```bash
-./acme.sh  --issue   --dns dns_aws -d ${API} -d "*.${WILDCARD}"
+./acme.sh --issue --dns dns_aws -d ${API} -d "*.${WILDCARD}"
 ```
 
 5. Apply the certificate to OCP
@@ -124,9 +123,9 @@ Use GitHub as the OAuth provider.
 
 NOTE: You will need to return to the GitHub OAuth a little bit later to correct the `Authorization callback URL`, once the value is generated for you.
 
-## Install the operator
+## Install the operator using one of two methods
 
-### Install the operator from this repo
+### Method 1: Install the operator from this repo
 
 1. Clone this repo
 
@@ -161,7 +160,7 @@ Check using the following command:
 oc get pods -n idp-mgmt-config
 ```
 
-### Install the operator from a Catalog
+### Method 2: Install the operator from a Catalog
 
 **NOTE**: To install via the catalog, you must be on OpenShift 4.8.12 or newer due to [this OLM bug](https://bugzilla.redhat.com/show_bug.cgi?id=1969902) - a backport to OCP 4.7 is in progress.
 
