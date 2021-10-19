@@ -19,9 +19,14 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/ghodss/yaml"
 	"github.com/go-logr/logr"
@@ -49,6 +54,8 @@ import (
 )
 
 const posthookAnnotation string = "managedcluster-import-controller.open-cluster-management.io/posthook-graceperiod"
+
+const DEX_CLIENT_SECRET_LABEL = "auth.identitatem.io/dex-client-secret"
 
 // ClusterOAuthReconciler reconciles a Strategy object
 type ClusterOAuthReconciler struct {
@@ -365,7 +372,7 @@ func (r *ClusterOAuthReconciler) CreateOrUpdateManifestWork(
 		oldManifestwork,
 	)
 	if err == nil {
-		oldManifestwork.Spec.Workload = manifestwork.Spec.Workload
+		oldManifestwork.Spec.Workload.Manifests = manifestwork.Spec.Workload.Manifests
 		if err := r.Update(context.TODO(), oldManifestwork); err != nil {
 			r.Log.Error(err, "Fail to update manifestwork")
 			return giterrors.WithStack(err)
@@ -573,5 +580,15 @@ func (r *ClusterOAuthReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&identitatemv1alpha1.ClusterOAuth{}).
 		Owns(&manifestworkv1.ManifestWork{}).
+		Watches(&source.Kind{Type: &corev1.Secret{}},
+			&handler.EnqueueRequestForObject{},
+			builder.WithPredicates(predicate.Funcs{
+				UpdateFunc: func(e event.UpdateEvent) bool {
+					if _, ok := e.ObjectNew.GetLabels()[DEX_CLIENT_SECRET_LABEL]; ok {
+						return true
+					}
+					return false
+				},
+			})).
 		Complete(r)
 }
