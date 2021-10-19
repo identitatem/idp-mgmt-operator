@@ -3,6 +3,7 @@
 package webhook
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"sync"
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -19,7 +21,8 @@ import (
 )
 
 type AuthRealmAdmissionHook struct {
-	Client      dynamic.ResourceInterface
+	Client dynamic.ResourceInterface
+	//clientClient client.Client
 	lock        sync.RWMutex
 	initialized bool
 }
@@ -95,6 +98,49 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 			return status
 
 		}
+
+		// Now check to see if namespace dex server is going to go is already in use
+		newNs := helpers.DexServerNamespace(authrealm)
+		//namespace := &corev1.Namespace{}
+		_, err := a.Client.Get(context.TODO(), newNs, metav1.GetOptions{})
+		//_, err := a.Client.Resource(schema.GroupVersionResource{Version: "v1", Resource: "namespaces"}).Get(context.TODO(), newNs, metav1.GetOptions{})
+		//_, err := a.Client.Get(schema.GroupVersionResource{Version: "v1", Resource: "namespaces"}).Get(context.TODO(), newNs, metav1.GetOptions{})
+		if err == nil {
+			status.Allowed = false
+			message := fmt.Sprintf("RouteSubDomain \"%s\" cannot be used because namespace \"%s\" already exists. Use a different value",
+				authrealm.Spec.RouteSubDomain,
+				newNs)
+
+			status.Result = &metav1.Status{
+				Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
+				Message: message,
+			}
+			return status
+		}
+
+		//a.Client.List()
+
+		//if err := a.clientClient.Get(ctx, newNs, &namespace); err == nil {
+		//a.Client.Get(context, newNs)
+		//a.client.Get()
+		//var pod corev1.Pod
+		// //if err := r.Get(ctx, req.NamespacedName, &pod); err != nil {
+		// //apiVersion: v1
+		// //kind: Namespace
+		//if err := a.clientClient.Get(context.TODO(), namespace, client.InNamespace(newNs)); err == nil {
+		// 	status.Allowed = false
+		// 	message := fmt.Sprintf("RouteSubDomain \"%s\" cannot be used because namespace \"%s\" already exists. Use a different value",
+		// 		authrealm.Spec.RouteSubDomain,
+		// 		newNs)
+
+		// 	status.Result = &metav1.Status{
+		// 		Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
+		// 		Message: message,
+		// 	}
+		// 	return status
+
+		//}
+
 	case admissionv1beta1.Update:
 		klog.V(4).Info("Validate AuthRealm update")
 
@@ -128,6 +174,13 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 	status.Allowed = true
 	return status
 }
+
+// // A client will be automatically injected.
+// // InjectClient injects the client.
+// func (a *AuthRealmAdmissionHook) InjectClient(c client.Client) error {
+// 	a.client = c
+// 	return nil
+// }
 
 // Initialize is called by generic-admission-server on startup to setup initialization that webhook needs.
 func (a *AuthRealmAdmissionHook) Initialize(kubeClientConfig *rest.Config, stopCh <-chan struct{}) error {

@@ -252,6 +252,24 @@ func TestAuthRealmValidate(t *testing.T) {
 				},
 			},
 		},
+		{
+			title:          "invalidate creating AuthRealm routeSubDomain has same name as existing namespace",
+			name:           "authrealm-test",
+			namespace:      "idp-mgmt-authrealm-test-subdomain",
+			proxytype:      identitatemv1alpha1.AuthProxyDex,
+			routeSubDomain: "authrealm-test-subdomain",
+			request: &admissionv1beta1.AdmissionRequest{
+				Resource:  authrealmSchema,
+				Operation: admissionv1beta1.Create,
+			},
+			expectedResponse: &admissionv1beta1.AdmissionResponse{
+				Allowed: false,
+				Result: &metav1.Status{
+					Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
+					Message: fmt.Sprintf(RouteSubDomainErrorMessage, "authrealm-test-subdomain"),
+				},
+			},
+		},
 	}
 
 	for _, c := range cases {
