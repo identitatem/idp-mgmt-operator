@@ -253,7 +253,7 @@ func TestAuthRealmValidate(t *testing.T) {
 			},
 		},
 		{
-			title:          "invalidate creating AuthRealm routeSubDomain has same name as existing namespace",
+			title:          "invalidate creating AuthRealm when routeSubDomain has same name as existing namespace",
 			name:           "authrealm-test",
 			namespace:      "idp-mgmt-authrealm-test-subdomain",
 			proxytype:      identitatemv1alpha1.AuthProxyDex,
