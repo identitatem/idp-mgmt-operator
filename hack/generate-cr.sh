@@ -25,6 +25,7 @@ export GITHUB_APP_CLIENT_SECRET=${GITHUB_APP_CLIENT_SECRET:-"githubappclientsecr
 export GITHUB_APP_CLIENT_ORG=${GITHUB_APP_CLIENT_ORG:-"githubappclientorg"}
 export ROUTE_SUBDOMAIN=${ROUTE_SUBDOMAIN:-"testdomain"}
 
+
 export THE_FILENAME=/tmp/${NAME}".yaml"
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -35,7 +36,7 @@ fi
 
 GITHUB_APP_CLIENT_SECRET_B64=`echo -n "$GITHUB_APP_CLIENT_SECRET" | $BASE64`
 
-printf "\n${BLUE}Generating YAML...${CLEAR}\n"
+printf "\n${BLUE}Generating YAML for Github...${CLEAR}\n"
 
 cat > ${THE_FILENAME} <<EOF
 ---
@@ -118,3 +119,96 @@ printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${NAME}-cluste
 printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}<managed cluster name> <label>${BLUE}\"${CLEAR}\n\n"
 
 printf "${BLUE}YAML file ${GREEN}${THE_FILENAME}${BLUE} is generated.  Apply using \"${GREEN}oc apply -f ${THE_FILENAME}${BLUE}\"${CLEAR}\n\n"
+
+
+export AUTHREALM_NAME=${AUTHREALM_NAME:-"authrealm-sample"}
+export AUTHREALM_NS=${AUTHREALM_NS:-"authrealm-sample-ns"}
+export LDAP_BINDPASSWORD=${LDAP_BINDPASSWORD}
+export LDAP_HOST=${LDAP_HOST}
+export LDAP_BIND_DN=${DEXSERVER_LDAP_BIND_DN:-"cn=Manager,dc=example,dc=com"}
+export LDAP_USERSEARCH_BASEDN=${DEXSERVER_LDAP_USERSEARCH_BASEDN:-"dc=example,dc=com"}
+export LDAP_FILENAME=/tmp/"demo-ldap-authrealm.yaml"
+
+printf "\n${BLUE}Generating YAML for LDAP...${CLEAR}\n"
+
+cat > ${LDAP_FILENAME} <<EOF
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: ${AUTHREALM_NS}
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: ManagedClusterSet
+metadata:
+  name: ${AUTHREALM_NAME}-clusterset
+  namespace: ${AUTHREALM_NS}
+---
+apiVersion: cluster.open-cluster-management.io/v1alpha1
+kind: Placement
+metadata:
+  name: ${AUTHREALM_NAME}-placement
+  namespace: ${AUTHREALM_NS}
+spec:
+  predicates:
+  - requiredClusterSelector:
+      labelSelector:
+        matchLabels:
+          authdeployment: east
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: ManagedClusterSetBinding
+metadata:
+  name: ${AUTHREALM_NAME}-clusterset
+  namespace: ${AUTHREALM_NS}
+spec:
+  clusterSet: ${AUTHREALM_NAME}-clusterset
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${AUTHREALM_NAME}-ldap-secret
+  namespace: ${AUTHREALM_NS}
+type: Opaque
+stringData:
+  bindPW: ${LDAP_BINDPASSWORD}
+---
+apiVersion: identityconfig.identitatem.io/v1alpha1
+kind: AuthRealm
+metadata:
+  name: ${AUTHREALM_NAME}
+  namespace: ${AUTHREALM_NS}
+spec:
+  type: dex
+  routeSubDomain: ${ROUTE_SUBDOMAIN}
+  placementRef:
+    name: ${AUTHREALM_NAME}-placement
+  ldapExtraConfigs:
+    openldap: 
+      baseDN: ${LDAP_USERSEARCH_BASEDN}
+      filter: "(objectClass=person)"
+  identityProviders:
+    - name: openldap
+      type: LDAP
+      mappingMethod: add
+      ldap:
+        url: ${LDAP_HOST}
+        insecure: true
+        bindDN: ${LDAP_BIND_DN}
+        bindPassword:
+          name: ${AUTHREALM_NAME}-ldap-secret
+          namespace: ${AUTHREALM_NS}
+        attributes:
+          id: 
+            - DN
+          preferredUsername: 
+            - mail
+          name: 
+            - cn
+          email: 
+            - mail  
+EOF
+
+printf "${BLUE}YAML file ${GREEN}${LDAP_FILENAME}${BLUE} is generated.  Apply using \"${GREEN}oc apply -f ${LDAP_FILENAME}${BLUE}\"${CLEAR}\n\n"
