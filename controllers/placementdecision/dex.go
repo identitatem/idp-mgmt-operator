@@ -78,7 +78,7 @@ func (r *PlacementDecisionReconciler) createConfigs(authRealm *identitatemv1alph
 				return err
 			}
 			//Create dexClient
-			if err := r.createDexClient(authRealm, &placementDecision, decision, clientSecret); err != nil {
+			if err := r.createDexClient(authRealm, placementDecision, decision, clientSecret); err != nil {
 				return err
 			}
 			//Create ClusterOAuth
@@ -90,7 +90,7 @@ func (r *PlacementDecisionReconciler) createConfigs(authRealm *identitatemv1alph
 	return nil
 }
 func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1alpha1.AuthRealm,
-	placementDecision *clusterv1alpha1.PlacementDecision,
+	placementDecision clusterv1alpha1.PlacementDecision,
 	decision clusterv1alpha1.ClusterDecision,
 	clientSecret *corev1.Secret) error {
 	r.Log.Info("create dexClient for", "cluster", decision.ClusterName, "authrealm", authRealm.Name)
