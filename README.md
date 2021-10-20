@@ -143,7 +143,7 @@ oc get pods -n idp-mgmt-config
 
 **NOTE**: To install via the catalog, you must be on OpenShift 4.8.12 or newer due to [this OLM bug](https://bugzilla.redhat.com/show_bug.cgi?id=1969902) - a backport to OCP 4.7 is in progress.
 
-If you built an operator bundle and catalog as [documented earlier](#build-a-bundle-and-catalog), or if you wish to use the latest published operator bundle and catalog to deploy:
+If you built an operator bundle and catalog as [documented later](#build-a-bundle-and-catalog), or if you wish to use the latest published operator bundle and catalog to deploy:
 1. Login to Red Hat Advanced Cluster Management or Multi Cluster Engine hub
 2. Verify you are logged into the hub cluster
 
@@ -271,6 +271,8 @@ oc delete -f {your YAML file}
 make undeploy
 ```
 
+---
+---
 ---
 
 # Build a Bundle and Catalog
