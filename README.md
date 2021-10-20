@@ -4,6 +4,8 @@
 
 This operator is in charge of configuring the idp client service. It will also install the dex operator.
 
+Please fork this repo and clone from the fork.  All your work should be against the forked repo.
+
 # Run test
 
 `make test`
@@ -107,7 +109,7 @@ NOTE: You will need to return to the GitHub OAuth a little bit later to correct 
 1. Fork and clone this repo
 
 ```bash
-git clone https://github.com/identitatem/idp-mgmt-operator.git
+git clone https://github.com/<git username>/idp-mgmt-operator.git
 cd idp-mgmt-operator
 ```
 
