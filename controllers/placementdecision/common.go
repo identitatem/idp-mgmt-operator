@@ -99,7 +99,7 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 						"name",
 					},
 				},
-				ClientID: authRealm.Name,
+				ClientID: helpers.DexClientName(authRealm, decision.ClusterName),
 				ClientSecret: openshiftconfigv1.SecretNameReference{
 					Name: clientSecret.Name,
 				},
