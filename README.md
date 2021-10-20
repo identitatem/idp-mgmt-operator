@@ -294,30 +294,32 @@ We have a GitHub action defined to generate a tagged bundle and catalog image wh
 ```bash
 date -u "+0.0.0-%Y%m%d-%H-%M-%S"
 ```
-2. Go to dex-operator github page and select Releases (https://github.com/identitatem/dex-operator/releases)
-3. Select Draft a new release
-4. For Release title, enter v and then paste the value from the date command above
-5. Select Choose a tag
-6. In the Find or create a new tag field, paste the value from the date command above
-7. Select Publish release.
+2. Go to dex-operator github page and select **Releases** (https://github.com/identitatem/dex-operator/releases)
+3. Select **Draft a new release**
+4. For **Release title**, enter **v** and then paste the value from the date command above
+5. Select **Choose a tag**
+6. In the **Find or create a new tag field**, paste the value from the date command above
+7. Select **Create new tab on publish**
+8. Select **Publish release**.
    This will cause a github action to start.  Once the github action is complete, move on to
    the next part which will pull the new dex-operator quay image from https://quay.io/repository/identitatem/dex-operator?tab=tags
    into the idp-mgmt-operator.
-8. In your fork of the https://github.com/identitatem/idp-mgmt-operator repo, create a new branch
-9. Update https://github.com/identitatem/idp-mgmt-operator/blob/main/config/manager/manager.yaml
+9. In your fork of the https://github.com/identitatem/idp-mgmt-operator repo, create a new branch
+10. Update https://github.com/identitatem/idp-mgmt-operator/blob/main/config/manager/manager.yaml
 so RELATED_IMAGE_DEX_OPERATOR points to the new dex-operator image in quay.
-10. Test the changes.
-11. Commit the PR changes and get them reviewed and merged.
-12. Run the following command to generate the value we will use as part of the release and tag (OR possibly use the same tag dex-operator used)
+11. Test the changes.
+12. Commit the PR changes and get them reviewed and merged.
+13. Run the following command to generate the value we will use as part of the release and tag (OR possibly use the same tag dex-operator used)
 ```bash
 date -u "+0.0.0-%Y%m%d-%H-%M-%S"
 ```
-13. Go to idp-mgmt-operator github page and select Releases (https://github.com/identitatem/idp-mgmt-operator/releases)
-14. Select Draft a new release
-15. For Release title, enter v and then paste the value from the date command above
-16. Select Choose a tag
-17. In the Find or create a new tag field, paste the value from the date command above
-18. Select Publish release.
+14. Go to idp-mgmt-operator github page and select **Releases** (https://github.com/identitatem/idp-mgmt-operator/releases)
+15. Select **Draft a new release**
+16. For **Release title**, enter v and then paste the value from the date command above
+17. Select Choose a tag
+18. In the **Find or create a new tag** field, paste the value from the date command above
+19. Select **Create new tab on publish**
+20. Select **Publish release**.
    This will cause a github action to start.  Once the github action is complete a
    new Operator Hub catalog will be available at
    https://quay.io/repository/identitatem/idp-mgmt-operator-catalog?tab=tags which you can reference in
