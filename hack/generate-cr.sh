@@ -16,8 +16,8 @@ fi
 
 printf "\n${BLUE}Gathering OpenShift cluster URL...${CLEAR}\n"
 
-export NAME=${NAME:-"authrealm-sample"}
-export NS=${NS:-"authrealm-sample-ns"}
+export AUTHREALM_GITHUB_NAME=${AUTHREALM_GITHUB_NAME:-"authrealm-sample-github"}
+export AUTHREALM_GITHUB_NS=${AUTHREALM_GITHUB_NS:-"authrealm-sample-github-ns"}
 export APPS=$(oc get infrastructure cluster -ojsonpath='{.status.apiServerURL}' | cut -d':' -f2 | sed 's/\/\/api/apps/g')
 export IDP_NAME=${IDP_NAME:-"github-sample-idp"}
 export GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID:-"githubappclientid"}
@@ -26,7 +26,7 @@ export GITHUB_APP_CLIENT_ORG=${GITHUB_APP_CLIENT_ORG:-"githubappclientorg"}
 export ROUTE_SUBDOMAIN=${ROUTE_SUBDOMAIN:-"testdomain"}
 
 
-export THE_FILENAME=/tmp/${NAME}".yaml"
+export THE_FILENAME=/tmp/${AUTHREALM_GITHUB_NAME}".yaml"
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 BASE64="base64 -w 0"
@@ -45,19 +45,19 @@ kind: Namespace
 metadata:
   labels:
     control-plane: controller-manager
-  name: ${NS}
+  name: ${AUTHREALM_GITHUB_NS}
 ---
 apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: ManagedClusterSet
 metadata:
-  name: ${NAME}-clusterset
-  namespace: ${NS}
+  name: ${AUTHREALM_GITHUB_NAME}-clusterset
+  namespace: ${AUTHREALM_GITHUB_NS}
 ---
 apiVersion: cluster.open-cluster-management.io/v1alpha1
 kind: Placement
 metadata:
-  name: ${NAME}-placement
-  namespace: ${NS}
+  name: ${AUTHREALM_GITHUB_NAME}-placement
+  namespace: ${AUTHREALM_GITHUB_NS}
 spec:
   predicates:
   - requiredClusterSelector:
@@ -68,16 +68,16 @@ spec:
 apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: ManagedClusterSetBinding
 metadata:
-  name: ${NAME}-clusterset
-  namespace: ${NS}
+  name: ${AUTHREALM_GITHUB_NAME}-clusterset
+  namespace: ${AUTHREALM_GITHUB_NS}
 spec:
-  clusterSet: ${NAME}-clusterset
+  clusterSet: ${AUTHREALM_GITHUB_NAME}-clusterset
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ${NAME}-client-secret
-  namespace: ${NS}
+  name: ${AUTHREALM_GITHUB_NAME}-client-secret
+  namespace: ${AUTHREALM_GITHUB_NS}
 data:
   clientSecret: ${GITHUB_APP_CLIENT_SECRET_B64}
 type: Opaque
@@ -85,13 +85,13 @@ type: Opaque
 apiVersion: identityconfig.identitatem.io/v1alpha1
 kind: AuthRealm
 metadata:
-  name: ${NAME}
-  namespace: ${NS}
+  name: ${AUTHREALM_GITHUB_NAME}
+  namespace: ${AUTHREALM_GITHUB_NS}
 spec:
   type: dex
   routeSubDomain: ${ROUTE_SUBDOMAIN}
   placementRef:
-    name: ${NAME}-placement
+    name: ${AUTHREALM_GITHUB_NAME}-placement
   identityProviders:
     - name: "${IDP_NAME}"
       mappingMethod: claim
@@ -99,7 +99,7 @@ spec:
       github:
         clientID: "${GITHUB_APP_CLIENT_ID}"
         clientSecret:
-          name: ${NAME}-client-secret
+          name: ${AUTHREALM_GITHUB_NAME}-client-secret
         organizations:
         - ${GITHUB_APP_CLIENT_ORG}
     
@@ -121,8 +121,8 @@ printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}
 printf "${BLUE}YAML file ${GREEN}${THE_FILENAME}${BLUE} is generated.  Apply using \"${GREEN}oc apply -f ${THE_FILENAME}${BLUE}\"${CLEAR}\n\n"
 
 
-export AUTHREALM_NAME=${AUTHREALM_NAME:-"authrealm-sample"}
-export AUTHREALM_NS=${AUTHREALM_NS:-"authrealm-sample-ns"}
+export AUTHREALM_LDAP_NAME=${AUTHREALM_NAME:-"authrealm-sample-ldap"}
+export AUTHREALM_LDAP_NS=${AUTHREALM_NS:-"authrealm-sample-ldap-ns"}
 export LDAP_BINDPASSWORD=${LDAP_BINDPASSWORD:="ladp bind password"}
 export LDAP_HOST=${LDAP_HOST:-"ldap host"}
 export LDAP_BIND_DN=${DEXSERVER_LDAP_BIND_DN:-"cn=Manager,dc=example,dc=com"}
@@ -138,19 +138,19 @@ kind: Namespace
 metadata:
   labels:
     control-plane: controller-manager
-  name: ${AUTHREALM_NS}
+  name: ${AUTHREALM_LDAP_NS}
 ---
 apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: ManagedClusterSet
 metadata:
-  name: ${AUTHREALM_NAME}-clusterset
-  namespace: ${AUTHREALM_NS}
+  name: ${AUTHREALM_LDAP_NAME}-clusterset
+  namespace: ${AUTHREALM_LDAP_NS}
 ---
 apiVersion: cluster.open-cluster-management.io/v1alpha1
 kind: Placement
 metadata:
-  name: ${AUTHREALM_NAME}-placement
-  namespace: ${AUTHREALM_NS}
+  name: ${AUTHREALM_LDAP_NAME}-placement
+  namespace: ${AUTHREALM_LDAP_NS}
 spec:
   predicates:
   - requiredClusterSelector:
@@ -161,16 +161,16 @@ spec:
 apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: ManagedClusterSetBinding
 metadata:
-  name: ${AUTHREALM_NAME}-clusterset
-  namespace: ${AUTHREALM_NS}
+  name: ${AUTHREALM_LDAP_NAME}-clusterset
+  namespace: ${AUTHREALM_LDAP_NS}
 spec:
-  clusterSet: ${AUTHREALM_NAME}-clusterset
+  clusterSet: ${AUTHREALM_LDAP_NAME}-clusterset
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ${AUTHREALM_NAME}-ldap-secret
-  namespace: ${AUTHREALM_NS}
+  name: ${AUTHREALM_LDAP_NAME}-ldap-secret
+  namespace: ${AUTHREALM_LDAP_NS}
 type: Opaque
 stringData:
   bindPW: ${LDAP_BINDPASSWORD}
@@ -178,13 +178,13 @@ stringData:
 apiVersion: identityconfig.identitatem.io/v1alpha1
 kind: AuthRealm
 metadata:
-  name: ${AUTHREALM_NAME}
-  namespace: ${AUTHREALM_NS}
+  name: ${AUTHREALM_LDAP_NAME}
+  namespace: ${AUTHREALM_LDAP_NS}
 spec:
   type: dex
   routeSubDomain: ${ROUTE_SUBDOMAIN}
   placementRef:
-    name: ${AUTHREALM_NAME}-placement
+    name: ${AUTHREALM_LDAP_NAME}-placement
   ldapExtraConfigs:
     openldap: 
       baseDN: ${LDAP_USERSEARCH_BASEDN}
@@ -198,8 +198,8 @@ spec:
         insecure: true
         bindDN: ${LDAP_BIND_DN}
         bindPassword:
-          name: ${AUTHREALM_NAME}-ldap-secret
-          namespace: ${AUTHREALM_NS}
+          name: ${AUTHREALM_LDAP_NAME}-ldap-secret
+          namespace: ${AUTHREALM_LDAP_NS}
         attributes:
           id: 
             - DN
