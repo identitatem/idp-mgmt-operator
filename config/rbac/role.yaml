@@ -10,16 +10,23 @@ rules:
   - ""
   resources:
   - configmaps
-  - namespaces
   - secrets
   - serviceaccounts
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
   verbs:
   - create
   - delete
   - get
   - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - ""
@@ -46,8 +53,6 @@ rules:
   - create
   - delete
   - get
-  - list
-  - patch
   - update
 - apiGroups:
   - apps
@@ -57,10 +62,7 @@ rules:
   - create
   - delete
   - get
-  - list
-  - patch
   - update
-  - watch
 - apiGroups:
   - auth.identitatem.io
   resources:
@@ -77,18 +79,19 @@ rules:
 - apiGroups:
   - auth.identitatem.io
   resources:
-  - dexclients
-  - dexclients/status
   - dexservers
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - auth.identitatem.io
+  resources:
   - dexservers/status
   verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
   - update
-  - watch
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
@@ -145,15 +148,8 @@ rules:
   - identityconfig.identitatem.io
   resources:
   - authrealms
-  - authrealms/finalizers
-  - authrealms/status
-  - strategies
   verbs:
-  - create
-  - delete
   - get
-  - list
-  - patch
   - update
   - watch
 - apiGroups:
@@ -164,6 +160,18 @@ rules:
   verbs:
   - get
   - list
+- apiGroups:
+  - identityconfig.identitatem.io
+  resources:
+  - authrealms/finalizers
+  verbs:
+  - create
+- apiGroups:
+  - identityconfig.identitatem.io
+  resources:
+  - authrealms/status
+  verbs:
+  - update
 - apiGroups:
   - identityconfig.identitatem.io
   resources:
@@ -181,6 +189,8 @@ rules:
   resources:
   - strategies
   verbs:
+  - create
+  - delete
   - get
   - list
   - update
@@ -189,20 +199,16 @@ rules:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings
-  - rolebindings
   verbs:
   - create
   - delete
   - get
   - list
-  - patch
   - update
-  - watch
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - clusterroles
-  - roles
   verbs:
   - bind
   - create
@@ -210,9 +216,27 @@ rules:
   - escalate
   - get
   - list
-  - patch
   - update
-  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  verbs:
+  - bind
+  - create
+  - delete
+  - escalate
+  - get
+  - update
 - apiGroups:
   - view.open-cluster-management.io
   resources:
