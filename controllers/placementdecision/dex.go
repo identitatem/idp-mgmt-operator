@@ -115,7 +115,7 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 		}
 	}
 
-	dexClient.Spec.ClientID = authRealm.Name
+	dexClient.Spec.ClientID = helpers.DexClientName(authRealm, decision.ClusterName)
 	dexClient.Spec.ClientSecretRef = corev1.SecretReference{
 		Name:      clientSecret.Name,
 		Namespace: clientSecret.Namespace,

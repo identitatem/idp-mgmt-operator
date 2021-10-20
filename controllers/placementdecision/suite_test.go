@@ -368,7 +368,7 @@ var _ = Describe("Process Strategy backplane: ", func() {
 			dexClient := &dexv1alpha1.DexClient{}
 			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexClientName(authRealm, ClusterName), Namespace: helpers.DexServerNamespace(authRealm)}, dexClient)
 			Expect(err).To(BeNil())
-			Expect(dexClient.Spec.ClientID).To(Equal(AuthRealmName))
+			Expect(dexClient.Spec.ClientID).To(Equal(helpers.DexClientName(authRealm, ClusterName)))
 			Expect(dexClient.Spec.ClientSecretRef.Name).To(Equal(clientSecret.Name))
 			Expect(dexClient.Spec.ClientSecretRef.Namespace).To(Equal(clientSecret.Namespace))
 			Expect(len(dexClient.Status.RelatedObjects)).To(Equal(1))
