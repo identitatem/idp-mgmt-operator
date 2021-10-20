@@ -22,8 +22,14 @@ export APPS=$(oc get infrastructure cluster -ojsonpath='{.status.apiServerURL}' 
 export IDP_NAME=${IDP_NAME:-"github-sample-idp"}
 export GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID:-"githubappclientid"}
 export GITHUB_APP_CLIENT_SECRET=${GITHUB_APP_CLIENT_SECRET:-"githubappclientsecret"}
-export GITHUB_APP_CLIENT_ORG=${GITHUB_APP_CLIENT_ORG:-"githubappclientorg"}
+export GITHUB_APP_CLIENT_ORG=${GITHUB_APP_CLIENT_ORG:-""}
 export ROUTE_SUBDOMAIN=${ROUTE_SUBDOMAIN:-"testdomain"}
+
+if [ -z ${GITHUB_APP_CLIENT_ORG} ]; then
+   GITHUB_APP_CLIENT_ORG_LINE=" "
+else
+   GITHUB_APP_CLIENT_ORG_LINE="        - ${GITHUB_APP_CLIENT_ORG}"
+fi
 
 export THE_FILENAME=/tmp/${NAME}".yaml"
 
@@ -100,7 +106,7 @@ spec:
         clientSecret:
           name: ${NAME}-client-secret
         organizations:
-        - ${GITHUB_APP_CLIENT_ORG}
+        ${GITHUB_APP_CLIENT_ORG_LINE}
     
 EOF
 
