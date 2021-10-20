@@ -178,18 +178,19 @@ func (r *PlacementDecisionReconciler) deleteConfig(authRealm *identitatemv1alpha
 	//Delete DexClient
 	r.Log.Info("get dexclient", "namespace", authRealm.Name, "name", dexClientName)
 	dexClient := &dexoperatorv1alpha1.DexClient{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: helpers.DexServerNamespace(authRealm)}, dexClient); err != nil {
-		return giterrors.WithStack(err)
-	}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: helpers.DexServerNamespace(authRealm)}, dexClient); err == nil {
-		if err := r.Delete(context.TODO(), dexClient); err != nil && !errors.IsNotFound(err) {
+	err := r.Client.Get(context.TODO(), client.ObjectKey{Name: dexClientName, Namespace: helpers.DexServerNamespace(authRealm)}, dexClient)
+	switch {
+	case err == nil:
+		if err := r.Delete(context.TODO(), dexClient); err != nil {
 			return giterrors.WithStack(err)
 		}
+	case !errors.IsNotFound(err):
+		giterrors.WithStack(err)
 	}
 	//Delete ClientSecret
 	r.Log.Info("delete clientSecret", "namespace", clusterName, "name", authRealm.Name)
 	clientSecret := &corev1.Secret{}
-	err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ClientSecretName(authRealm), Namespace: clusterName}, clientSecret)
+	err = r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ClientSecretName(authRealm), Namespace: clusterName}, clientSecret)
 	switch {
 	case err == nil:
 		if err = r.Delete(context.TODO(), clientSecret); err != nil {
