@@ -123,8 +123,8 @@ printf "${BLUE}YAML file ${GREEN}${THE_FILENAME}${BLUE} is generated.  Apply usi
 
 export AUTHREALM_NAME=${AUTHREALM_NAME:-"authrealm-sample"}
 export AUTHREALM_NS=${AUTHREALM_NS:-"authrealm-sample-ns"}
-export LDAP_BINDPASSWORD=${LDAP_BINDPASSWORD}
-export LDAP_HOST=${LDAP_HOST}
+export LDAP_BINDPASSWORD=${LDAP_BINDPASSWORD:="ladp bind password"}
+export LDAP_HOST=${LDAP_HOST:-"ldap host"}
 export LDAP_BIND_DN=${DEXSERVER_LDAP_BIND_DN:-"cn=Manager,dc=example,dc=com"}
 export LDAP_USERSEARCH_BASEDN=${DEXSERVER_LDAP_USERSEARCH_BASEDN:-"dc=example,dc=com"}
 export LDAP_FILENAME=/tmp/"demo-ldap-authrealm.yaml"
@@ -210,5 +210,11 @@ spec:
           email: 
             - mail  
 EOF
+
+printf "${BLUE} Add the following labels to any managed cluster you want in the cluster set ${GREEN}${NAME}-clusterset${BLUE}:${CLEAR}\n"
+printf "    ${GREEN}authdeployment=east${CLEAR}\n"
+printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${NAME}-clusterset${CLEAR}\n"
+printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}<managed cluster name> <label>${BLUE}\"${CLEAR}\n\n"
+
 
 printf "${BLUE}YAML file ${GREEN}${LDAP_FILENAME}${BLUE} is generated.  Apply using \"${GREEN}oc apply -f ${LDAP_FILENAME}${BLUE}\"${CLEAR}\n\n"
