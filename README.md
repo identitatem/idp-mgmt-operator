@@ -202,8 +202,8 @@ export GITHUB_APP_CLIENT_ID={your GitHub App Client ID}
 export GITHUB_APP_CLIENT_SECRET={your GitHub App Client Secret}
 export GITHUB_APP_CLIENT_ORG={your GitHub organization}
 export IDP_NAME=sample-idp
-export NAME=authrealm-sample
-export NS=authrealm-sample-ns
+export AUTHREALM_GITHUB_NAME=authrealm-sample-github
+export AUTHREALM_GITHUB_NS=authrealm-sample-github-ns
 ```
 
 2. Verify you are logged into the hub cluster
