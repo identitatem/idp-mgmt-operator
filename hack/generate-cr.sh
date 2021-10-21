@@ -30,7 +30,7 @@ export ROUTE_SUBDOMAIN=${ROUTE_SUBDOMAIN:-"testdomain"}
 if [ -z ${GITHUB_APP_CLIENT_ORG} ]; then
    GITHUB_APP_CLIENT_ORG_LINE=" "
 else
-   GITHUB_APP_CLIENT_ORG_LINE="        - ${GITHUB_APP_CLIENT_ORG}"
+   GITHUB_APP_CLIENT_ORG_LINE="- ${GITHUB_APP_CLIENT_ORG}"
 fi
 
 export THE_FILENAME=/tmp/${NAME}".yaml"
@@ -136,7 +136,7 @@ spec:
           name: ${AUTHREALM_GITHUB_NAME}-client-secret
         organizations:
         ${GITHUB_APP_CLIENT_ORG_LINE}
-    
+
 EOF
 
 printf "\n${BLUE}Before using the generated YAML:${CLEAR}\n\n"
@@ -213,7 +213,7 @@ spec:
   placementRef:
     name: ${AUTHREALM_LDAP_NAME}-placement
   ldapExtraConfigs:
-    openldap: 
+    openldap:
       baseDN: ${LDAP_USERSEARCH_BASEDN}
       filter: "(objectClass=person)"
   identityProviders:
@@ -228,14 +228,14 @@ spec:
           name: ${AUTHREALM_LDAP_NAME}-ldap-secret
           namespace: ${AUTHREALM_LDAP_NS}
         attributes:
-          id: 
+          id:
             - DN
-          preferredUsername: 
+          preferredUsername:
             - mail
-          name: 
+          name:
             - cn
-          email: 
-            - mail  
+          email:
+            - mail
 EOF
 
 printf "${BLUE} Add the following labels to any managed cluster you want in the cluster set ${GREEN}${NAME}-clusterset${BLUE}:${CLEAR}\n"
@@ -314,7 +314,7 @@ spec:
   placementRef:
     name: ${AUTHREALM_NAME}-placement
   ldapExtraConfigs:
-    openldap: 
+    openldap:
       baseDN: ${LDAP_USERSEARCH_BASEDN}
       filter: "(objectClass=person)"
   identityProviders:
@@ -338,14 +338,14 @@ spec:
           name: ${AUTHREALM_NAME}-ldap-secret
           namespace: ${AUTHREALM_NS}
         attributes:
-          id: 
+          id:
             - DN
-          preferredUsername: 
+          preferredUsername:
             - mail
-          name: 
+          name:
             - cn
-          email: 
-            - mail  
+          email:
+            - mail
 EOF
 printf "\n${BLUE}Before using the generated YAML:${CLEAR}\n\n"
 
