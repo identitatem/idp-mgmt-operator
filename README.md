@@ -4,6 +4,8 @@
 
 This operator is in charge of configuring the idp client service. It will also install the dex operator.
 
+Please fork this repo and clone from the fork.  All your work should be against the forked repo.
+
 # Run test
 
 `make test`
@@ -12,29 +14,6 @@ This operator is in charge of configuring the idp client service. It will also i
 
 `make functional-test-full`
 
-# Build a Bundle and Catalog
-
-You can build and push an operator bundle and installable catalog for this operator, which will allow you to apply a CatalogSource to your cluster and install via the OperatorHub UI or via an Operator Subscription object.  
-
-To build and publish a bundle and catalog:
-1. [IMPORTANT] Use your own registry.  If you want to use your own registry, create to repos in your quay.io org (your user org) named `idp-mgmt-operator-bundle` and `idp-mgmt-operator-catalog` and, if so, `export IMAGE_TAG_BASE=quay.io/\<your-user\>/idp-mgmt-operator`.  **If you don’t do this, you need push permissions to identitatem - and you’ll push straight to the source identitatem org.**
-2. `export` DOCKER_USER and DOCKER_PASS equal to a docker user and password that will allow you to push to the quay repositories outlined in step 1.
-3. run `make publish` - this should acquire any dependencies and push to quay!
-
-# Tagging and Generating a Release
-
-We have a GitHub action defined to generate a tagged bundle and catalog image when a SemVer GitHub tag is created on this repo.  To create a new release that will generate a versioned Bundle/Catalog:
-
-1. `git tag <semver-tag>`
-2. `git push --tags`
-3. Wait for the [GitHub Action to complete](https://github.com/identitatem/idp-mgmt-operator/actions).
-4. The action will create and push an [idp-mgmt-operator-bundle](https://quay.io/repository/identitatem/idp-mgmt-operator-bundle) and [idp-mgmt-operator-catalog](https://quay.io/repository/identitatem/idp-mgmt-operator-catalog) image and push to quay, tagged with the same SemVer tag you applied to the GitHub repo to generate that release.  
-
-In order to deploy this version - follow the Catalog deploy method but set:
-```
-VERSION=<semver-tag>
-IMG_TAG=<semver-tag>
-```
 
 # Installing
 
@@ -60,7 +39,7 @@ https://github.com/open-cluster-management/sre-tools/wiki/ACM---Day-1#add-an-acm
 
 Here is a summary of the commands you need to run:
 
-1. Clone the repo and setup AWS account environment variables
+1. Clone the acmesh-official repo and setup AWS account environment variables
 
 ```bash
 export AWS_ACCESS_KEY_ID={your AWS Access Key ID}
@@ -127,10 +106,10 @@ NOTE: You will need to return to the GitHub OAuth a little bit later to correct 
 
 ### Method 1: Install the operator from this repo
 
-1. Clone this repo
+1. Fork and clone this repo
 
 ```bash
-git clone https://github.com/identitatem/idp-mgmt-operator.git
+git clone https://github.com/<git username>/idp-mgmt-operator.git
 cd idp-mgmt-operator
 ```
 
@@ -164,7 +143,7 @@ oc get pods -n idp-mgmt-config
 
 **NOTE**: To install via the catalog, you must be on OpenShift 4.8.12 or newer due to [this OLM bug](https://bugzilla.redhat.com/show_bug.cgi?id=1969902) - a backport to OCP 4.7 is in progress.
 
-If you built an operator bundle and catalog as [documented earlier](#build-a-bundle-and-catalog), or if you wish to use the latest published operator bundle and catalog to deploy:
+If you built an operator bundle and catalog as [documented later](#build-a-bundle-and-catalog), or if you wish to use the latest published operator bundle and catalog to deploy:
 1. Login to Red Hat Advanced Cluster Management or Multi Cluster Engine hub
 2. Verify you are logged into the hub cluster
 
@@ -290,4 +269,72 @@ oc delete -f {your YAML file}
 
 ```bash
 make undeploy
+```
+
+---
+---
+---
+
+# Build a Bundle and Catalog
+
+You can build and push an operator bundle and installable catalog for this operator, which will allow you to apply a CatalogSource to your cluster and install via the OperatorHub UI or via an Operator Subscription object.  
+
+To build and publish a bundle and catalog:
+1. [IMPORTANT] Use your own registry.  If you want to use your own registry, create to repos in your quay.io org (your user org) named `idp-mgmt-operator-bundle` and `idp-mgmt-operator-catalog` and, if so, `export IMAGE_TAG_BASE=quay.io/\<your-user\>/idp-mgmt-operator`.  **If you don’t do this, you need push permissions to identitatem - and you’ll push straight to the source identitatem org.**
+2. `export` DOCKER_USER and DOCKER_PASS equal to a docker user and password that will allow you to push to the quay repositories outlined in step 1.
+3. run `make publish` - this should acquire any dependencies and push to quay!
+
+# Tagging and Generating a Release
+
+We have a GitHub action defined to generate a tagged bundle and catalog image when a SemVer GitHub tag is created on this repo.  To create a new release that will generate a versioned Bundle/Catalog there are two methods:
+
+## Method One - Use GitHub UI
+
+1. Run the following command to generate the value we will use as part of the release and tag
+```bash
+date -u "+0.0.0-%Y%m%d-%H-%M-%S"
+```
+2. Go to dex-operator github page and select **Releases** (https://github.com/identitatem/dex-operator/releases)
+3. Select **Draft a new release**
+4. For **Release title**, enter **v** and then paste the value from the date command above
+5. Select **Choose a tag**
+6. In the **Find or create a new tag field**, paste the value from the date command above
+7. Select **Create new tab on publish**
+8. Select **Publish release**.
+   This will cause a github action to start.  Once the github action is complete, move on to
+   the next part which will pull the new dex-operator quay image from https://quay.io/repository/identitatem/dex-operator?tab=tags
+   into the idp-mgmt-operator.
+9. In your fork of the https://github.com/identitatem/idp-mgmt-operator repo, create a new branch
+10. Update https://github.com/identitatem/idp-mgmt-operator/blob/main/config/manager/manager.yaml
+so RELATED_IMAGE_DEX_OPERATOR points to the new dex-operator image in quay.
+11. Test the changes.
+12. Commit the PR changes and get them reviewed and merged.
+13. Run the following command to generate the value we will use as part of the release and tag (OR possibly use the same tag dex-operator used)
+```bash
+date -u "+0.0.0-%Y%m%d-%H-%M-%S"
+```
+14. Go to idp-mgmt-operator github page and select **Releases** (https://github.com/identitatem/idp-mgmt-operator/releases)
+15. Select **Draft a new release**
+16. For **Release title**, enter v and then paste the value from the date command above
+17. Select Choose a tag
+18. In the **Find or create a new tag** field, paste the value from the date command above
+19. Select **Create new tab on publish**
+20. Select **Publish release**.
+   This will cause a github action to start.  Once the github action is complete a
+   new Operator Hub catalog will be available at
+   https://quay.io/repository/identitatem/idp-mgmt-operator-catalog?tab=tags which you can reference in
+   your catalog source.
+
+
+
+## Method Two - Create a tag in non-forked repo
+1. `git tag <semver-tag>`
+2. `git push --tags`
+3. Wait for the [GitHub Action to complete](https://github.com/identitatem/idp-mgmt-operator/actions).
+4. The action will create and push an [idp-mgmt-operator-bundle](https://quay.io/repository/identitatem/idp-mgmt-operator-bundle) and [idp-mgmt-operator-catalog](https://quay.io/repository/identitatem/idp-mgmt-operator-catalog) image and push to quay, tagged with the same SemVer tag you applied to the GitHub repo to generate that release.  
+
+In order to deploy this version - follow the Catalog deploy method but set:
+```
+VERSION=<semver-tag>
+IMG_TAG=<semver-tag>
 ```
