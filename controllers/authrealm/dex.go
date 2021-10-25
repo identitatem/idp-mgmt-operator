@@ -336,8 +336,8 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			r.Log.Info("create connector for GitHub")
 			c := &dexoperatorv1alpha1.ConnectorSpec{
 				Type: dexoperatorv1alpha1.ConnectorTypeGitHub,
-				Name: "github",
-				Id:   "github",
+				Name: idp.Name,
+				Id:   idp.Name,
 				GitHub: dexoperatorv1alpha1.GitHubConfigSpec{
 					ClientID: idp.GitHub.ClientID,
 					ClientSecretRef: corev1.SecretReference{
@@ -359,8 +359,8 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			//TODO set LDAP
 			c := &dexoperatorv1alpha1.ConnectorSpec{
 				Type: dexoperatorv1alpha1.ConnectorTypeLDAP,
-				Name: "ldap",
-				Id:   "ldap",
+				Name: idp.Name,
+				Id:   idp.Name,
 				LDAP: dexoperatorv1alpha1.LDAPConfigSpec{
 					Host:   idp.LDAP.URL,
 					BindDN: idp.LDAP.BindDN,
