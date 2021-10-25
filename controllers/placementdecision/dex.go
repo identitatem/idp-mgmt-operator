@@ -202,7 +202,7 @@ func (r *PlacementDecisionReconciler) deleteConfig(authRealm *identitatemv1alpha
 	//Delete clusterOAuth
 	r.Log.Info("delete clusterOAuth", "Namespace", clusterName, "Name", authRealm.Name)
 	clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
-	err = r.Client.Get(context.TODO(), client.ObjectKey{Name: authRealm.Name, Namespace: clusterName}, clusterOAuth)
+	err = r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ClusterOAuthName(authRealm), Namespace: clusterName}, clusterOAuth)
 	switch {
 	case err == nil:
 		if err = r.Delete(context.TODO(), clusterOAuth); err != nil {

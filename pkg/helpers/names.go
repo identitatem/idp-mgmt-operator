@@ -67,13 +67,13 @@ func DexClientName(
 func ClientSecretName(
 	authRealm *identitatemv1alpha1.AuthRealm,
 ) string {
-	return authRealm.Name
+	return ClusterOAuthName(authRealm)
 }
 
 func ClusterOAuthName(
 	authRealm *identitatemv1alpha1.AuthRealm,
 ) string {
-	return authRealm.Name
+	return fmt.Sprintf("%s-%s", authRealm.Name, authRealm.Namespace)
 }
 
 func DexClientObjectKey(
