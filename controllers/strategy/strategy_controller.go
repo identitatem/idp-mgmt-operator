@@ -58,6 +58,7 @@ type StrategyReconciler struct {
 }
 
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={strategies},verbs=get;list;watch;update
+//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={strategies/finalizers},verbs=create;delete;patch;update
 
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={placements},verbs=get;list;watch;create;update;delete
 

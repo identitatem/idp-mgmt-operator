@@ -59,7 +59,7 @@ type AuthRealmReconciler struct {
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={rolebindings},verbs=get;create;update;delete
 
 // +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms},verbs=get;update;watch
-// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms/finalizers},verbs=create
+// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms/finalizers},verbs=create;delete;update;patch
 // +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms/status},verbs=update
 // +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={strategies},verbs=get;create;delete
 
