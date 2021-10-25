@@ -51,17 +51,19 @@ type PlacementDecisionReconciler struct {
 	Scheme             *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups="",resources={namespaces,secrets},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources={secrets},verbs=get;create;delete
 
-//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies},verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources=strategies/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources=strategies/finalizers,verbs=update
-//+kubebuilder:rbac:groups=auth.identitatem.io,resources={dexclients},verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="apiextensions.k8s.io",resources={customresourcedefinitions},verbs=get;list;create;update;patch;delete
+//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={clusteroauths},verbs=get;create;update;delete
+//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={strategies},verbs=list
 
-//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={managedclusters,placements,placementdecisions},verbs=get;list;watch;create;update;patch;delete;watch
-//+kubebuilder:rbac:groups=work.open-cluster-management.io,resources={manifestworks},verbs=get;list;watch;create;update;patch;delete;watch
-//+kubebuilder:rbac:groups=config.openshift.io,resources={infrastructures},verbs=get;list;watch;create;update;patch;delete;watch
+// +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexclients,dexclients/status},verbs=get;list;watch;create;update;patch;delete
+
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={placementdecisions},verbs=get;list;watch
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={placements},verbs=watch;list
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={placementdecisions/finalizer},verbs=update
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={managedclusters},verbs=get;list;watch
+
+//+kubebuilder:rbac:groups=config.openshift.io,resources={infrastructures},verbs=get;watch;list
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

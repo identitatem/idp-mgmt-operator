@@ -46,13 +46,26 @@ type AuthRealmReconciler struct {
 	Scheme             *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,authrealms/status,authrealms/finalizers,strategies},verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexservers,dexservers/status,dexclients,dexclients/status},verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="",resources={namespaces,secrets,serviceaccounts,configmaps},verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="apps",resources={deployments},verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={clusterrolebindings,rolebindings},verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={clusterroles,roles},verbs=get;list;watch;create;update;patch;delete;escalate;bind
-// +kubebuilder:rbac:groups="apiextensions.k8s.io",resources={customresourcedefinitions},verbs=get;list;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources={namespaces},verbs=get;create;delete;list;watch
+// +kubebuilder:rbac:groups="",resources={secrets,serviceaccounts,configmaps},verbs=get;create;update;list;watch
+
+// +kubebuilder:rbac:groups="apps",resources={deployments},verbs=get;create;update;delete
+
+// +kubebuilder:rbac:groups="apiextensions.k8s.io",resources={customresourcedefinitions},verbs=get;create;update;delete
+
+// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={clusterroles},verbs=escalate;get;create;update;delete;bind;list
+// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={clusterrolebindings},verbs=get;create;update;delete;list
+// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={roles},verbs=get;create;update;delete;escalate;bind
+// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={rolebindings},verbs=get;create;update;delete
+
+// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms},verbs=get;update;watch
+// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms/finalizers},verbs=create
+// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms/status},verbs=update
+// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={strategies},verbs=get;create;delete
+
+// +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexservers},verbs=get;create;update;watch;list
+// +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexservers/status},verbs=update
+
 // +kubebuilder:rbac:groups="coordination.k8s.io",resources={leases},verbs=get;list;create;update;patch;delete
 // +kubebuilder:rbac:groups="";events.k8s.io,resources=events,verbs=create;update;patch
 

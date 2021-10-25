@@ -36,8 +36,8 @@ import (
 
 	identitatemdexv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 
-	clusterv1 "open-cluster-management.io/api/cluster/v1"
-	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
+	// clusterv1 "open-cluster-management.io/api/cluster/v1"
+	// clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	manifestworkv1 "open-cluster-management.io/api/work/v1"
 
 	viewv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/view/v1beta1"
@@ -67,12 +67,11 @@ type ClusterOAuthReconciler struct {
 	Scheme             *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies,clusteroauths},verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources=strategies/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources=strategies/finalizers,verbs=update
-//+kubebuilder:rbac:groups="apiextensions.k8s.io",resources={customresourcedefinitions},verbs=get;list;create;update;patch;delete
+//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={clusteroauths},verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies},verbs=get;list
 
-//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={placements,placementdecisions},verbs=get;list;watch;create;update;patch;delete;watch
+//+kubebuilder:rbac:groups=work.open-cluster-management.io,resources={manifestworks},verbs=get;list;watch;create;update;delete
+
 //+kubebuilder:rbac:groups=view.open-cluster-management.io,resources={managedclusterviews},verbs=get;list;watch;create;update;patch;delete;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -553,13 +552,13 @@ func (r *ClusterOAuthReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return giterrors.WithStack(err)
 	}
 
-	if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		return giterrors.WithStack(err)
-	}
+	// if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+	// 	return giterrors.WithStack(err)
+	// }
 
-	if err := clusterv1.AddToScheme(mgr.GetScheme()); err != nil {
-		return giterrors.WithStack(err)
-	}
+	// if err := clusterv1.AddToScheme(mgr.GetScheme()); err != nil {
+	// 	return giterrors.WithStack(err)
+	// }
 
 	if err := manifestworkv1.AddToScheme(mgr.GetScheme()); err != nil {
 		return giterrors.WithStack(err)
