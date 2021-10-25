@@ -276,14 +276,18 @@ func (r *ClusterOAuthReconciler) generateManifestWork(clusterOAuth *identitatemv
 		return giterrors.WithStack(err)
 	}
 
+	idpNames := make(map[string]string)
 	for _, clusterOAuth := range clusterOAuths.Items {
 		//build OAuth and add to manifest work
 		r.Log.Info(" build clusterOAuth", "name: ", clusterOAuth.GetName(), " namespace:", clusterOAuth.GetNamespace(), "identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
 
 		for j, idp := range clusterOAuth.Spec.OAuth.Spec.IdentityProviders {
-
 			r.Log.Info("process identityProvider", "identityProvider  ", j, " name:", idp.Name)
-
+			if v, ok := idpNames[idp.Name]; ok {
+				return fmt.Errorf("clusterOAuth %s and %s in cluster %s defines the same idp.Name %s",
+					v, clusterOAuth.GetName(), clusterOAuth.Namespace, idp.Name)
+			}
+			idpNames[idp.Name] = clusterOAuth.GetName()
 			//build oauth by appending first clusterOAuth entry into single OAuth
 			singleOAuth.Spec.IdentityProviders = append(singleOAuth.Spec.IdentityProviders, idp)
 		}

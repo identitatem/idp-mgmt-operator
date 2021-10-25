@@ -155,6 +155,7 @@ var _ = AfterSuite(func() {
 var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 	AuthRealmName := "my-authrealm"
 	AuthRealmName2 := "my-authrealm" + "-2"
+	AuthRealmName3 := "my-authrealm" + "-3"
 	//StrategyName := AuthRealmName + "-backplane"
 	//ClusterOAuthName1 := StrategyName + "-1"
 	//ClusterOAuthName2 := StrategyName + "-2"
@@ -347,7 +348,7 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		})
 
-		By(fmt.Sprintf("creation of ClusterOAuth 2 for mangaed cluster %s", ClusterName), func() {
+		By(fmt.Sprintf("creation of ClusterOAuth 2 for managed cluster %s", ClusterName), func() {
 			clusterOAuth := &identitatemv1alpha1.ClusterOAuth{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: identitatemv1alpha1.SchemeGroupVersion.String(),
@@ -414,6 +415,81 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 			// AND
 			// should find manifest for OAuth 2 and manifest for Secret 2 and Secret 3 and an aggregated role
 			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(4))
+		})
+
+		var secret3 *corev1.Secret
+		By(fmt.Sprintf("creation of IDP secret 3 in cluster namespace %s", ClusterName), func() {
+			secret3 = &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: corev1.SchemeGroupVersion.String(),
+					Kind:       "Secret",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      AuthRealmName3,
+					Namespace: ClusterName,
+				},
+			}
+			err := k8sClient.Create(context.TODO(), secret3)
+			Expect(err).To(BeNil())
+
+		})
+
+		By(fmt.Sprintf("creation of ClusterOAuth 3 with duplicate idp.Name for managed cluster %s", ClusterName), func() {
+			clusterOAuth := &identitatemv1alpha1.ClusterOAuth{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: identitatemv1alpha1.SchemeGroupVersion.String(),
+					Kind:       "ClusterOAuth",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      AuthRealmName3,
+					Namespace: ClusterName,
+				},
+				Spec: identitatemv1alpha1.ClusterOAuthSpec{
+					OAuth: &openshiftconfigv1.OAuth{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: openshiftconfigv1.SchemeGroupVersion.String(),
+							Kind:       "OAuth",
+						},
+
+						Spec: openshiftconfigv1.OAuthSpec{
+							IdentityProviders: []openshiftconfigv1.IdentityProvider{
+								{
+									//Keep the same name as secret 2 for duplicate idp.Name scenario
+									Name:          secret2.Name,
+									MappingMethod: openshiftconfigv1.MappingMethodClaim,
+									IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+										Type: openshiftconfigv1.IdentityProviderTypeGitHub,
+										OpenID: &openshiftconfigv1.OpenIDIdentityProvider{
+											ClientID: secret3.Name,
+											ClientSecret: openshiftconfigv1.SecretNameReference{
+												Name: secret3.Name,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			err := k8sClient.Create(context.TODO(), clusterOAuth)
+			Expect(err).To(BeNil())
+		})
+
+		By("Calling reconcile", func() {
+			r := &ClusterOAuthReconciler{
+				Client:        k8sClient,
+				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
+				DynamicClient: dynamic.NewForConfigOrDie(cfg),
+				Log:           logf.Log,
+				Scheme:        scheme.Scheme,
+			}
+			req := ctrl.Request{}
+			req.Name = AuthRealmName3
+			req.Namespace = ClusterName
+			_, err := r.Reconcile(context.TODO(), req)
+			//Expect error as there is a idp.Name duplicate
+			Expect(err).NotTo(BeNil())
 		})
 
 	})
