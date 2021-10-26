@@ -185,7 +185,7 @@ func (r *PlacementDecisionReconciler) deleteConfig(authRealm *identitatemv1alpha
 			return giterrors.WithStack(err)
 		}
 	case !errors.IsNotFound(err):
-		giterrors.WithStack(err)
+		return giterrors.WithStack(err)
 	}
 	//Delete ClientSecret
 	r.Log.Info("delete clientSecret", "namespace", clusterName, "name", authRealm.Name)
