@@ -15,7 +15,7 @@ const (
 	manifestWorkSecretName        string = "idp-secret"
 	managedClusterViewOAuth       string = "oauth-view"
 	configMapOriginalOAuth        string = "idp-oauth-original"
-	dexServerName                 string = "dex-server"
+	dexServerNamePrefix           string = "dex"
 	dexOperatorNamespace          string = "idp-mgmt-dex"
 	dexServerNamespacePrefix      string = "idp-mgmt"
 )
@@ -49,8 +49,8 @@ func DexOperatorNamespace() string {
 	return dexOperatorNamespace
 }
 
-func DexServerName() string {
-	return dexServerName
+func DexServerName(authRealm *identitatemv1alpha1.AuthRealm) string {
+	return fmt.Sprintf("%s-%s", dexServerNamePrefix, authRealm.Name)
 }
 
 func DexServerNamespace(authRealm *identitatemv1alpha1.AuthRealm) string {
