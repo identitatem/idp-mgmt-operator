@@ -128,7 +128,7 @@ spec:
     name: ${AUTHREALM_GITHUB_NAME}-placement
   identityProviders:
     - name: "${IDP_NAME}"
-      mappingMethod: claim
+      mappingMethod: add
       type: GitHub
       github:
         clientID: "${GITHUB_APP_CLIENT_ID}"
@@ -319,7 +319,7 @@ spec:
       filter: "(objectClass=person)"
   identityProviders:
     - name: "${IDP_NAME}"
-      mappingMethod: claim
+      mappingMethod: add
       type: GitHub
       github:
         clientID: "${GITHUB_APP_CLIENT_ID}"
