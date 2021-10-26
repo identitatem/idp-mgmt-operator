@@ -67,6 +67,8 @@ type ClusterOAuthReconciler struct {
 	Scheme             *runtime.Scheme
 }
 
+// +kubebuilder:rbac:groups="",resources={configmaps},verbs=get;create;update;list;watch;delete
+
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={clusteroauths},verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={clusteroauths/finalizers},verbs=create;delete;patch;update
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies},verbs=get;list;watch
