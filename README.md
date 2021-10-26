@@ -37,7 +37,7 @@ This is required for the Dex server we will be using under the covers to authent
 the managed clusters OpenID OAuth requests. The quickest way to do this is using a tool from
 https://github.com/open-cluster-management/sre-tools/wiki/ACM---Day-1#add-an-acme-certificate.
 
-Here is a summary of the commands you need to run:
+Here is a summary of the commands you need to run for an AWS based hub:
 
 1. Clone the acmesh-official repo and setup AWS account environment variables
 
