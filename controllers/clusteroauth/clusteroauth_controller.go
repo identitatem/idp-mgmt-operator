@@ -522,16 +522,20 @@ func (r *ClusterOAuthReconciler) deleteManifestWork(name, ns string) error {
 
 func (r *ClusterOAuthReconciler) deleteOriginalOAuth(ns string) error {
 	cm := &corev1.ConfigMap{}
-	r.Log.Info("check if configMap already exists", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", ns)
+	r.Log.Info("check if configmap already exists", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", ns)
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: ns}, cm); err != nil {
 		if !errors.IsNotFound(err) {
-			//nothing to do as already deleted
 			return giterrors.WithStack(err)
 		}
+		//nothing to do as already deleted
 		return nil
 	}
 
-	return r.Delete(context.TODO(), cm)
+	if err := r.Delete(context.TODO(), cm); err != nil {
+		return err
+	}
+	r.Log.Info("configmap deleted", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", ns)
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
