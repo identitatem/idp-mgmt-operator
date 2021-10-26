@@ -54,19 +54,19 @@ type AuthRealmReconciler struct {
 // +kubebuilder:rbac:groups="apiextensions.k8s.io",resources={customresourcedefinitions},verbs=get;create;update;delete
 
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={clusterroles},verbs=escalate;get;create;update;delete;bind;list
-// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={clusterrolebindings},verbs=get;create;update;delete;list
+// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={clusterrolebindings},verbs=get;create;update;delete;list;watch
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={roles},verbs=get;create;update;delete;escalate;bind
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={rolebindings},verbs=get;create;update;delete
 
 // +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms},verbs=get;update;watch
-// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms/finalizers},verbs=create
+// +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms/finalizers},verbs=create;delete;update;patch
 // +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms/status},verbs=update
 // +kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={strategies},verbs=get;create;delete
 
 // +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexservers},verbs=get;create;update;watch;list
 // +kubebuilder:rbac:groups=auth.identitatem.io,resources={dexservers/status},verbs=update
 
-// +kubebuilder:rbac:groups="coordination.k8s.io",resources={leases},verbs=get;list;create;update;patch;delete
+// +kubebuilder:rbac:groups="coordination.k8s.io",resources={leases},verbs=get;list;create;update;patch;delete;watch
 // +kubebuilder:rbac:groups="";events.k8s.io,resources=events,verbs=create;update;patch
 
 func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
