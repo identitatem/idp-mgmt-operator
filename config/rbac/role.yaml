@@ -113,6 +113,9 @@ rules:
   resources:
   - placementdecisions/finalizer
   verbs:
+  - create
+  - delete
+  - patch
   - update
 - apiGroups:
   - cluster.open-cluster-management.io
@@ -144,6 +147,7 @@ rules:
   - list
   - patch
   - update
+  - watch
 - apiGroups:
   - identityconfig.identitatem.io
   resources:
@@ -160,12 +164,16 @@ rules:
   verbs:
   - get
   - list
+  - watch
 - apiGroups:
   - identityconfig.identitatem.io
   resources:
   - authrealms/finalizers
   verbs:
   - create
+  - delete
+  - patch
+  - update
 - apiGroups:
   - identityconfig.identitatem.io
   resources:
@@ -187,6 +195,15 @@ rules:
 - apiGroups:
   - identityconfig.identitatem.io
   resources:
+  - clusteroauths/finalizers
+  verbs:
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - identityconfig.identitatem.io
+  resources:
   - strategies
   verbs:
   - create
@@ -195,6 +212,15 @@ rules:
   - list
   - update
   - watch
+- apiGroups:
+  - identityconfig.identitatem.io
+  resources:
+  - strategies/finalizers
+  verbs:
+  - create
+  - delete
+  - patch
+  - update
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
@@ -205,6 +231,7 @@ rules:
   - get
   - list
   - update
+  - watch
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:

@@ -60,7 +60,7 @@ type PlacementDecisionReconciler struct {
 
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={placementdecisions},verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={placements},verbs=watch;list
-//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={placementdecisions/finalizer},verbs=update
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={placementdecisions/finalizer},verbs=create;delete;patch;update
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={managedclusters},verbs=get;list;watch
 
 //+kubebuilder:rbac:groups=config.openshift.io,resources={infrastructures},verbs=get;watch;list

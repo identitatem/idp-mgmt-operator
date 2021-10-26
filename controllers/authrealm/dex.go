@@ -371,6 +371,10 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 					InsecureNoSSL:      false,
 					InsecureSkipVerify: idp.LDAP.Insecure,
 					UsernamePrompt:     "Email Address",
+					RootCARef: corev1.SecretReference{
+						Name:      idp.LDAP.CA.Name,
+						Namespace: authRealm.Namespace,
+					},
 					UserSearch: dexoperatorv1alpha1.UserSearchSpec{
 						BaseDN:    authRealm.Spec.LDAPExtraConfigs[idp.Name].BaseDN,
 						Filter:    authRealm.Spec.LDAPExtraConfigs[idp.Name].Filter,
