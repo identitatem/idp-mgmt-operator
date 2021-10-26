@@ -351,9 +351,9 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			for i, org := range idp.GitHub.Organizations {
 				c.GitHub.Orgs[i].Name = org
 			}
-			r.Log.Info("genrated connextor", "c.GitHub", c.GitHub)
+			r.Log.Info("generated connector", "c.GitHub", c.GitHub)
 			cs = append(cs, *c)
-			r.Log.Info("genrated intermediate connextors", "cs", cs)
+			r.Log.Info("generated intermediate connectors", "cs", cs)
 		case openshiftconfigv1.IdentityProviderTypeLDAP:
 			r.Log.Info("create connector for LDAP")
 			//TODO set LDAP
@@ -385,10 +385,10 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 					},
 				},
 			}
-			r.Log.Info("genrated connector", "c.LDAP", c.LDAP)
+			r.Log.Info("generated connector", "c.LDAP", c.LDAP)
 			cs = append(cs, *c)
 			fmt.Println("cs: ", cs)
-			r.Log.Info("genrated intermediate connextors", "cs", cs)
+			r.Log.Info("generated intermediate connextors", "cs", cs)
 		default:
 			return nil, giterrors.WithStack(fmt.Errorf("unsupported provider type %s", idp.Type))
 		}
@@ -396,7 +396,7 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 	if len(cs) == 0 {
 		return nil, giterrors.WithStack(fmt.Errorf("no identityProvider defined in %s/%s", authRealm.Name, authRealm.Name))
 	}
-	r.Log.Info("genrated connectors", "cs", cs)
+	r.Log.Info("generated connectors", "cs", cs)
 	return cs, giterrors.WithStack(err)
 }
 
