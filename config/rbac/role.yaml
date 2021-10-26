@@ -147,6 +147,7 @@ rules:
   - list
   - patch
   - update
+  - watch
 - apiGroups:
   - identityconfig.identitatem.io
   resources:
@@ -163,6 +164,7 @@ rules:
   verbs:
   - get
   - list
+  - watch
 - apiGroups:
   - identityconfig.identitatem.io
   resources:
@@ -229,6 +231,7 @@ rules:
   - get
   - list
   - update
+  - watch
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
