@@ -67,6 +67,8 @@ type ClusterOAuthReconciler struct {
 	Scheme             *runtime.Scheme
 }
 
+// +kubebuilder:rbac:groups="",resources={configmaps},verbs=get;create;update;list;watch;delete
+
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={clusteroauths},verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={clusteroauths/finalizers},verbs=create;delete;patch;update
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies},verbs=get;list;watch
@@ -520,16 +522,20 @@ func (r *ClusterOAuthReconciler) deleteManifestWork(name, ns string) error {
 
 func (r *ClusterOAuthReconciler) deleteOriginalOAuth(ns string) error {
 	cm := &corev1.ConfigMap{}
-	r.Log.Info("check if configMap already exists", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", ns)
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: ns}, cm); err == nil {
-		if errors.IsNotFound(err) {
-			//nothing to do as already deleted
-			return nil
+	r.Log.Info("check if configmap already exists", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", ns)
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: ns}, cm); err != nil {
+		if !errors.IsNotFound(err) {
+			return giterrors.WithStack(err)
 		}
-		return giterrors.WithStack(err)
+		//nothing to do as already deleted
+		return nil
 	}
 
-	return r.Delete(context.TODO(), cm)
+	if err := r.Delete(context.TODO(), cm); err != nil {
+		return err
+	}
+	r.Log.Info("configmap deleted", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", ns)
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
