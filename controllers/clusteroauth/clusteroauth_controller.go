@@ -521,12 +521,12 @@ func (r *ClusterOAuthReconciler) deleteManifestWork(name, ns string) error {
 func (r *ClusterOAuthReconciler) deleteOriginalOAuth(ns string) error {
 	cm := &corev1.ConfigMap{}
 	r.Log.Info("check if configMap already exists", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", ns)
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: ns}, cm); err == nil {
-		if errors.IsNotFound(err) {
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: ns}, cm); err != nil {
+		if !errors.IsNotFound(err) {
 			//nothing to do as already deleted
-			return nil
+			return giterrors.WithStack(err)
 		}
-		return giterrors.WithStack(err)
+		return nil
 	}
 
 	return r.Delete(context.TODO(), cm)
