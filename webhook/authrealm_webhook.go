@@ -13,15 +13,18 @@ import (
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 )
 
 type AuthRealmAdmissionHook struct {
 	Client      dynamic.ResourceInterface
+	KubeClient  kubernetes.Interface
 	lock        sync.RWMutex
 	initialized bool
 }
@@ -76,15 +79,22 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 
 		// This is the same regex used by kubernetes for ensuring a CR name is valid
 		domainRegex, _ := regexp.Compile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`) // DNS-1123 subdomain
-		if len(authrealm.Spec.RouteSubDomain) == 0 {
+		switch {
+		case len(authrealm.Spec.RouteSubDomain) == 0:
 			status.Allowed = false
 			status.Result = &metav1.Status{
 				Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
 				Message: "routeSubDomain is required",
 			}
 			return status
-
-		} else if !domainRegex.MatchString(authrealm.Spec.RouteSubDomain) {
+		case len(authrealm.Spec.RouteSubDomain) > 63:
+			status.Allowed = false
+			status.Result = &metav1.Status{
+				Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
+				Message: "routeSubDomain is too long (max 63 characters)",
+			}
+			return status
+		case !domainRegex.MatchString(authrealm.Spec.RouteSubDomain):
 			status.Allowed = false
 			message := fmt.Sprintf("RouteSubDomain \"%s\" is invalid: a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example', regex used for validation is \"%s\"",
 				authrealm.Spec.RouteSubDomain,
@@ -95,28 +105,29 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 				Message: message,
 			}
 			return status
-
 		}
-
 		// Now check to see if namespace dex server is going to go is already in use
 		// In case we are running unit tests where this is not possible
-		if a.Client != nil {
-			newNs := helpers.DexServerNamespace(authrealm)
-			_, err := a.Client.Get(context.TODO(), newNs, metav1.GetOptions{})
-			if err == nil {
-				status.Allowed = false
-				message := fmt.Sprintf("RouteSubDomain \"%s\" cannot be used because namespace \"%s\" already exists. Use a different value",
-					authrealm.Spec.RouteSubDomain,
-					newNs)
+		_, err = a.KubeClient.CoreV1().Namespaces().Get(context.TODO(), helpers.DexServerNamespace(authrealm), metav1.GetOptions{})
+		switch {
+		case err == nil:
+			status.Allowed = false
+			message := fmt.Sprintf("RouteSubDomain \"%s\" already in use",
+				authrealm.Spec.RouteSubDomain)
 
-				status.Result = &metav1.Status{
-					Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
-					Message: message,
-				}
-				return status
+			status.Result = &metav1.Status{
+				Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
+				Message: message,
 			}
+			return status
+		case !errors.IsNotFound(err):
+			status.Allowed = false
+			status.Result = &metav1.Status{
+				Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
+				Message: err.Error(),
+			}
+			return status
 		}
-
 	case admissionv1beta1.Update:
 		klog.V(4).Info("Validate AuthRealm update")
 
@@ -164,6 +175,11 @@ func (a *AuthRealmAdmissionHook) Initialize(kubeClientConfig *rest.Config, stopC
 		Version: "v1alpha1",
 	}
 	shallowClientConfigCopy.APIPath = "/apis"
+	kubeClient, err := kubernetes.NewForConfig(&shallowClientConfigCopy)
+	if err != nil {
+		return err
+	}
+	a.KubeClient = kubeClient
 	dynamicClient, err := dynamic.NewForConfig(&shallowClientConfigCopy)
 	if err != nil {
 		return err
