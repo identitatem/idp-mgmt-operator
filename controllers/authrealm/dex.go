@@ -55,7 +55,7 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 	//Create DexServer CR
 	if err := r.createDexServer(authRealm); err != nil {
 		r.Log.Info("Update status create dexServer CR failure",
-			"name", helpers.DexServerName(authRealm),
+			"name", helpers.DexServerName(),
 			"namespace", helpers.DexServerNamespace(authRealm),
 			"error", err.Error())
 		cond := metav1.Condition{
@@ -63,7 +63,7 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 			Status: metav1.ConditionFalse,
 			Reason: "AuthRealmAppliedFailed",
 			Message: fmt.Sprintf("failed to create dexServer name: %s namespace: %s error: %s",
-				helpers.DexServerName(authRealm),
+				helpers.DexServerName(),
 				helpers.DexServerNamespace(authRealm),
 				err.Error()),
 		}
@@ -232,14 +232,14 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 	}
 	dexServerExists := true
 	dexServer := &dexoperatorv1alpha1.DexServer{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(authRealm), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer); err != nil {
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer); err != nil {
 		if !errors.IsNotFound(err) {
 			return giterrors.WithStack(err)
 		}
 		dexServerExists = false
 		dexServer = &dexoperatorv1alpha1.DexServer{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      helpers.DexServerName(authRealm),
+				Name:      helpers.DexServerName(),
 				Namespace: helpers.DexServerNamespace(authRealm),
 			},
 		}
