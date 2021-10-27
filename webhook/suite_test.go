@@ -99,7 +99,7 @@ var _ = Describe("Run webhook tests: ", func() {
 	RouteSubDomain := "abcdefghijklmnopqrstuvwxyz-0123456789"
 	stopCh := make(chan struct{})
 	var authRealmAdmissionHook *AuthRealmAdmissionHook
-	It("Validate re-use of subRouteDomain", func() {
+	It("Validate uniqueness of RouteSubDomain", func() {
 		By(fmt.Sprintf("creation of User namespace %s", AuthRealmNameSpace), func() {
 			ns := &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -130,7 +130,7 @@ var _ = Describe("Run webhook tests: ", func() {
 			Expect(authRealmAdmissionHook.Initialize(cfg, stopCh)).To(BeNil())
 		})
 		//Allowed because no ns exist yet for the DexServer
-		By("Calling Validate", func() {
+		By("Calling Validate to ensure webhook allows RouteSubDomain", func() {
 			r := &admissionv1beta1.AdmissionRequest{
 				Resource:  authrealmSchema,
 				Operation: admissionv1beta1.Create,
@@ -149,7 +149,7 @@ var _ = Describe("Run webhook tests: ", func() {
 			Expect(err).To(BeNil())
 		})
 		//Denied because a dexserver namespace exists
-		By("Calling Validate", func() {
+		By("Calling Validate to ensure webhook blocks use of duplicate RouteSubDomain", func() {
 			r := &admissionv1beta1.AdmissionRequest{
 				Resource:  authrealmSchema,
 				Operation: admissionv1beta1.Create,
