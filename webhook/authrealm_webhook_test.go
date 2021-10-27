@@ -66,20 +66,6 @@ func TestAuthRealmValidate(t *testing.T) {
 				Allowed: true,
 			},
 		},
-		{
-			title:          "validate creating AuthRealm Dex",
-			name:           "authrealm-test",
-			namespace:      "authrealm-test-ns",
-			proxytype:      identitatemv1alpha1.AuthProxyDex,
-			routeSubDomain: "abcdefghijklmnopqrstuvwxyz-0123456789",
-			request: &admissionv1beta1.AdmissionRequest{
-				Resource:  authrealmSchema,
-				Operation: admissionv1beta1.Create,
-			},
-			expectedResponse: &admissionv1beta1.AdmissionResponse{
-				Allowed: true,
-			},
-		},
 
 		//TODO - Add when RHSSO is valid
 		// {
