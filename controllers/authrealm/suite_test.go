@@ -302,7 +302,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 		})
 		By("Checking DexServer", func() {
 			dexServer := &identitatemdexserverv1lapha1.DexServer{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: helpers.DexServerNamespace(authRealm)}, dexServer)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer)
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientID).To(Equal(MyGithubAppClientID))
@@ -331,7 +331,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 		})
 		By("Checking DexServer", func() {
 			dexServer := &identitatemdexserverv1lapha1.DexServer{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: helpers.DexServerNamespace(authRealm)}, dexServer)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer)
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientID).To(Equal(MyGithubAppClientID))
@@ -364,7 +364,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 		})
 		By("Checking DexServer", func() {
 			dexServer := &identitatemdexserverv1lapha1.DexServer{}
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: AuthRealmName, Namespace: helpers.DexServerNamespace(authRealm)}, dexServer)
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer)
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientID).To(Equal(MyGithubAppClientID))
