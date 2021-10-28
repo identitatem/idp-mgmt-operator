@@ -78,6 +78,17 @@ rules:
   - auth.identitatem.io
   resources:
   - dexclients
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - auth.identitatem.io
+  resources:
+  - dexclients
   - dexclients/status
   verbs:
   - create
@@ -93,6 +104,7 @@ rules:
   - dexservers
   verbs:
   - create
+  - delete
   - get
   - list
   - update
