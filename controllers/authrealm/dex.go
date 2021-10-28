@@ -401,20 +401,12 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 }
 
 func (r *AuthRealmReconciler) processAuthRealmDeletion(authRealm *identitatemv1alpha1.AuthRealm) error {
-	r.Log.Info("delete DexServer ns", "namespace", helpers.DexServerNamespace(authRealm))
-	ns := &corev1.Namespace{}
-	err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authRealm)}, ns)
-	switch {
-	case err == nil:
-		if err := r.Client.Delete(context.TODO(), ns); err != nil {
-			return giterrors.WithStack(err)
-		}
-	case !errors.IsNotFound(err):
-		return giterrors.WithStack(err)
+	if err := r.processDexServerDeletion(authRealm); err != nil {
+		return err
 	}
 	r.Log.Info("delete Strategy", "name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType))
 	st := &identitatemv1alpha1.Strategy{}
-	err = r.Client.Get(context.TODO(),
+	err := r.Client.Get(context.TODO(),
 		client.ObjectKey{Name: helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType), Namespace: authRealm.Namespace},
 		st)
 	switch {
@@ -428,4 +420,47 @@ func (r *AuthRealmReconciler) processAuthRealmDeletion(authRealm *identitatemv1a
 	r.Log.Info("deleted Strategy", "name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType))
 	r.Log.Info("delete DexOperator")
 	return r.deleteDexOperator(authRealm)
+}
+
+func (r *AuthRealmReconciler) processDexServerDeletion(authRealm *identitatemv1alpha1.AuthRealm) error {
+	r.Log.Info("delete DexClients in ns", "namespace", helpers.DexServerNamespace(authRealm))
+	ldc := &dexoperatorv1alpha1.DexClientList{}
+	if err := r.Client.List(context.TODO(), ldc, &client.ListOptions{Namespace: helpers.DexServerNamespace(authRealm)}); err != nil {
+		return giterrors.WithStack(err)
+	}
+	for _, dc := range ldc.Items {
+		if err := r.Client.Delete(context.TODO(), &dc); err != nil {
+			return giterrors.WithStack(err)
+		}
+	}
+	if len(ldc.Items) != 0 {
+		return fmt.Errorf("waiting dexclient to be deleted")
+	}
+
+	r.Log.Info("delete DexServers in ns", "namespace", helpers.DexServerNamespace(authRealm))
+	lds := &dexoperatorv1alpha1.DexServerList{}
+	if err := r.Client.List(context.TODO(), lds, &client.ListOptions{Namespace: helpers.DexServerNamespace(authRealm)}); err != nil {
+		return giterrors.WithStack(err)
+	}
+	for _, ds := range lds.Items {
+		if err := r.Client.Delete(context.TODO(), &ds); err != nil {
+			return giterrors.WithStack(err)
+		}
+	}
+	if len(lds.Items) != 0 {
+		return fmt.Errorf("waiting dexservers to be deleted")
+	}
+
+	r.Log.Info("delete DexServer ns", "namespace", helpers.DexServerNamespace(authRealm))
+	ns := &corev1.Namespace{}
+	err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authRealm)}, ns)
+	switch {
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), ns); err != nil {
+			return giterrors.WithStack(err)
+		}
+	case !errors.IsNotFound(err):
+		return giterrors.WithStack(err)
+	}
+	return nil
 }
