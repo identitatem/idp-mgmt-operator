@@ -71,7 +71,7 @@ spec:
             cpu: 300m
             memory: 500Mi
       serviceAccountName: dex-operator-manager
-      terminationGracePeriodSeconds: 10
+      terminationGracePeriodSeconds: 30
       tolerations:
         - key: node-role.kubernetes.io/infra
           operator: Exists
