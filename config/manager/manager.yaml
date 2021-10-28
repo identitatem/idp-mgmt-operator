@@ -53,7 +53,7 @@ spec:
             - -v 5
           env:
             - name: RELATED_IMAGE_DEX_OPERATOR
-              value: "quay.io/identitatem/dex-operator:0.0.0-20211026-15-32-11"
+              value: "quay.io/identitatem/dex-operator:0.0.0-20211028-14-34-26"
             - name: RELATED_IMAGE_DEX_SERVER
               value: quay.io/dexidp/dex:v2.28.1
           image: quay.io/identitatem/idp-mgmt-operator:latest
