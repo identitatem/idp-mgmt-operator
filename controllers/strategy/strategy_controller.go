@@ -5,6 +5,7 @@ package strategy
 import (
 	"context"
 	"fmt"
+	"time"
 
 	// "time"
 
@@ -95,9 +96,8 @@ func (r *StrategyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	if instance.DeletionTimestamp != nil {
-		err := r.processStrategyDeletion(instance)
-		if err != nil {
-			return reconcile.Result{}, err
+		if result, err := r.processStrategyDeletion(instance); err != nil || result.Requeue {
+			return result, err
 		}
 		controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
 		if err := r.Client.Update(context.TODO(), instance); err != nil {
@@ -185,7 +185,7 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 	placement *clusterv1alpha1.Placement) (*clusterv1alpha1.Placement, bool, error) {
 	placementStrategy := &clusterv1alpha1.Placement{}
 	placementStrategyExists := true
-	placementStrategyName := getPlacementStrategyName(strategy, authRealm)
+	placementStrategyName := helpers.PlacementStrategyName(strategy, authRealm)
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: placementStrategyName, Namespace: strategy.Namespace}, placementStrategy); err != nil {
 		if !errors.IsNotFound(err) {
 			return nil, false, err
@@ -209,30 +209,29 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 	return placementStrategy, placementStrategyExists, nil
 }
 
-func getPlacementStrategyName(strategy *identitatemv1alpha1.Strategy,
-	authRealm *identitatemv1alpha1.AuthRealm) string {
-	return fmt.Sprintf("%s-%s", authRealm.Spec.PlacementRef.Name, strategy.Spec.Type)
-}
-
-func (r *StrategyReconciler) processStrategyDeletion(strategy *identitatemv1alpha1.Strategy) error {
+func (r *StrategyReconciler) processStrategyDeletion(strategy *identitatemv1alpha1.Strategy) (ctrl.Result, error) {
 	//Delete strategyPlacement
 	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
 	if err != nil {
-		return giterrors.WithStack(err)
+		return ctrl.Result{}, giterrors.WithStack(err)
 	}
 	pl := &clusterv1alpha1.Placement{}
 	err = r.Client.Get(context.TODO(),
-		client.ObjectKey{Name: getPlacementStrategyName(strategy, authRealm), Namespace: strategy.Namespace},
+		client.ObjectKey{Name: helpers.PlacementStrategyName(strategy, authRealm), Namespace: strategy.Namespace},
 		pl)
 	switch {
 	case err == nil:
 		if err := r.Client.Delete(context.TODO(), pl); err != nil {
-			return giterrors.WithStack(err)
+			return ctrl.Result{}, giterrors.WithStack(err)
 		}
+		r.Log.Info("waiting strategy placement to be deleted",
+			"name", helpers.PlacementStrategyName(strategy, authRealm),
+			"namespace", strategy.Namespace)
+		return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Second}, nil
 	case errors.IsNotFound(err):
-		return nil
+		return ctrl.Result{}, nil
 	}
-	return err
+	return ctrl.Result{}, err
 }
 
 // SetupWithManager sets up the controller with the Manager.
