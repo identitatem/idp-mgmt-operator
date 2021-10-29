@@ -89,3 +89,8 @@ func DexClientObjectKey(
 func StrategyName(authRealm *identitatemv1alpha1.AuthRealm, t identitatemv1alpha1.StrategyType) string {
 	return fmt.Sprintf("%s-%s", authRealm.Name, string(t))
 }
+
+func PlacementStrategyName(strategy *identitatemv1alpha1.Strategy,
+	authRealm *identitatemv1alpha1.AuthRealm) string {
+	return fmt.Sprintf("%s-%s", authRealm.Spec.PlacementRef.Name, strategy.Spec.Type)
+}
