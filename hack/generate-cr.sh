@@ -28,8 +28,10 @@ export ROUTE_SUBDOMAIN=${ROUTE_SUBDOMAIN:-"testdomain"}
 
 # For determining if the optional github org is needed in yaml
 if [ -z ${GITHUB_APP_CLIENT_ORG} ]; then
+   GITHUB_ORGANIZATIONS_LABEL=" "
    GITHUB_APP_CLIENT_ORG_LINE=" "
 else
+   GITHUB_ORGANIZATIONS_LABEL="organizations:"
    GITHUB_APP_CLIENT_ORG_LINE="- ${GITHUB_APP_CLIENT_ORG}"
 fi
 
@@ -134,7 +136,7 @@ spec:
         clientID: "${GITHUB_APP_CLIENT_ID}"
         clientSecret:
           name: ${AUTHREALM_GITHUB_NAME}-client-secret
-        organizations:
+        ${GITHUB_ORGANIZATIONS_LABEL}
         ${GITHUB_APP_CLIENT_ORG_LINE}
 
 EOF
@@ -325,7 +327,7 @@ spec:
         clientID: "${GITHUB_APP_CLIENT_ID}"
         clientSecret:
           name: ${AUTHREALM_NAME}-client-secret
-        organizations:
+        ${GITHUB_ORGANIZATIONS_LABEL}
         ${GITHUB_APP_CLIENT_ORG_LINE}
     - name: openldap
       type: LDAP
