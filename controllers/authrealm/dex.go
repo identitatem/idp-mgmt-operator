@@ -32,9 +32,10 @@ const (
 
 func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthRealm) error {
 	r.Log.Info("syncDexCRs", "AuthRealm.Name", authRealm.Name, "AuthRealm.Namespace", authRealm.Namespace)
-	//TODO this test should maybe be in a webhook to avoid the creation of an invalid CR
 	if len(authRealm.Spec.IdentityProviders) < 1 {
-		return giterrors.WithStack(fmt.Errorf("the identityproviders array of the authrealm %s can have one and only one element", authRealm.Name))
+		return giterrors.WithStack(
+			fmt.Errorf("the identityproviders array of the authrealm %s can have one and only one element",
+				authRealm.Name))
 	}
 
 	// Create namespace and Install the dex-operator
@@ -225,7 +226,9 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 	r.Log.Info("createDexServer", "Name", authRealm.Name, "Namespace", helpers.DexServerNamespace(authRealm))
 	//Create namespace if not exists
 	dexServerNamespace := &corev1.Namespace{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerNamespace(authRealm)}, dexServerNamespace); err != nil {
+	if err := r.Client.Get(context.TODO(),
+		client.ObjectKey{Name: helpers.DexServerNamespace(authRealm)},
+		dexServerNamespace); err != nil {
 		if !errors.IsNotFound(err) {
 			return giterrors.WithStack(err)
 		}
@@ -240,7 +243,9 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 	}
 	dexServerExists := true
 	dexServer := &dexoperatorv1alpha1.DexServer{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer); err != nil {
+	if err := r.Client.Get(context.TODO(),
+		client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)},
+		dexServer); err != nil {
 		if !errors.IsNotFound(err) {
 			return giterrors.WithStack(err)
 		}
@@ -364,7 +369,6 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			r.Log.Info("generated intermediate connectors", "cs", cs)
 		case openshiftconfigv1.IdentityProviderTypeLDAP:
 			r.Log.Info("create connector for LDAP")
-			//TODO set LDAP
 			c := &dexoperatorv1alpha1.ConnectorSpec{
 				Type: dexoperatorv1alpha1.ConnectorTypeLDAP,
 				Name: idp.Name,
@@ -415,7 +419,9 @@ func (r *AuthRealmReconciler) processAuthRealmDeletion(authRealm *identitatemv1a
 	r.Log.Info("delete Strategy", "name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType))
 	st := &identitatemv1alpha1.Strategy{}
 	err := r.Client.Get(context.TODO(),
-		client.ObjectKey{Name: helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType), Namespace: authRealm.Namespace},
+		client.ObjectKey{
+			Name:      helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType),
+			Namespace: authRealm.Namespace},
 		st)
 	switch {
 	case err == nil:
@@ -437,11 +443,14 @@ func (r *AuthRealmReconciler) processAuthRealmDeletion(authRealm *identitatemv1a
 func (r *AuthRealmReconciler) processDexServerDeletion(authRealm *identitatemv1alpha1.AuthRealm) (ctrl.Result, error) {
 	r.Log.Info("delete DexClients in ns", "namespace", helpers.DexServerNamespace(authRealm))
 	ldc := &dexoperatorv1alpha1.DexClientList{}
-	if err := r.Client.List(context.TODO(), ldc, &client.ListOptions{Namespace: helpers.DexServerNamespace(authRealm)}); err != nil {
+	if err := r.Client.List(context.TODO(),
+		ldc,
+		&client.ListOptions{Namespace: helpers.DexServerNamespace(authRealm)}); err != nil {
 		return ctrl.Result{}, giterrors.WithStack(err)
 	}
 	for _, dc := range ldc.Items {
-		if err := r.Client.Delete(context.TODO(), &dc); err != nil {
+		dcc := dc.DeepCopy()
+		if err := r.Client.Delete(context.TODO(), dcc); err != nil {
 			return ctrl.Result{}, giterrors.WithStack(err)
 		}
 	}
@@ -456,7 +465,8 @@ func (r *AuthRealmReconciler) processDexServerDeletion(authRealm *identitatemv1a
 		return ctrl.Result{}, giterrors.WithStack(err)
 	}
 	for _, ds := range lds.Items {
-		if err := r.Client.Delete(context.TODO(), &ds); err != nil {
+		dsc := ds.DeepCopy()
+		if err := r.Client.Delete(context.TODO(), dsc); err != nil {
 			return ctrl.Result{}, giterrors.WithStack(err)
 		}
 	}
