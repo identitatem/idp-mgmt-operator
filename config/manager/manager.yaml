@@ -79,7 +79,7 @@ spec:
               memory: 500Mi
             requests:
               cpu: 50m
-              memory: 128Mi
+              memory: 150Mi
       serviceAccountName: idp-mgmt-operator-controller-manager
       terminationGracePeriodSeconds: 10
       tolerations:
