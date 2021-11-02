@@ -68,8 +68,8 @@ spec:
             cpu: 300m
             memory: 500Mi
           requests:
-            cpu: 300m
-            memory: 500Mi
+            cpu: 50m
+            memory: 150Mi
       serviceAccountName: dex-operator-manager
       terminationGracePeriodSeconds: 30
       tolerations:
@@ -79,4 +79,3 @@ spec:
         - key: dedicated
           operator: Exists
           effect: NoSchedule
-      
