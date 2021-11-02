@@ -349,8 +349,8 @@ spec:
                         cpu: 300m
                         memory: 500Mi
                       requests:
-                        cpu: 300m
-                        memory: 500Mi
+                        cpu: 50m
+                        memory: 128Mi
                 serviceAccountName: idp-mgmt-operator-controller-manager
                 terminationGracePeriodSeconds: 10
         - name: idp-mgmt-operator-webhook-service
