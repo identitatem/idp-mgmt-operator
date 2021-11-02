@@ -290,10 +290,11 @@ We have a GitHub action defined to generate a tagged bundle and catalog image wh
 
 ## Method One - Use GitHub UI
 
-1. Run the following command to generate the value we will use as part of the release and tag
+1. Run the following command to generate the value we will use as part of the release and tag for non-shipped releases
 ```bash
 date -u "+0.0.0-%Y%m%d-%H-%M-%S"
 ```
+If you are building a release candidate, the format should be **0.1.0-rc#**.  (Where **#** is the release candidate number. Do not use UPPERCASE characters!)
 2. Go to dex-operator github page and select **Releases** (https://github.com/identitatem/dex-operator/releases)
 3. Select **Draft a new release**
 4. For **Release title**, enter **v** and then paste the value from the date command above
@@ -315,6 +316,7 @@ so RELATED_IMAGE_DEX_OPERATOR points to the new dex-operator image in quay.
 ```bash
 date -u "+0.0.0-%Y%m%d-%H-%M-%S"
 ```
+If you are building a release candidate, the format should be **0.1.0-rc#**.  (Where **#** is the release candidate number. Do not use UPPERCASE characters!)
 16. Go to idp-mgmt-operator github page and select **Releases** (https://github.com/identitatem/idp-mgmt-operator/releases)
 17. Select **Draft a new release**
 18. For **Release title**, enter v and then paste the value from the date command above
