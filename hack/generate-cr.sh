@@ -35,8 +35,6 @@ else
    GITHUB_APP_CLIENT_ORG_LINE="- ${GITHUB_APP_CLIENT_ORG}"
 fi
 
-export THE_FILENAME=/tmp/${NAME}".yaml"
-
 export GITHUB_FILENAME=/tmp/${AUTHREALM_GITHUB_NAME}".yaml"
 
 export AUTHREALM_LDAP_NAME=${AUTHREALM_LDAP_NAME:-"authrealm-sample-ldap"}
@@ -149,7 +147,7 @@ printf "    - ${GREEN}Homepage URL:${YELLOW} https://console-openshift-console.$
 printf "    - ${GREEN}Authorization callback URL:${YELLOW} https://${ROUTE_SUBDOMAIN}.${APPS}/callback${CLEAR}\n"
 printf "${BLUE}prior to running the ${GREEN}oc apply${BLUE} command shown below.\n\n${CLEAR}"
 
-printf "${BLUE}2) Add the following labels to any managed cluster you want in the cluster set ${GREEN}${NAME}-clusterset${BLUE}:${CLEAR}\n"
+printf "${BLUE}2) Add the following labels to any managed cluster you want in the cluster set ${GREEN}${AUTHREALM_GITHUB_NAME}-clusterset${BLUE}:${CLEAR}\n"
 printf "    ${GREEN}authdeployment=east${CLEAR}\n"
 printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${AUTHREALM_GITHUB_NAME}-clusterset${CLEAR}\n"
 printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}<managed cluster name> <label>${BLUE}\"${CLEAR}\n\n"
@@ -240,7 +238,7 @@ spec:
             - mail
 EOF
 
-printf "${BLUE} Add the following labels to any managed cluster you want in the cluster set ${GREEN}${NAME}-clusterset${BLUE}:${CLEAR}\n"
+printf "${BLUE} Add the following labels to any managed cluster you want in the cluster set ${GREEN}${AUTHREALM_LDAP_NAME}-clusterset${BLUE}:${CLEAR}\n"
 printf "    ${GREEN}authdeployment=east${CLEAR}\n"
 printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${AUTHREALM_LDAP_NAME}-clusterset${CLEAR}\n"
 printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}<managed cluster name> <label>${BLUE}\"${CLEAR}\n\n"
@@ -357,7 +355,7 @@ printf "    - ${GREEN}Homepage URL:${YELLOW} https://console-openshift-console.$
 printf "    - ${GREEN}Authorization callback URL:${YELLOW} https://${ROUTE_SUBDOMAIN}.${APPS}/callback${CLEAR}\n"
 printf "${BLUE}prior to running the ${GREEN}oc apply${BLUE} command shown below.\n\n${CLEAR}"
 
-printf "${BLUE}2) Add the following labels to any managed cluster you want in the cluster set ${GREEN}${NAME}-clusterset${BLUE}:${CLEAR}\n"
+printf "${BLUE}2) Add the following labels to any managed cluster you want in the cluster set ${GREEN}${AUTHREALM_NAME}-clusterset${BLUE}:${CLEAR}\n"
 printf "    ${GREEN}authdeployment=east${CLEAR}\n"
 printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${AUTHREALM_NAME}-clusterset${CLEAR}\n"
 printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}<managed cluster name> <label>${BLUE}\"${CLEAR}\n\n"
