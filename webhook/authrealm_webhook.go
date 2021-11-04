@@ -43,6 +43,8 @@ func (a *AuthRealmAdmissionHook) ValidatingResource() (plural schema.GroupVersio
 // Validate is called by generic-admission-server when the registered REST resource above is called with an admission request.
 func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse {
 	status := &admissionv1beta1.AdmissionResponse{}
+	klog.V(0).Infof("Validate webhook for AuthRealm group: %s, resource: %s", admissionSpec.Resource.Group, admissionSpec.Resource.Resource)
+	klog.V(1).Infof("V1 test")
 
 	// only validate the request for authrealm
 	if admissionSpec.Resource.Group != "admission.identityconfig.identitatem.io" ||
@@ -63,7 +65,7 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 		return status
 	}
 
-	klog.V(4).Infof("Validate webhook for AuthRealm name: %s, type: %s, routeSubDomain: %s", authrealm.Name, authrealm.Spec.Type, authrealm.Spec.RouteSubDomain)
+	klog.V(0).Infof("Validate webhook for AuthRealm name: %s, type: %s, routeSubDomain: %s", authrealm.Name, authrealm.Spec.Type, authrealm.Spec.RouteSubDomain)
 	switch admissionSpec.Operation {
 	case admissionv1beta1.Create:
 		klog.V(4).Info("Validate AuthRealm create")
@@ -167,6 +169,8 @@ func (a *AuthRealmAdmissionHook) Initialize(kubeClientConfig *rest.Config, stopC
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
+	klog.V(0).Infof("Initialize webhook for AuthRealm 1")
+
 	a.initialized = true
 
 	shallowClientConfigCopy := *kubeClientConfig
@@ -179,6 +183,9 @@ func (a *AuthRealmAdmissionHook) Initialize(kubeClientConfig *rest.Config, stopC
 	if err != nil {
 		return err
 	}
+
+	klog.V(0).Infof("Initialize webhook for AuthRealm 2")
+
 	a.KubeClient = kubeClient
 	dynamicClient, err := dynamic.NewForConfig(&shallowClientConfigCopy)
 	if err != nil {
@@ -190,6 +197,8 @@ func (a *AuthRealmAdmissionHook) Initialize(kubeClientConfig *rest.Config, stopC
 		// kind is the kind for the resource (e.g. 'Foo' is the kind for a resource 'foo')
 		Resource: "authrealms",
 	})
+
+	klog.V(0).Infof("Initialize webhook for AuthRealm 3")
 
 	return nil
 }
