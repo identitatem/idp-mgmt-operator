@@ -43,9 +43,10 @@ func (a *AuthRealmAdmissionHook) ValidatingResource() (plural schema.GroupVersio
 // Validate is called by generic-admission-server when the registered REST resource above is called with an admission request.
 func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse {
 	status := &admissionv1beta1.AdmissionResponse{}
+	//klog.V(0).Infof("Validate webhook for AuthRealm group: %s, resource: %s", admissionSpec.Resource.Group, admissionSpec.Resource.Resource)
 
 	// only validate the request for authrealm
-	if admissionSpec.Resource.Group != "admission.identityconfig.identitatem.io" ||
+	if admissionSpec.Resource.Group != "identityconfig.identitatem.io" ||
 		admissionSpec.Resource.Resource != "authrealms" {
 		status.Allowed = true
 		return status
@@ -142,7 +143,7 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 			return status
 		}
 
-		klog.V(4).Info("Compare RouteSubDomain", "old value:", oldauthrealm.Spec.RouteSubDomain, "new value:", authrealm.Spec.RouteSubDomain)
+		klog.V(4).Info("Compare RouteSubDomain", " old value:", oldauthrealm.Spec.RouteSubDomain, " new value:", authrealm.Spec.RouteSubDomain)
 
 		if authrealm.Spec.RouteSubDomain != oldauthrealm.Spec.RouteSubDomain {
 			status.Allowed = false
@@ -167,6 +168,8 @@ func (a *AuthRealmAdmissionHook) Initialize(kubeClientConfig *rest.Config, stopC
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
+	klog.V(0).Infof("Initialize admission webhook for AuthRealm")
+
 	a.initialized = true
 
 	shallowClientConfigCopy := *kubeClientConfig
@@ -179,6 +182,7 @@ func (a *AuthRealmAdmissionHook) Initialize(kubeClientConfig *rest.Config, stopC
 	if err != nil {
 		return err
 	}
+
 	a.KubeClient = kubeClient
 	dynamicClient, err := dynamic.NewForConfig(&shallowClientConfigCopy)
 	if err != nil {

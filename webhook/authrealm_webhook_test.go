@@ -20,7 +20,7 @@ const (
 )
 
 var authrealmSchema = metav1.GroupVersionResource{
-	Group:    "admission.identityconfig.identitatem.io",
+	Group:    "identityconfig.identitatem.io",
 	Version:  "v1alpha1",
 	Resource: "authrealms",
 }
