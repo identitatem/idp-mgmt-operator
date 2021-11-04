@@ -22,7 +22,7 @@ IMG_COVERAGE ?= ${PROJECT_NAME}-coverage:${IMG_TAG}
 CRD_OPTIONS ?= "crd:crdVersions=v1"
 
 # Version to apply to generated artifacts (for bundling/publishing)
-export VERSION ?= 0.0.1
+export VERSION ?= 0.1.0
 
 # Bundle Prereqs
 IMAGE_TAG_BASE ?= quay.io/identitatem/$(PROJECT_NAME)
@@ -184,11 +184,11 @@ endif
 
 
 
-# A comma-separated list of bundle images (e.g. make catalog-build BUNDLE_IMGS=quay.io/identitatem/idp-mgmt-config-bundle:0.0.1,quay.io/identitatem/idp-mgmt-config-bundle:0.0.2).
+# A comma-separated list of bundle images (e.g. make catalog-build BUNDLE_IMGS=quay.io/identitatem/idp-mgmt-config-bundle:0.1.0,quay.io/identitatem/idp-mgmt-config-bundle:0.0.2).
 # These images MUST exist in a registry and be pull-able.
 BUNDLE_IMGS ?= $(BUNDLE_IMG)
 
-# The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=quay.io/identitatem/idp-mgmt-config-catalog:0.0.1).
+# The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=quay.io/identitatem/idp-mgmt-config-catalog:0.1.0).
 CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION)
 
 # Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
@@ -228,7 +228,7 @@ bundle: manifests kustomize yq/install operatorsdk
 
 .PHONY: bundle-build
 ## Build the bundle image.
-bundle-build: 
+bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 
