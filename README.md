@@ -165,7 +165,7 @@ spec:
   name: idp-mgmt-operator
   source: idp-mgmt-config-catalog
   sourceNamespace: idp-mgmt-config
-  startingCSV: idp-mgmt-operator.v0.0.1
+  startingCSV: idp-mgmt-operator.v0.1.0
 ```
 5. Wait for the operator to install - then move on to the next step!
 
