@@ -143,7 +143,7 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 			return status
 		}
 
-		klog.V(4).Info("Compare RouteSubDomain", "old value:", oldauthrealm.Spec.RouteSubDomain, "new value:", authrealm.Spec.RouteSubDomain)
+		klog.V(4).Info("Compare RouteSubDomain", " old value:", oldauthrealm.Spec.RouteSubDomain, " new value:", authrealm.Spec.RouteSubDomain)
 
 		if authrealm.Spec.RouteSubDomain != oldauthrealm.Spec.RouteSubDomain {
 			status.Allowed = false
