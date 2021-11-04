@@ -47,7 +47,8 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 	klog.V(1).Infof("V1 test")
 
 	// only validate the request for authrealm
-	if admissionSpec.Resource.Group != "admission.identityconfig.identitatem.io" ||
+	if admissionSpec.Resource.Group != "identityconfig.identitatem.io" ||
+		//if !strings.HasSuffix(admissionSpec.Resource.Group, "identityconfig.identitatem.io") ||
 		admissionSpec.Resource.Resource != "authrealms" {
 		status.Allowed = true
 		return status
