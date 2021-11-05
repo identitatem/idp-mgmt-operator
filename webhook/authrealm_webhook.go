@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 	"sync"
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
@@ -22,6 +23,10 @@ import (
 	"k8s.io/klog/v2"
 )
 
+const (
+	GROUP_SUFFIX = "identityconfig.identitatem.io"
+)
+
 type AuthRealmAdmissionHook struct {
 	Client      dynamic.ResourceInterface
 	KubeClient  kubernetes.Interface
@@ -33,7 +38,7 @@ type AuthRealmAdmissionHook struct {
 // webhook is accessed by the kube apiserver.
 func (a *AuthRealmAdmissionHook) ValidatingResource() (plural schema.GroupVersionResource, singular string) {
 	return schema.GroupVersionResource{
-			Group:    "admission.identityconfig.identitatem.io",
+			Group:    "admission." + GROUP_SUFFIX,
 			Version:  "v1alpha1",
 			Resource: "authrealms",
 		},
@@ -43,10 +48,10 @@ func (a *AuthRealmAdmissionHook) ValidatingResource() (plural schema.GroupVersio
 // Validate is called by generic-admission-server when the registered REST resource above is called with an admission request.
 func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse {
 	status := &admissionv1beta1.AdmissionResponse{}
-	//klog.V(0).Infof("Validate webhook for AuthRealm group: %s, resource: %s", admissionSpec.Resource.Group, admissionSpec.Resource.Resource)
+	klog.V(4).Infof("AuthRealm Validate %q operation for object %q, group: %s, resource: %s", admissionSpec.Operation, admissionSpec.Object, admissionSpec.Resource.Group, admissionSpec.Resource.Resource)
 
 	// only validate the request for authrealm
-	if admissionSpec.Resource.Group != "identityconfig.identitatem.io" ||
+	if !strings.HasSuffix(admissionSpec.Resource.Group, GROUP_SUFFIX) ||
 		admissionSpec.Resource.Resource != "authrealms" {
 		status.Allowed = true
 		return status
@@ -174,7 +179,7 @@ func (a *AuthRealmAdmissionHook) Initialize(kubeClientConfig *rest.Config, stopC
 
 	shallowClientConfigCopy := *kubeClientConfig
 	shallowClientConfigCopy.GroupVersion = &schema.GroupVersion{
-		Group:   "identityconfig.identitatem.io",
+		Group:   GROUP_SUFFIX,
 		Version: "v1alpha1",
 	}
 	shallowClientConfigCopy.APIPath = "/apis"
@@ -189,7 +194,7 @@ func (a *AuthRealmAdmissionHook) Initialize(kubeClientConfig *rest.Config, stopC
 		return err
 	}
 	a.Client = dynamicClient.Resource(schema.GroupVersionResource{
-		Group:   "identityconfig.identitatem.io",
+		Group:   GROUP_SUFFIX,
 		Version: "v1alpha1",
 		// kind is the kind for the resource (e.g. 'Foo' is the kind for a resource 'foo')
 		Resource: "authrealms",
