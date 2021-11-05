@@ -317,7 +317,7 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 					Name:      certSecret.Name,
 					Namespace: dexServer.Namespace,
 				},
-				Type: corev1.SecretTypeOpaque,
+				Type: certSecret.Type,
 				Data: certSecret.Data,
 			}
 			if err := r.Client.Create(context.TODO(), dexServerCertSecret); err != nil {
@@ -325,6 +325,7 @@ func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.Aut
 			}
 		} else {
 			dexServerCertSecret.Data = certSecret.Data
+			dexServerCertSecret.Type = certSecret.Type
 			if err := r.Client.Update(context.TODO(), dexServerCertSecret); err != nil {
 				return giterrors.WithStack(err)
 			}
