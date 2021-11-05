@@ -289,11 +289,15 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 
 func (r *AuthRealmReconciler) updateDexServer(authRealm *identitatemv1alpha1.AuthRealm, dexServer *dexoperatorv1alpha1.DexServer) error {
 	r.Log.Info("updateDexServer", "Name", dexServer.Name, "Namespace", dexServer.Namespace)
-	uScheme, host, err := helpers.GetAppsURL(r.Client, false)
-	if err != nil {
-		return err
+	if len(authRealm.Spec.Host) != 0 {
+		dexServer.Spec.Issuer = authRealm.Spec.Host
+	} else {
+		uScheme, host, err := helpers.GetAppsURL(r.Client, false)
+		if err != nil {
+			return err
+		}
+		dexServer.Spec.Issuer = fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Spec.RouteSubDomain, host)
 	}
-	dexServer.Spec.Issuer = fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Spec.RouteSubDomain, host)
 	if len(authRealm.Spec.CertificatesSecretRef.Name) != 0 {
 		certSecret := &corev1.Secret{}
 		if err := r.Client.Get(context.TODO(),
