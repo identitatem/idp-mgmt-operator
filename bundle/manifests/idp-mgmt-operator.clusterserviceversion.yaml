@@ -405,7 +405,7 @@ spec:
                         value: quay.io/identitatem/dex-operator:0.1.0-rc1
                       - name: RELATED_IMAGE_DEX_SERVER
                         value: quay.io/dexidp/dex:v2.28.1
-                    image: idp-mgmt-operator:make-bundle
+                    image: registry-proxy.engineering.redhat.com/rh-osbs/identity-config-idp-mgmt-operator-rhel8:v0.1.0
                     imagePullPolicy: Always
                     livenessProbe:
                       httpGet:
@@ -479,7 +479,7 @@ spec:
                       - --tls-cert-file=/serving-cert/tls.crt
                       - --tls-private-key-file=/serving-cert/tls.key
                       - -v 5
-                    image: idp-mgmt-operator:make-bundle
+                    image: registry-proxy.engineering.redhat.com/rh-osbs/identity-config-idp-mgmt-operator-rhel8:v0.1.0
                     imagePullPolicy: Always
                     name: webhook
                     resources: {}
