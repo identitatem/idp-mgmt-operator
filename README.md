@@ -311,7 +311,7 @@ date -u "+0.0.0-%Y%m%d-%H-%M-%S"
 1. Run `go mod tidy`.  The `go.mod` entry will be updated to the correct value.
 1. Update https://github.com/identitatem/idp-mgmt-operator/blob/main/config/manager/manager.yaml
 so RELATED_IMAGE_DEX_OPERATOR points to the new dex-operator image in quay.
-1. Run `make bundle` to update https://github.com/identitatem/idp-mgmt-operator/blob/main/bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
+1. Run `make bundle` to update https://github.com/identitatem/idp-mgmt-operator/blob/main/bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml.  **NOTE**: DO NOT CHANGE LINES WITH `image: quay.io/identitatem/idp-mgmt-operator:latest` OR IT WILL CAUSE DOWNSTREAM ISSUES.  Revert changes to those lines.
 1. Test the changes using `make test` then `make deploy` and apply and AuthRealm to a managed cluster and be sure it works.
 1. Commit the PR changes and get them reviewed and merged.
 1. Run the following command to generate the value we will use as part of the release and tag (OR possibly use the same tag dex-operator used)
