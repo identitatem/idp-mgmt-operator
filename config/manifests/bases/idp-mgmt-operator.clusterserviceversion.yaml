@@ -32,6 +32,8 @@ spec:
   links:
   - name: identity configuration management for Kubernetes
     url: https://github.com/identitatem
+  - name: Documentation
+    url: https://identitatem.github.io/idp-mgmt-docs/
   maintainers:
   - email: acm-contact@redhat.com
     name: Red Hat
