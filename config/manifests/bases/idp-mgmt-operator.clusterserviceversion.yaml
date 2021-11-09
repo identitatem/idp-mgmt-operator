@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: idp-mgmt-operator.v0.0.0
+  name: idp-mgmt-operator.v0.1.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
