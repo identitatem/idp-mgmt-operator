@@ -308,7 +308,7 @@ We have a GitHub action defined to generate a tagged bundle and catalog image wh
 ```bash
 date -u "+0.0.0-%Y%m%d-%H-%M-%S"
 ```
-  If you are building a release candidate, the format should be **0.1.0-rc#**.  (Where **#** is the release candidate number. Do not use UPPERCASE characters!)
+  If you are building a release candidate, the format should be **0.1.0-rc#**.  (Where **#** is the release candidate number. Do not use UPPERCASE characters!)  If you are building the final release, the format should be **0.1.0**.
 
 1. Go to dex-operator github page and select **Releases** (https://github.com/identitatem/dex-operator/releases)
 1. Select **Draft a new release**
@@ -336,7 +336,7 @@ export IMG=quay.io/identitatem/idp-mgmt-operator:latest
 ```bash
 date -u "+0.0.0-%Y%m%d-%H-%M-%S"
 ```
- If you are building a release candidate, the format should be **0.1.0-rc#**.  (Where **#** is the release candidate number. Do not use UPPERCASE characters!)
+ If you are building a release candidate, the format should be **0.1.0-rc#**.  (Where **#** is the release candidate number. Do not use UPPERCASE characters!)  If you are building the final release, the format should be **0.1.0**.
 
 1. Go to idp-mgmt-operator github page and select **Releases** (https://github.com/identitatem/idp-mgmt-operator/releases)
 1. Select **Draft a new release**
