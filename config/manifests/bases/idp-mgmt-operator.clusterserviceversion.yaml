@@ -29,9 +29,9 @@ spec:
     type: AllNamespaces
   keywords:
   - idp-mgmt-operator
+  - authrealm
+  - oauth
   links:
-  - name: identity configuration management for Kubernetes
-    url: https://github.com/identitatem
   - name: Documentation
     url: https://identitatem.github.io/idp-mgmt-docs/
   maintainers:
@@ -41,4 +41,4 @@ spec:
   provider:
     name: Red Hat
     url: https://github.com/identitatem
-  version: 0.0.0
+  version: 0.1.0
