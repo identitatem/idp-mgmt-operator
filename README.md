@@ -280,7 +280,21 @@ make undeploy
 You can build and push an operator bundle and installable catalog for this operator, which will allow you to apply a CatalogSource to your cluster and install via the OperatorHub UI or via an Operator Subscription object.  
 
 To build and publish a bundle and catalog:
-1. [IMPORTANT] Use your own registry.  If you want to use your own registry, create to repos in your quay.io org (your user org) named `idp-mgmt-operator-bundle` and `idp-mgmt-operator-catalog` and, if so, `export IMAGE_TAG_BASE=quay.io/\<your-user\>/idp-mgmt-operator`.  **If you don’t do this, you need push permissions to identitatem - and you’ll push straight to the source identitatem org.**
+1. [IMPORTANT] Use your own registry!  Do the following to enable you to use your own registry and create repos in your quay.io org (your user org) named `idp-mgmt-operator-bundle` and `idp-mgmt-operator-catalog` and, if so,
+```bash
+export IMAGE_TAG_BASE=quay.io/\<your-user\>/idp-mgmt-operator
+```
+  **If you don’t do this, you need push permissions to identitatem - and you’ll push straight to the source identitatem org. - Which only the build system should do!**
+  
+  **You might need to make these personal repos public to allow the images to be downloaded by OLM**
+1. Set the **VERSION** as a timestamp.  For example:
+```bash
+export VERSION=`date -u "+0.0.0-%Y%m%d-%H-%M-%S"`
+```
+1. If you want to use a specific idp-mgmt-operator image, set the **IMG** environment variable. For example:
+```bash
+export IMG=quay.io/identitatem/idp-mgmt-operator@sha256:f1303674fc463cbc3834d3dd6c9d023cc991144a3e170c496dac5d2a44459d5c
+```
 1. `export` DOCKER_USER and DOCKER_PASS equal to a docker user and password that will allow you to push to the quay repositories outlined in step 1.
 1. run `make publish` - this should acquire any dependencies and push to quay!
 
@@ -311,7 +325,7 @@ date -u "+0.0.0-%Y%m%d-%H-%M-%S"
 1. Run `go mod tidy`.  The `go.mod` entry will be updated to the correct value.
 1. Update https://github.com/identitatem/idp-mgmt-operator/blob/main/config/manager/manager.yaml
 so RELATED_IMAGE_DEX_OPERATOR points to the new dex-operator image in quay.
-1. Run `make bundle` to update https://github.com/identitatem/idp-mgmt-operator/blob/main/bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
+1. Run `make bundle` to update https://github.com/identitatem/idp-mgmt-operator/blob/main/bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml.  **NOTE**: DO NOT CHANGE LINES WITH `image: quay.io/identitatem/idp-mgmt-operator:latest` OR IT WILL CAUSE DOWNSTREAM ISSUES.  Revert changes to those lines.
 1. Test the changes using `make test` then `make deploy` and apply and AuthRealm to a managed cluster and be sure it works.
 1. Commit the PR changes and get them reviewed and merged.
 1. Run the following command to generate the value we will use as part of the release and tag (OR possibly use the same tag dex-operator used)
