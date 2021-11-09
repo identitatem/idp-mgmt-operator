@@ -297,6 +297,7 @@ export IMG=quay.io/identitatem/idp-mgmt-operator@sha256:f1303674fc463cbc3834d3dd
 ```
 1. `export` DOCKER_USER and DOCKER_PASS equal to a docker user and password that will allow you to push to the quay repositories outlined in step 1.
 1. run `make publish` - this should acquire any dependencies and push to quay!
+1. To test, run `make deploy-catalog`.  This will create a catalogsource on your hub cluster and you can install the test catalog from OperatorHub.
 
 # Tagging and Generating a Release
 
