@@ -406,7 +406,7 @@ spec:
                         value: quay.io/identitatem/dex-operator:0.1.0
                       - name: RELATED_IMAGE_DEX_SERVER
                         value: quay.io/dexidp/dex:v2.28.1
-                    image: quay.io/identitatem/idp-mgmt-operator@sha256:f1303674fc463cbc3834d3dd6c9d023cc991144a3e170c496dac5d2a44459d5c
+                    image: quay.io/identitatem/idp-mgmt-operator:latest
                     imagePullPolicy: Always
                     livenessProbe:
                       httpGet:
@@ -480,7 +480,7 @@ spec:
                       - --tls-cert-file=/serving-cert/tls.crt
                       - --tls-private-key-file=/serving-cert/tls.key
                       - -v 5
-                    image: quay.io/identitatem/idp-mgmt-operator@sha256:f1303674fc463cbc3834d3dd6c9d023cc991144a3e170c496dac5d2a44459d5c
+                    image: quay.io/identitatem/idp-mgmt-operator:latest
                     imagePullPolicy: Always
                     name: webhook
                     resources: {}
