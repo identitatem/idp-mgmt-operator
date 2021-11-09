@@ -4,6 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
+    categories: Integration & Delivery
   name: idp-mgmt-operator.v0.1.0
   namespace: placeholder
 spec:

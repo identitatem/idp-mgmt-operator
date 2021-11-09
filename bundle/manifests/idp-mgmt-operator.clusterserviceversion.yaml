@@ -4,6 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
+    categories: Integration & Delivery
     operators.operatorframework.io/builder: operator-sdk-v1.12.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
   name: idp-mgmt-operator.v0.0.0-20211109-14-03-18
@@ -402,7 +403,7 @@ spec:
                       - -v 5
                     env:
                       - name: RELATED_IMAGE_DEX_OPERATOR
-                        value: quay.io/identitatem/dex-operator:0.1.0-rc1
+                        value: quay.io/identitatem/dex-operator:0.1.0
                       - name: RELATED_IMAGE_DEX_SERVER
                         value: quay.io/dexidp/dex:v2.28.1
                     image: quay.io/identitatem/idp-mgmt-operator@sha256:f1303674fc463cbc3834d3dd6c9d023cc991144a3e170c496dac5d2a44459d5c
