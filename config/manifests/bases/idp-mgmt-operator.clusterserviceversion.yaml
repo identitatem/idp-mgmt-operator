@@ -5,6 +5,7 @@ metadata:
     alm-examples: '[]'
     capabilities: Basic Install
     categories: Integration & Delivery
+    operatorframework.io/suggested-namespace: idp-mgmt-config
   name: idp-mgmt-operator.v0.1.1
   namespace: placeholder
 spec:
