@@ -5,6 +5,7 @@ metadata:
     alm-examples: '[]'
     capabilities: Basic Install
     categories: Integration & Delivery
+    operatorframework.io/suggested-namespace: idp-mgmt-config
     operators.operatorframework.io/builder: operator-sdk-v1.12.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
   name: idp-mgmt-operator.v0.1.1
