@@ -22,24 +22,24 @@ export FUNCT_TEST_COVERAGE="${CURR_FOLDER_PATH}/../test/functional/coverage"
 
 if ! which kubectl > /dev/null; then
     echo "installing kubectl"
-    curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+    curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.21.1/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
 fi
 if ! which kind > /dev/null; then
     echo "installing kind"
-    curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-$(uname)-amd64
+    curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.11.1/kind-$(uname)-amd64
     chmod +x ./kind
     sudo mv ./kind /usr/local/bin/kind
 fi
 if ! which ginkgo > /dev/null; then
     echo "Installing ginkgo ..."
-    pushd $(mktemp -d) 
+    pushd $(mktemp -d)
     GOSUMDB=off go get github.com/onsi/ginkgo/ginkgo
     GOSUMDB=off go get github.com/onsi/gomega/...
     popd
 fi
 if ! which gocovmerge > /dev/null; then
   echo "Installing gocovmerge..."
-  pushd $(mktemp -d) 
+  pushd $(mktemp -d)
   GOSUMDB=off go get -u github.com/wadey/gocovmerge
   popd
 fi
@@ -114,4 +114,3 @@ else
 
   go tool cover -html "${FUNCT_TEST_COVERAGE}/cover-functional.out" -o ${PROJECT_DIR}/test/functional/coverage/cover-functional.html
 fi
-
