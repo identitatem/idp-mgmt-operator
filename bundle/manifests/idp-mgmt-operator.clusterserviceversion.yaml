@@ -7,7 +7,7 @@ metadata:
     categories: Integration & Delivery
     operators.operatorframework.io/builder: operator-sdk-v1.12.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
-  name: idp-mgmt-operator.v0.0.0-20211109-18-38-01
+  name: idp-mgmt-operator.v0.1.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -525,7 +525,8 @@ spec:
   provider:
     name: Red Hat
     url: https://github.com/identitatem
-  version: 0.0.0-20211109-18-38-01
+  replaces: idp-mgmt-operator.v0.1.0
+  version: 0.1.1
   webhookdefinitions:
     - admissionReviewVersions:
         - v1beta1
