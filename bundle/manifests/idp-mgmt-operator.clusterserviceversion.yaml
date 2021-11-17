@@ -404,9 +404,9 @@ spec:
                       - -v 5
                     env:
                       - name: RELATED_IMAGE_DEX_OPERATOR
-                        value: quay.io/identitatem/dex-operator:0.1.0
+                        value: quay.io/identitatem/dex-operator:0.1.1-20211117-19-45-29
                       - name: RELATED_IMAGE_DEX_SERVER
-                        value: quay.io/dexidp/dex:v2.28.1
+                        value: ghcr.io/dexidp/dex:v2.30.2
                     image: quay.io/identitatem/idp-mgmt-operator:latest
                     imagePullPolicy: Always
                     livenessProbe:
