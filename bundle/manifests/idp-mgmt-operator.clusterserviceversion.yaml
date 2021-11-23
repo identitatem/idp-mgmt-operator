@@ -9,7 +9,7 @@ metadata:
     operators.openshift.io/valid-subscription: '["Red Hat Advanced Cluster Management for Kubernetes", "multicluster engine for Kubernetes"]'
     operators.operatorframework.io/builder: operator-sdk-v1.12.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
-  name: idp-mgmt-operator.v0.0.0-20211122-23-34-00
+  name: idp-mgmt-operator.v0.1.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -533,7 +533,7 @@ spec:
     name: Red Hat
     url: https://github.com/identitatem
   replaces: idp-mgmt-operator.v0.1.0
-  version: 0.0.0-20211122-23-34-00
+  version: 0.1.1
   webhookdefinitions:
     - admissionReviewVersions:
         - v1beta1
