@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	dexoperatorv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
@@ -368,6 +369,12 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			c.GitHub.Orgs = make([]dexoperatorv1alpha1.Org, len(idp.GitHub.Organizations))
 			for i, org := range idp.GitHub.Organizations {
 				c.GitHub.Orgs[i].Name = org
+				for _, team := range idp.GitHub.Teams {
+					s := strings.Split(team, "/")
+					if s[0] == org {
+						c.GitHub.Orgs[i].Teams = append(c.GitHub.Orgs[i].Teams, team)
+					}
+				}
 			}
 			r.Log.Info("generated connector", "c.GitHub", c.GitHub)
 			cs = append(cs, *c)
