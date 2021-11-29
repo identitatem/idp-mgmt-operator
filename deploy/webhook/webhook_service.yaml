@@ -1,4 +1,6 @@
 
+# Copyright Red Hat
+
 apiVersion: v1
 kind: Service
 metadata:
