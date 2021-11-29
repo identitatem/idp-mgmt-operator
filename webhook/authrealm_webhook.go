@@ -93,11 +93,11 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 				Message: "routeSubDomain is required",
 			}
 			return status
-		case len(authrealm.Spec.RouteSubDomain) > 63:
+		case len(authrealm.Spec.RouteSubDomain) > 54:
 			status.Allowed = false
 			status.Result = &metav1.Status{
 				Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
-				Message: "routeSubDomain is too long (max 63 characters)",
+				Message: "routeSubDomain is too long (max 54 characters)",
 			}
 			return status
 		case !domainRegex.MatchString(authrealm.Spec.RouteSubDomain):
