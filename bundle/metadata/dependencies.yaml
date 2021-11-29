@@ -1,0 +1,6 @@
+dependencies:
+  - type: olm.gvk
+    value:
+      group: apps.open-cluster-management.io
+      kind: PlacementRule
+      version: v1
