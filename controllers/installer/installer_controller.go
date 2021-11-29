@@ -295,49 +295,53 @@ func (r *IDPConfigReconciler) processIDPConfigDeletion(idpConfig *corev1.ConfigM
 	//Delete manager deployment
 	r.Log.Info("Delete deployment", "name", "idp-mgmt-operator-manager", "namespace", podNamespace)
 	idpMgmtOperatorDeployment := &appsv1.Deployment{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-operator-manager", Namespace: podNamespace}, idpMgmtOperatorDeployment); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
+	err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-operator-manager", Namespace: podNamespace}, idpMgmtOperatorDeployment)
+	switch {
+	case errors.IsNotFound(err):
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), idpMgmtOperatorDeployment, &client.DeleteOptions{}); err != nil {
+			return giterrors.WithStack(err)
 		}
-		return giterrors.WithStack(err)
-	}
-	if err := r.Client.Delete(context.TODO(), idpMgmtOperatorDeployment, &client.DeleteOptions{}); err != nil {
+	default:
 		return giterrors.WithStack(err)
 	}
 
 	r.Log.Info("Delete roleBinding", "name", "idp-mgmt-operator-leader-election-rolebinding", "namespace", podNamespace)
 	leaderElectionRoleBinding := &rbacv1.RoleBinding{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-operator-leader-election-rolebinding", Namespace: podNamespace}, leaderElectionRoleBinding); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
+	err = r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-operator-leader-election-rolebinding", Namespace: podNamespace}, leaderElectionRoleBinding)
+	switch {
+	case errors.IsNotFound(err):
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), leaderElectionRoleBinding, &client.DeleteOptions{}); err != nil {
+			return giterrors.WithStack(err)
 		}
-		return giterrors.WithStack(err)
-	}
-	if err := r.Client.Delete(context.TODO(), leaderElectionRoleBinding, &client.DeleteOptions{}); err != nil {
+	default:
 		return giterrors.WithStack(err)
 	}
 
 	r.Log.Info("Delete roleBinding", "name", "idp-mgmt-operator-manager-rolebinding", "namespace", podNamespace)
 	roleBinding := &rbacv1.RoleBinding{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-operator-manager-rolebinding", Namespace: podNamespace}, roleBinding); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
+	err = r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-operator-manager-rolebinding", Namespace: podNamespace}, roleBinding)
+	switch {
+	case errors.IsNotFound(err):
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), roleBinding, &client.DeleteOptions{}); err != nil {
+			return giterrors.WithStack(err)
 		}
-		return giterrors.WithStack(err)
-	}
-	if err := r.Client.Delete(context.TODO(), roleBinding, &client.DeleteOptions{}); err != nil {
+	default:
 		return giterrors.WithStack(err)
 	}
 
 	r.Log.Info("Delete serviceAccount", "name", "idp-mgmt-operator-manager", "namespace", podNamespace)
 	serviceAccount := &corev1.ServiceAccount{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-operator-manager", Namespace: podNamespace}, serviceAccount); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
+	err = r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-operator-manager", Namespace: podNamespace}, serviceAccount)
+	switch {
+	case errors.IsNotFound(err):
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), serviceAccount, &client.DeleteOptions{}); err != nil {
+			return giterrors.WithStack(err)
 		}
-		return giterrors.WithStack(err)
-	}
-	if err := r.Client.Delete(context.TODO(), serviceAccount, &client.DeleteOptions{}); err != nil {
+	default:
 		return giterrors.WithStack(err)
 	}
 
@@ -354,85 +358,92 @@ func (r *IDPConfigReconciler) processIDPConfigDeletion(idpConfig *corev1.ConfigM
 	//Delete webhook
 	r.Log.Info("Delete Deployment", "name", "idp-mgmt-webhook-service", "namespace", podNamespace)
 	webhookDeployment := &appsv1.Deployment{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-webhook-service", Namespace: podNamespace}, webhookDeployment); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
+	err = r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-webhook-service", Namespace: podNamespace}, webhookDeployment)
+	switch {
+	case errors.IsNotFound(err):
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), webhookDeployment, &client.DeleteOptions{}); err != nil {
+			return giterrors.WithStack(err)
 		}
-		return giterrors.WithStack(err)
-	}
-	if err := r.Client.Delete(context.TODO(), webhookDeployment, &client.DeleteOptions{}); err != nil {
+	default:
 		return giterrors.WithStack(err)
 	}
 
 	r.Log.Info("Delete APIService", "name", "v1alpha1.admission.identityconfig.identitatem.io")
 	apiService := &apiregistrationv1.APIService{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "v1alpha1.admission.identityconfig.identitatem.io"}, apiService); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
+	err = r.Client.Get(context.TODO(), client.ObjectKey{Name: "v1alpha1.admission.identityconfig.identitatem.io"}, apiService)
+	switch {
+	case errors.IsNotFound(err):
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), apiService, &client.DeleteOptions{}); err != nil {
+			return giterrors.WithStack(err)
 		}
-		return giterrors.WithStack(err)
-	}
-	if err := r.Client.Delete(context.TODO(), apiService, &client.DeleteOptions{}); err != nil {
+	default:
 		return giterrors.WithStack(err)
 	}
 
 	r.Log.Info("Delete ClusterRoleBinding", "name", "idp-mgmt-webhook-service")
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-webhook-service"}, clusterRoleBinding); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
+	err = r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-webhook-service"}, clusterRoleBinding)
+	switch {
+	case errors.IsNotFound(err):
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), clusterRoleBinding, &client.DeleteOptions{}); err != nil {
+			return giterrors.WithStack(err)
 		}
-		return giterrors.WithStack(err)
-	}
-	if err := r.Client.Delete(context.TODO(), clusterRoleBinding, &client.DeleteOptions{}); err != nil {
+	default:
 		return giterrors.WithStack(err)
 	}
 
 	r.Log.Info("Delete ClusterRole", "name", "idp-mgmt-webhook-service")
 	clusterRole := &rbacv1.ClusterRole{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-webhook-service"}, clusterRole); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
+	err = r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-webhook-service"}, clusterRole)
+	switch {
+	case errors.IsNotFound(err):
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), clusterRole, &client.DeleteOptions{}); err != nil {
+			return giterrors.WithStack(err)
 		}
-		return giterrors.WithStack(err)
-	}
-	if err := r.Client.Delete(context.TODO(), clusterRole, &client.DeleteOptions{}); err != nil {
+	default:
 		return giterrors.WithStack(err)
 	}
 
 	r.Log.Info("Delete serviceAccount", "name", "idp-mgmt-webhook-service", "namespace", podNamespace)
 	serviceAccount = &corev1.ServiceAccount{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-webhook-service", Namespace: podNamespace}, serviceAccount); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
+	err = r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-webhook-service", Namespace: podNamespace}, serviceAccount)
+	switch {
+	case errors.IsNotFound(err):
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), serviceAccount, &client.DeleteOptions{}); err != nil {
+			return giterrors.WithStack(err)
 		}
-		return giterrors.WithStack(err)
-	}
-	if err := r.Client.Delete(context.TODO(), serviceAccount, &client.DeleteOptions{}); err != nil {
+	default:
 		return giterrors.WithStack(err)
 	}
 
 	r.Log.Info("Delete Service", "name", "idp-mgmt-webhook-service", "namespace", podNamespace)
 	service := &corev1.Service{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-webhook-service", Namespace: podNamespace}, service); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
+	err = r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-webhook-service", Namespace: podNamespace}, service)
+	switch {
+	case errors.IsNotFound(err):
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), service, &client.DeleteOptions{}); err != nil {
+			return giterrors.WithStack(err)
 		}
-		return giterrors.WithStack(err)
-	}
-	if err := r.Client.Delete(context.TODO(), service, &client.DeleteOptions{}); err != nil {
+	default:
 		return giterrors.WithStack(err)
 	}
 
 	r.Log.Info("Delete ValidatingWebhookConfiguration", "name", "idp-mgmt-webhook-service", "namespace", podNamespace)
 	validationWebhook := &admissionregistration.ValidatingWebhookConfiguration{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-webhook-service", Namespace: podNamespace}, validationWebhook); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
+	err = r.Client.Get(context.TODO(), client.ObjectKey{Name: "idp-mgmt-webhook-service", Namespace: podNamespace}, validationWebhook)
+	switch {
+	case errors.IsNotFound(err):
+	case err == nil:
+		if err := r.Client.Delete(context.TODO(), validationWebhook, &client.DeleteOptions{}); err != nil {
+			return giterrors.WithStack(err)
 		}
-		return giterrors.WithStack(err)
-	}
-	if err := r.Client.Delete(context.TODO(), validationWebhook, &client.DeleteOptions{}); err != nil {
+	default:
 		return giterrors.WithStack(err)
 	}
 
