@@ -19,6 +19,8 @@ export DOCKER_IMAGE_AND_TAG=${1}
 
 export FUNCT_TEST_TMPDIR="${CURR_FOLDER_PATH}/../test/functional/tmp"
 export FUNCT_TEST_COVERAGE="${CURR_FOLDER_PATH}/../test/functional/coverage"
+export FUNCT_TEST_OPERATOR_COVERAGE="${CURR_FOLDER_PATH}/../test/functional/coverage/operator"
+export FUNCT_TEST_INSTALLER_COVERAGE="${CURR_FOLDER_PATH}/../test/functional/coverage/installer"
 
 if ! which kubectl > /dev/null; then
     echo "installing kubectl"
@@ -50,9 +52,13 @@ mkdir -p "$FUNCT_TEST_TMPDIR"
 mkdir -p "$FUNCT_TEST_TMPDIR/kind-config"
 mkdir -p "$FUNCT_TEST_TMPDIR/CR"
 
-echo "setting up test coverage folder"
+echo "setting up test coverage folders"
 [ -d "$FUNCT_TEST_COVERAGE" ] && rm -r "$FUNCT_TEST_COVERAGE"
 mkdir -p "${FUNCT_TEST_COVERAGE}"
+[ -d "$FUNCT_TEST_OPERATOR_COVERAGE" ] && rm -r "$FUNCT_TEST_OPERATOR_COVERAGE"
+mkdir -p "${FUNCT_TEST_OPERATOR_COVERAGE}"
+[ -d "$FUNCT_TEST_INSTALLER_COVERAGE" ] && rm -r "$FUNCT_TEST_INSTALLER_COVERAGE"
+mkdir -p "${FUNCT_TEST_INSTALLER_COVERAGE}"
 
 echo "generating kind configfile"
 cat << EOF > "${FUNCT_TEST_TMPDIR}/kind-config/kind-config.yaml"
@@ -67,8 +73,10 @@ nodes:
       kubeletExtraArgs:
         system-reserved: memory=2Gi
   extraMounts:
-  - hostPath: "${FUNCT_TEST_COVERAGE}"
-    containerPath: /tmp/coverage
+  - hostPath: "${FUNCT_TEST_OPERATOR_COVERAGE}"
+    containerPath: /tmp/coverage-operator
+  - hostPath: "${FUNCT_TEST_INSTALLER_COVERAGE}"
+    containerPath: /tmp/coverage-installer
 EOF
 
 echo "creating hub cluster"
@@ -89,7 +97,7 @@ echo "Wait deployment stabilize"
 sleep 15
 echo "Launch functional-test"
 make functional-test
-# exit 1
+exit 1
 echo "Wait 15 sec to let coverage to flush"
 sleep 15
 
@@ -101,14 +109,28 @@ sleep 10
 
 make functional-test-full-clean
 
-if [ `find $FUNCT_TEST_COVERAGE -prune -empty 2>/dev/null` ]; then
+if [ `find $FUNCT_TEST_OPERATOR_COVERAGE -prune -empty 2>/dev/null` ]; then
+  echo "no operator coverage files found. skipping"
+else
+  gocovmerge "${FUNCT_TEST_OPERATOR_COVERAGE}/"* >> "${FUNCT_TEST_COVERAGE}/cover-functional.out"
+fi
+
+if [ `find $FUNCT_TEST_INSTALLER_COVERAGE -prune -empty 2>/dev/null` ]; then
+  echo "no installer coverage files found. skipping"
+else
+  gocovmerge "${FUNCT_TEST_INSTALLER_COVERAGE}/"* >> "${FUNCT_TEST_COVERAGE}/cover-functional.out"
+fi
+
+if [ `find $FUNCT_TEST_OPERATOR_COVERAGE -prune -empty 2>/dev/null` ] &&
+   [ `find $FUNCT_TEST_INSTALLER_COVERAGE -prune -empty 2>/dev/null` ]; then
   echo "no coverage files found. skipping"
 else
+
   echo "merging coverage files"
 
-  gocovmerge "${FUNCT_TEST_COVERAGE}/"* >> "${FUNCT_TEST_COVERAGE}/cover-functional.out"
   COVERAGE=$(go tool cover -func="${FUNCT_TEST_COVERAGE}/cover-functional.out" | grep "total:" | awk '{ print $3 }' | sed 's/[][()><%]/ /g')
   echo "-------------------------------------------------------------------------"
+  echo "THIS INACCURATE AND NEED TO BE FIXED LATER"
   echo "TOTAL COVERAGE IS ${COVERAGE}%"
   echo "-------------------------------------------------------------------------"
 

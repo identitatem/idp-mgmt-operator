@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: idp-mgmt-operator-manager
+  namespace: {{ .Namespace }}
+  labels:
+    control-plane: idp-mgmt-operator-manager
+spec:
+  selector:
+    matchLabels:
+      control-plane: idp-mgmt-operator-manager
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: idp-mgmt-operator-manager
+        idp-antiaffinity-selector: idp-mgmt-operator-controller
+    spec:
+      containers:
+        - args:
+            - manager
+          env:
+            - name: RELATED_IMAGE_DEX_OPERATOR
+              value: {{ .ImageDexOperator }}
+            - name: RELATED_IMAGE_DEX_SERVER
+              value: {{ .ImageDexServer }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          image: {{ .Image }}
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          name: manager
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+          - mountPath: /tmp/coverage-operator
+            name: coverage-dir  
+          resources:
+            limits:
+              cpu: 300m
+              memory: 500Mi
+            requests:
+              cpu: 50m
+              memory: 150Mi
+      serviceAccountName: idp-mgmt-operator-manager
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: coverage-dir
+          hostPath:
+            # directory location on host
+            path: /tmp/coverage-operator
+            # this field is optional
+            type: Directory

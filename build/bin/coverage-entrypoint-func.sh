@@ -145,6 +145,8 @@ func_trap() {
     pid="$2"
     fileName="$3"
     filePath="$4"
+    # deployment="$5"
+    # namespace="$6"
     awsAccessKeyID=$AWS_ACCESS_KEY_ID
     awsSecretAccessKey=$AWS_SECRET_ACCESS_KEY
     awsBucketName=$AWS_BUCKET_NAME
@@ -155,10 +157,13 @@ func_trap() {
     echo "AWS_BUCKET_FOLDER="$awsBucketFolder
     echo "AWS_REGION="$awsRegion
 
+    # echo "Wait finalizers to be removed from pod"
+    # wait_finalizers $deployment $namespace
     #Generate the coverage data
     echo "Save coverage data... "$filePath
     kill -$trap $pid
     wait_data $filePath
+    
     cat $filePath
     if [ -n "$awsBucketName" ]; then
        #Upload the coverage data
@@ -172,12 +177,31 @@ func_trap() {
 
 # This function wait if the coverage data are posted in the POD.
 wait_data() {
-   n="10"
+   n="25"
     while [ $n != 0 ]; do
         if [ -f $1 ]; then
             break
         fi
         echo "Coverage data not posted yet..."$1
+        sleep 5
+        n=$[$n-1]
+    done
+}
+
+wait_finalizers() {
+   n="10"
+   pod=$(kubectl get pods -n $2 | grep $1 | cut -d ' ' -f 1)
+   kubectl get pods -n $2
+   echo "pod="$pod
+    while [ $n != 0 ]; do
+        finalizers=$(kubectl get pods -n $2 $pod -o jsonpath='{ .metadata.finalizers }')
+        kubectl get pods -n $2 $pod -o jsonpath='{ .metadata.finalizers }'
+        echo "finalizers="$finalizers
+        if [ -z $finalizers ]; then
+            echo "No finalizers left..."
+            break
+        fi
+        echo "Finalizers still present... "$finalizers
         sleep 5
         n=$[$n-1]
     done

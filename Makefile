@@ -216,15 +216,17 @@ docker-login:
 .PHONY: bundle
 ## Generate bundle manifests and metadata, patch the webhook deployment name, then validate generated files [NOTE: validate bundle is skipped for now].
 bundle: manifests kustomize yq/install operatorsdk
+	echo IMG=${IMG}
 	${OPERATOR_SDK} generate kustomize manifests --interactive=false -q
-	cp -R config /tmp
-	cd /tmp/config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	${YQ} e 'del(.resources[2])'  -i /tmp/config/webhook/kustomization.yaml
-	kustomize build /tmp/config/manifests | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
-	@WEBHOOK_DEPLOYMENT_NAME=`${YQ} e '.spec.template.spec.serviceAccountName' /tmp/config/webhook/webhook.yaml` \
+	$(eval TMP_DIR := $(shell mktemp -d))
+	echo ${TMP_DIR}
+	cp -R config ${TMP_DIR}
+	cd ${TMP_DIR}/config/installer && $(KUSTOMIZE) edit set image controller=$(IMG)
+	${YQ} e 'del(.resources[2])'  -i ${TMP_DIR}/config/webhook/kustomization.yaml
+	kustomize build  ${TMP_DIR}/config/default | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
+	@WEBHOOK_DEPLOYMENT_NAME=`${YQ} e '.spec.template.spec.serviceAccountName' ${TMP_DIR}/config/webhook/webhook.yaml` \
 		${YQ} e '.spec.webhookdefinitions[0].deploymentName = env(WEBHOOK_DEPLOYMENT_NAME)' -i bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
 	@${YQ} e '.spec.install.spec.deployments[].spec.template.spec.containers[].image = env(IMG)' -i bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
-
 
 .PHONY: bundle-build
 ## Build the bundle image.
@@ -307,18 +309,18 @@ uninstall: manifests
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
-	cp config/manager/kustomization.yaml config/manager/kustomization.yaml.tmp
-	cd config/manager && kustomize edit set image controller=${IMG}
+	cp config/installer/kustomization.yaml config/installer/kustomization.yaml.tmp
+	cd config/installer && kustomize edit set image controller=${IMG}
 	kustomize build config/default | kubectl apply -f -
-	mv config/manager/kustomization.yaml.tmp config/manager/kustomization.yaml
+	mv config/installer/kustomization.yaml.tmp config/installer/kustomization.yaml
 
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy-coverage: manifests
-	cp config/manager-coverage/kustomization.yaml config/manager-coverage/kustomization.yaml.tmp
-	cd config/manager-coverage && kustomize edit set image controller=${IMG_COVERAGE}
+	cp config/installer-coverage/kustomization.yaml config/installer-coverage/kustomization.yaml.tmp
+	cd config/installer-coverage && kustomize edit set image controller=${IMG_COVERAGE}
 	kustomize build config/default-coverage | kubectl apply -f -
-	mv config/manager-coverage/kustomization.yaml.tmp config/manager-coverage/kustomization.yaml
+	mv config/installer-coverage/kustomization.yaml.tmp config/installer-coverage/kustomization.yaml
 
 
 undeploy:

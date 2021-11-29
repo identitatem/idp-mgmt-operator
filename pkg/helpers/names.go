@@ -18,6 +18,7 @@ const (
 	dexServerName                 string = "dex-server"
 	dexOperatorNamespace          string = "idp-mgmt-dex"
 	dexServerNamespacePrefix      string = "idp-mgmt"
+	idpConfigLabel                       = "auth.identitatem.io/installer-config"
 )
 
 const (
@@ -93,4 +94,8 @@ func StrategyName(authRealm *identitatemv1alpha1.AuthRealm, t identitatemv1alpha
 func PlacementStrategyName(strategy *identitatemv1alpha1.Strategy,
 	authRealm *identitatemv1alpha1.AuthRealm) string {
 	return fmt.Sprintf("%s-%s", authRealm.Spec.PlacementRef.Name, strategy.Spec.Type)
+}
+
+func IDPConfigLabel() string {
+	return idpConfigLabel
 }

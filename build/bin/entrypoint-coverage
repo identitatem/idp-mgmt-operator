@@ -1,5 +1,5 @@
 #!/bin/sh -e
-# set -x
+set -x
 # This is documented here:
 # https://docs.openshift.com/container-platform/3.11/creating_images/guidelines.html#openshift-specific-guidelines
 
@@ -11,11 +11,13 @@ if ! whoami &>/dev/null; then
   fi
 fi
 
-FILENAME=$HOSTNAME-$(basename $OPERATOR)-`date +%s%N`.out
-FILEPATH=/tmp/coverage/$FILENAME
-mkdir -p /tmp/coverage
+SUBCOMMAND=$1
 
-${OPERATOR} -test.run "^TestRunMain$" -test.coverprofile=$FILEPATH $@ & PID=$!
+FILENAME=$HOSTNAME-$(basename $OPERATOR)-`date +%s%N`.out
+FILEPATH=/tmp/coverage-$SUBCOMMAND/$FILENAME
+mkdir -p /tmp/coverage-$SUBCOMMAND
+
+${OPERATOR} -test.run="^TestRunMain$" -test.coverprofile=$FILEPATH $@ & PID=$!
 
 trap_with_arg func_trap 15 $PID $FILENAME $FILEPATH
 

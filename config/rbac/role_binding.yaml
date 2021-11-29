@@ -8,5 +8,5 @@ roleRef:
   name: manager-role
 subjects:
 - kind: ServiceAccount
-  name: idp-mgmt-operator-controller-manager
+  name: idp-mgmt-installer-controller-manager
   namespace: idp-mgmt-config

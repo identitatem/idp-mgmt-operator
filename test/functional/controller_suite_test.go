@@ -5,6 +5,7 @@
 package functional
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -15,6 +16,8 @@ import (
 	"path/filepath"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -53,6 +56,8 @@ var dynamicClient dynamic.Interface
 var authClientSet *idpclientset.Clientset
 
 var cfg *rest.Config
+
+var idpConfig *corev1.ConfigMap
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter)))
@@ -147,6 +152,44 @@ var _ = BeforeSuite(func() {
 		}
 		err := k8sClient.Create(context.TODO(), infraConfig)
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	By("Creating idpconfig", func() {
+		idpConfig = &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "idpconfig",
+				Namespace: "idp-mgmt-config",
+				Labels: map[string]string{
+					"auth.identitatem.io/installer-config": "",
+				},
+			},
+		}
+		_, err := kubeClient.CoreV1().ConfigMaps("idp-mgmt-config").Create(context.TODO(), idpConfig, metav1.CreateOptions{})
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+})
+
+var _ = AfterSuite(func() {
+	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter)))
+	SetDefaultEventuallyTimeout(20 * time.Second)
+	SetDefaultEventuallyPollingInterval(1 * time.Second)
+	By("Deleting idpconfig", func() {
+		err := kubeClient.CoreV1().ConfigMaps("idp-mgmt-config").Delete(context.TODO(), "idpconfig", metav1.DeleteOptions{})
+		Expect(err).NotTo(HaveOccurred())
+	})
+	By("Checking idpconfig deletion", func() {
+		Eventually(func() error {
+			_, err := kubeClient.CoreV1().ConfigMaps("idp-mgmt-config").
+				Get(context.TODO(), "idpconfig", metav1.GetOptions{})
+			if err != nil {
+				if !errors.IsNotFound(err) {
+					return err
+				}
+				return nil
+			}
+			return fmt.Errorf("clientSecret %s in ns %s still exist", "idpconfig", "idp-mgmt-config")
+		}, 60, 1).Should(BeNil())
 	})
 
 })
