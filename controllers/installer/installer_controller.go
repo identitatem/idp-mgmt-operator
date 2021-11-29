@@ -63,7 +63,7 @@ type IDPConfigReconciler struct {
 
 var podName, podNamespace string
 
-// +kubebuilder:rbac:groups="",resources={configmaps,pods,services,serviceaccount},verbs=get;create;update;list;watch;delete
+// +kubebuilder:rbac:groups="",resources={configmaps,pods,services,serviceaccounts},verbs=get;create;update;list;watch;delete
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={roles,rolebindings,clusterrolebindings},verbs=get;create;update;list;watch;delete
 // +kubebuilder:rbac:groups="apps",resources={replicasets,deployments},verbs=get;create;update;list;watch;delete
 
