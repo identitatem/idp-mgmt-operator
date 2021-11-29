@@ -97,7 +97,7 @@ echo "Wait deployment stabilize"
 sleep 15
 echo "Launch functional-test"
 make functional-test
-exit 1
+# exit 1
 echo "Wait 15 sec to let coverage to flush"
 sleep 15
 

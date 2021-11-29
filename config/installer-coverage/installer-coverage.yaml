@@ -32,6 +32,10 @@ spec:
           value: "quay.io/identitatem/dex-operator:latest"
         - name: RELATED_IMAGE_DEX_SERVER
           value: ghcr.io/dexidp/dex:v2.30.2
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
