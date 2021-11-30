@@ -21,19 +21,6 @@ rules:
   - ""
   resources:
   - configmaps
-  - pods
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
   - secrets
   - serviceaccounts
   verbs:
@@ -55,11 +42,31 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - create
   - delete
   - get
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
 - apiGroups:
   - ""
   - events.k8s.io
@@ -104,16 +111,6 @@ rules:
   - apps
   resources:
   - deployments
-  verbs:
-  - create
-  - delete
-  - get
-  - update
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  - replicasets
   verbs:
   - create
   - delete
@@ -271,6 +268,17 @@ rules:
   - delete
   - patch
   - update
+- apiGroups:
+  - identityconfig.identitatem.io
+  resources:
+  - idpconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
 - apiGroups:
   - identityconfig.identitatem.io
   resources:

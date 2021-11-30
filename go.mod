@@ -2,6 +2,8 @@ module github.com/identitatem/idp-mgmt-operator
 
 go 1.16
 
+replace github.com/identitatem/idp-client-api => github.com/itdove/idp-client-api v0.0.0-20211130105643-dc0b20c4ede1
+
 require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v0.4.0
@@ -22,7 +24,7 @@ require (
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/component-base v0.22.0
 	k8s.io/klog/v2 v2.10.0
-	k8s.io/kube-aggregator v0.21.2 // indirect
+	k8s.io/kube-aggregator v0.21.2
 	k8s.io/kubectl v0.21.2
 	open-cluster-management.io/api v0.0.0-20210916013819-2e58cdb938f9
 	open-cluster-management.io/clusteradm v0.1.0-alpha.5

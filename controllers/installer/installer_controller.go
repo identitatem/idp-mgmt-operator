@@ -26,13 +26,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	// "sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	// "sigs.k8s.io/controller-runtime/pkg/source"
@@ -40,9 +38,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 
-	// clusterv1 "open-cluster-management.io/api/cluster/v1"
-	// clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
-
+	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	idpoperatorconfig "github.com/identitatem/idp-client-api/config"
 	"github.com/identitatem/idp-mgmt-operator/deploy"
 	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
@@ -63,12 +59,15 @@ type IDPConfigReconciler struct {
 
 var podName, podNamespace string
 
-// +kubebuilder:rbac:groups="",resources={configmaps,pods,services,serviceaccounts},verbs=get;create;update;list;watch;delete
+// +kubebuilder:rbac:groups="",resources={pods},verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources={services,serviceaccounts},verbs=get;create;update;list;watch;delete
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={roles,rolebindings,clusterrolebindings},verbs=get;create;update;list;watch;delete
-// +kubebuilder:rbac:groups="apps",resources={replicasets,deployments},verbs=get;create;update;list;watch;delete
+// +kubebuilder:rbac:groups="apps",resources={deployments},verbs=get;create;update;list;watch;delete
 
 // +kubebuilder:rbac:groups="admissionregistration.k8s.io",resources={validatingwebhookconfigurations},verbs=get;create;update;list;watch;delete
 // +kubebuilder:rbac:groups="apiregistration.k8s.io",resources={apiservices},verbs=get;create;update;list;watch;delete
+
+// +kubebuilder:rbac:groups="identityconfig.identitatem.io",resources={idpconfigs},verbs=get;create;update;list;watch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -84,7 +83,7 @@ func (r *IDPConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	_ = r.Log.WithValues("namespace", req.NamespacedName, "name", req.Name)
 
 	// your logic here
-	instance := &corev1.ConfigMap{}
+	instance := &identitatemv1alpha1.IDPConfig{}
 
 	if err := r.Client.Get(
 		context.TODO(),
@@ -113,56 +112,8 @@ func (r *IDPConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if err := r.Client.Update(context.TODO(), instance); err != nil {
 			return ctrl.Result{}, err
 		}
-		// r.Log.Info("idpconfig deleled, remove finalizer", "Finalizer:", helpers.AuthrealmFinalizer, "name", pod.Name, "namespace", pod.Namespace)
-		// controllerutil.RemoveFinalizer(pod, helpers.AuthrealmFinalizer)
-		// if err := r.Client.Update(context.TODO(), pod); err != nil {
-		// 	return ctrl.Result{}, err
-		// }
 		return reconcile.Result{}, nil
 	}
-
-	// replicatSetDeleted := false
-	// replicatSet := &appsv1.ReplicaSet{}
-	// err := r.Client.Get(context.TODO(), types.NamespacedName{Name: pod.OwnerReferences[0].Name, Namespace: podNamespace}, replicatSet)
-	// switch {
-	// case errors.IsNotFound(err):
-	// 	replicatSetDeleted = true
-	// case err != nil:
-	// 	return reconcile.Result{}, err
-	// case !replicatSet.DeletionTimestamp.IsZero():
-	// 	r.Log.Info("replicatSet deleting", "Name", replicatSet.Name, "Namespace", replicatSet.Namespace, "deletiontimeStamp", replicatSet.DeletionTimestamp, "deleted", replicatSetDeleted)
-	// 	replicatSetDeleted = true
-	// }
-
-	// deploymentDeleted := false
-	// if !replicatSetDeleted {
-	// 	deployment := &appsv1.Deployment{}
-	// 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: replicatSet.OwnerReferences[0].Name, Namespace: podNamespace}, deployment)
-	// 	switch {
-	// 	case errors.IsNotFound(err):
-	// 		deploymentDeleted = true
-	// 	case err != nil:
-	// 		return reconcile.Result{}, err
-	// 	}
-	// }
-	// r.Log.Info("Deployment", "deleted", deploymentDeleted)
-
-	//Remove the finalizer if somehow the pod has to restart while the deployment is running
-	// if (pod.DeletionTimestamp != nil || replicatSetDeleted) && !deploymentDeleted {
-	// 	r.Log.Info("pod or replicaset deleted but not deployment, remove finalizer", "Finalizer:", helpers.AuthrealmFinalizer, "name", pod.Name, "namespace", pod.Namespace)
-	// 	controllerutil.RemoveFinalizer(pod, helpers.AuthrealmFinalizer)
-	// 	if err := r.Client.Update(context.TODO(), pod); err != nil {
-	// 		return ctrl.Result{}, err
-	// 	}
-	// 	return reconcile.Result{}, nil
-	// }
-
-	// Add finalizer on pod to make sure to process the deletion
-	// controllerutil.AddFinalizer(pod, helpers.AuthrealmFinalizer)
-
-	// if err := r.Client.Update(context.TODO(), pod); err != nil {
-	// 	return ctrl.Result{}, giterrors.WithStack(err)
-	// }
 
 	// Add finalizer on idpconfig to make sure the installer process it.
 	controllerutil.AddFinalizer(instance, helpers.AuthrealmFinalizer)
@@ -178,7 +129,7 @@ func (r *IDPConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	return ctrl.Result{}, nil
 }
 
-func (r *IDPConfigReconciler) processIDPConfigCreation(idpConfig *corev1.ConfigMap) error {
+func (r *IDPConfigReconciler) processIDPConfigCreation(idpConfig *identitatemv1alpha1.IDPConfig) error {
 	r.Log.Info("processIDPConfigCreation", "Name", idpConfig.Name, "Namespace", idpConfig.Namespace)
 	pod := &corev1.Pod{}
 	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: podName, Namespace: podNamespace}, pod); err != nil {
@@ -290,7 +241,7 @@ func (r *IDPConfigReconciler) processIDPConfigCreation(idpConfig *corev1.ConfigM
 	return nil
 }
 
-func (r *IDPConfigReconciler) processIDPConfigDeletion(idpConfig *corev1.ConfigMap) error {
+func (r *IDPConfigReconciler) processIDPConfigDeletion(idpConfig *identitatemv1alpha1.IDPConfig) error {
 	r.Log.Info("processIDPConfigDeletion", "Name", idpConfig.Name, "Namespace", idpConfig.Namespace)
 	//Delete manager deployment
 	r.Log.Info("Delete deployment", "name", "idp-mgmt-operator-manager", "namespace", podNamespace)
@@ -453,6 +404,10 @@ func (r *IDPConfigReconciler) processIDPConfigDeletion(idpConfig *corev1.ConfigM
 // SetupWithManager sets up the controller with the Manager.
 func (r *IDPConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
+	if err := identitatemv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		return giterrors.WithStack(err)
+	}
+
 	if err := apiregistrationv1.AddToScheme(mgr.GetScheme()); err != nil {
 		return giterrors.WithStack(err)
 	}
@@ -467,8 +422,11 @@ func (r *IDPConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	readerIDPMgmtOperator := idpoperatorconfig.GetScenarioResourcesReader()
 
-	files := []string{"crd/bases/identityconfig.identitatem.io_authrealms.yaml",
-		"crd/bases/identityconfig.identitatem.io_strategies.yaml"}
+	files := []string{
+		"crd/bases/identityconfig.identitatem.io_authrealms.yaml",
+		"crd/bases/identityconfig.identitatem.io_idpconfigs.yaml",
+		"crd/bases/identityconfig.identitatem.io_strategies.yaml",
+	}
 	if _, err := applier.ApplyDirectly(readerIDPMgmtOperator, nil, false, "", files...); err != nil {
 		return giterrors.WithStack(err)
 	}
@@ -480,48 +438,6 @@ func (r *IDPConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.ConfigMap{},
-			builder.WithPredicates(predicate.Funcs{
-				CreateFunc: func(e event.CreateEvent) bool {
-					if _, ok := e.Object.GetLabels()[helpers.IDPConfigLabel()]; ok {
-						return ok
-					}
-					return false
-				},
-				UpdateFunc: func(e event.UpdateEvent) bool {
-					if _, ok := e.ObjectNew.GetLabels()[helpers.IDPConfigLabel()]; ok {
-						return ok
-					}
-					return false
-				},
-			})).
-		// Watches(&source.Kind{Type: &corev1.Pod{}},
-		// 	handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
-		// 		var idpConfigList corev1.ConfigMapList
-		// 		_ = mgr.GetClient().List(context.TODO(),
-		// 			&idpConfigList,
-		// 			client.InNamespace(podNamespace),
-		// 			client.MatchingLabels{
-		// 				helpers.IDPConfigLabel(): "",
-		// 			},
-		// 		)
-
-		// 		var requests = []reconcile.Request{}
-
-		// 		for _, idpConfig := range idpConfigList.Items {
-		// 			requests = append(requests, reconcile.Request{
-		// 				NamespacedName: types.NamespacedName{
-		// 					Name:      idpConfig.Name,
-		// 					Namespace: idpConfig.Namespace,
-		// 				},
-		// 			})
-		// 		}
-		// 		return requests // Events from the watched secrets mapped to the DexClient resource
-		// 	}),
-		// 	builder.WithPredicates(predicate.Funcs{
-		// 		UpdateFunc: func(e event.UpdateEvent) bool {
-		// 			return e.ObjectNew.GetName() == podName && e.ObjectNew.GetNamespace() == podNamespace
-		// 		},
-		// 	})).
+		For(&identitatemv1alpha1.IDPConfig{}).
 		Complete(r)
 }

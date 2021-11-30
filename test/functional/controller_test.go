@@ -146,12 +146,12 @@ var _ = Describe("AuthRealm", func() {
 					},
 				},
 			}
-			_, err := authClientSet.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), &authRealm, metav1.CreateOptions{})
+			_, err := identitatemClientSet.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), &authRealm, metav1.CreateOptions{})
 			Expect(err).To(BeNil())
 		})
 		By("Checking the AuthRealm on authrealm creation", func() {
 			Eventually(func() error {
-				_, err := authClientSet.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
+				_, err := identitatemClientSet.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
 				if err != nil {
 					logf.Log.Info("Error while reading authrealm", "Error", err)
 					return err
@@ -172,7 +172,7 @@ var _ = Describe("AuthRealm", func() {
 		})
 		By("Checking the strategy backplane creation", func() {
 			Eventually(func() error {
-				_, err := authClientSet.
+				_, err := identitatemClientSet.
 					IdentityconfigV1alpha1().
 					Strategies(AuthRealmNameSpace).
 					Get(context.TODO(), AuthRealmName+"-"+string(identitatemv1alpha1.BackplaneStrategyType), metav1.GetOptions{})
@@ -200,12 +200,12 @@ var _ = Describe("AuthRealm", func() {
 	//TODO check dexserver when update authrealm
 	It("Delete the authrealm", func() {
 		By("Deleting the authrealm", func() {
-			err := authClientSet.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Delete(context.TODO(), AuthRealmName, metav1.DeleteOptions{})
+			err := identitatemClientSet.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Delete(context.TODO(), AuthRealmName, metav1.DeleteOptions{})
 			Expect(err).To(BeNil())
 		})
 		By("Authrealm is deleted", func() {
 			Eventually(func() error {
-				_, err := authClientSet.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
+				_, err := identitatemClientSet.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
 				if err != nil {
 					if errors.IsNotFound(err) {
 						return nil
@@ -224,7 +224,7 @@ var _ = Describe("AuthRealm", func() {
 		})
 		By("Checking strategy Backplane deleted", func() {
 			Eventually(func() error {
-				_, err := authClientSet.
+				_, err := identitatemClientSet.
 					IdentityconfigV1alpha1().
 					Strategies(AuthRealmNameSpace).
 					Get(context.TODO(), AuthRealmName+"-"+string(identitatemv1alpha1.BackplaneStrategyType), metav1.GetOptions{})

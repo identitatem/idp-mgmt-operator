@@ -16,7 +16,6 @@ import (
 	"path/filepath"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -35,9 +34,7 @@ import (
 	dexv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	dexoperatorconfig "github.com/identitatem/dex-operator/config"
 	identitatemclientset "github.com/identitatem/idp-client-api/api/client/clientset/versioned"
-	idpclientset "github.com/identitatem/idp-client-api/api/client/clientset/versioned"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
-	idpconfig "github.com/identitatem/idp-client-api/config"
 	viewv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/view/v1beta1"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	clientsetcluster "open-cluster-management.io/api/client/cluster/clientset/versioned"
@@ -53,11 +50,10 @@ var k8sClient client.Client
 var kubeClient *kubernetes.Clientset
 var apiExtensionsClient *apiextensionsclient.Clientset
 var dynamicClient dynamic.Interface
-var authClientSet *idpclientset.Clientset
 
 var cfg *rest.Config
 
-var idpConfig *corev1.ConfigMap
+var idpConfig *identitatemv1alpha1.IDPConfig
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter)))
@@ -86,10 +82,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(dynamicClient).ToNot(BeNil())
 
-	authClientSet, err = idpclientset.NewForConfig(cfg)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(authClientSet).ToNot(BeNil())
-
 	identitatemClientSet, err = identitatemclientset.NewForConfig(cfg)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(identitatemClientSet).ToNot(BeNil())
@@ -105,18 +97,19 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	readerIDP := idpconfig.GetScenarioResourcesReader()
+	// readerIDP := idpconfig.GetScenarioResourcesReader()
 	applierBuilder := &clusteradmapply.ApplierBuilder{}
 	applier := applierBuilder.WithClient(kubeClient, apiExtensionsClient, dynamicClient).Build()
 
-	files := []string{
-		"crd/bases/identityconfig.identitatem.io_authrealms.yaml",
-	}
-	_, err = applier.ApplyDirectly(readerIDP, nil, false, "", files...)
-	Expect(err).Should(BeNil())
+	// files := []string{
+	// 	"crd/bases/identityconfig.identitatem.io_authrealms.yaml",
+	// 	"crd/bases/identityconfig.identitatem.io_idpconfigs.yaml",
+	// }
+	// _, err = applier.ApplyDirectly(readerIDP, nil, false, "", files...)
+	// Expect(err).Should(BeNil())
 
 	readerDex := dexoperatorconfig.GetScenarioResourcesReader()
-	files = []string{
+	files := []string{
 		"crd/bases/auth.identitatem.io_dexclients.yaml",
 	}
 	_, err = applier.ApplyDirectly(readerDex, nil, false, "", files...)
@@ -155,16 +148,13 @@ var _ = BeforeSuite(func() {
 	})
 
 	By("Creating idpconfig", func() {
-		idpConfig = &corev1.ConfigMap{
+		idpConfig = &identitatemv1alpha1.IDPConfig{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "idpconfig",
 				Namespace: "idp-mgmt-config",
-				Labels: map[string]string{
-					"auth.identitatem.io/installer-config": "",
-				},
 			},
 		}
-		_, err := kubeClient.CoreV1().ConfigMaps("idp-mgmt-config").Create(context.TODO(), idpConfig, metav1.CreateOptions{})
+		_, err := identitatemClientSet.IdentityconfigV1alpha1().IDPConfigs("idp-mgmt-config").Create(context.TODO(), idpConfig, metav1.CreateOptions{})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -175,7 +165,7 @@ var _ = AfterSuite(func() {
 	SetDefaultEventuallyTimeout(20 * time.Second)
 	SetDefaultEventuallyPollingInterval(1 * time.Second)
 	By("Deleting idpconfig", func() {
-		err := kubeClient.CoreV1().ConfigMaps("idp-mgmt-config").Delete(context.TODO(), "idpconfig", metav1.DeleteOptions{})
+		err := identitatemClientSet.IdentityconfigV1alpha1().IDPConfigs("idp-mgmt-config").Delete(context.TODO(), "idpconfig", metav1.DeleteOptions{})
 		Expect(err).NotTo(HaveOccurred())
 	})
 	By("Checking idpconfig deletion", func() {
