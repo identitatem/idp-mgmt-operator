@@ -369,13 +369,29 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			c.GitHub.Orgs = make([]dexoperatorv1alpha1.Org, len(idp.GitHub.Organizations))
 			for i, org := range idp.GitHub.Organizations {
 				c.GitHub.Orgs[i].Name = org
-				for _, team := range idp.GitHub.Teams {
-					s := strings.Split(team, "/")
-					if s[0] == org {
-						c.GitHub.Orgs[i].Teams = append(c.GitHub.Orgs[i].Teams, team)
+
+			}
+
+			c.GitHub.Orgs = make([]dexoperatorv1alpha1.Org, len(idp.GitHub.Teams))
+			j := 0
+			flag := false
+			for i, team := range idp.GitHub.Teams {
+				s := strings.Split(team, "/")
+				for k := 0; k < i; k++ {
+					if s[0] == c.GitHub.Orgs[k].Name {
+						c.GitHub.Orgs[k].Teams = append(c.GitHub.Orgs[k].Teams, team)
+						flag = true
+						break
 					}
 				}
+				if !flag {
+					c.GitHub.Orgs[j].Name = s[0]
+					c.GitHub.Orgs[j].Teams = append(c.GitHub.Orgs[j].Teams, team)
+					j++
+				}
+
 			}
+
 			r.Log.Info("generated connector", "c.GitHub", c.GitHub)
 			cs = append(cs, *c)
 			r.Log.Info("generated intermediate connectors", "cs", cs)
