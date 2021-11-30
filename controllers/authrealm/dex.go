@@ -379,14 +379,14 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 				s := strings.Split(team, "/")
 				for k := 0; k < i; k++ {
 					if s[0] == c.GitHub.Orgs[k].Name {
-						c.GitHub.Orgs[k].Teams = append(c.GitHub.Orgs[k].Teams, team)
+						c.GitHub.Orgs[k].Teams = append(c.GitHub.Orgs[k].Teams, s[1])
 						flag = true
 						break
 					}
 				}
 				if !flag {
 					c.GitHub.Orgs[j].Name = s[0]
-					c.GitHub.Orgs[j].Teams = append(c.GitHub.Orgs[j].Teams, team)
+					c.GitHub.Orgs[j].Teams = append(c.GitHub.Orgs[j].Teams, s[1])
 					j++
 				}
 
