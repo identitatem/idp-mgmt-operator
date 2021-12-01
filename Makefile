@@ -22,7 +22,7 @@ IMG_COVERAGE ?= ${PROJECT_NAME}-coverage:${IMG_TAG}
 CRD_OPTIONS ?= "crd:crdVersions=v1"
 
 # Version to apply to generated artifacts (for bundling/publishing)
-export VERSION ?= 0.1.1-$(shell date -u +'%Y%m%d-%H-%M-%S')
+export VERSION ?= 0.1.1
 
 # Bundle Prereqs
 IMAGE_TAG_BASE ?= quay.io/identitatem/$(PROJECT_NAME)
