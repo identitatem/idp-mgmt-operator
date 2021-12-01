@@ -1,6 +1,6 @@
 # Copyright Red Hat
 
-name: Go
+name: Publish
 
 on:
   push:
@@ -22,4 +22,6 @@ jobs:
       env:
         DOCKER_USER: ${{ secrets.DOCKER_USER }}
         DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
-      run: make publish
+      run: |
+        export VERSION="0.1.1-$(date -u +'%Y%m%d-%H-%M-%S')"
+        make publish
