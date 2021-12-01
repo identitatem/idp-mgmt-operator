@@ -330,7 +330,7 @@ undeploy-coverage:
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen yq/install
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." && \
-	${YQ} e '.metadata.name = "idp-mgmt-installer-operator-role"' config/rbac/role.yaml > deploy/idp-mgmt-operator/clusterrole.yaml && \
+	${YQ} e '.metadata.name = "idp-mgmt-installer-manager-role"' config/rbac/role.yaml > deploy/idp-mgmt-operator/clusterrole.yaml && \
 	${YQ} e '.metadata.name = "leader-election-operator-role" | .metadata.namespace = "{{ .Namespace }}"' config/rbac/leader_election_role.yaml > deploy/idp-mgmt-operator/leader_election_role.yaml
 
 # Run go fmt against code

@@ -2,6 +2,7 @@
 .copyrightignore
 _generated.go
 config/
+deploy/
 kind_kubeconfig.yaml
 kind_kubeconfig_internal.yaml
 # directories to ignore
