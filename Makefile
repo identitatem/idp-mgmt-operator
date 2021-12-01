@@ -222,11 +222,7 @@ bundle: manifests kustomize yq/install operatorsdk
 	echo ${TMP_DIR}
 	cp -R config ${TMP_DIR}
 	cd ${TMP_DIR}/config/installer && $(KUSTOMIZE) edit set image controller=$(IMG)
-	${YQ} e 'del(.resources[2])'  -i ${TMP_DIR}/config/webhook/kustomization.yaml
 	kustomize build  ${TMP_DIR}/config/default | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
-	@WEBHOOK_DEPLOYMENT_NAME=`${YQ} e '.spec.template.spec.serviceAccountName' ${TMP_DIR}/config/webhook/webhook.yaml` \
-		${YQ} e '.spec.webhookdefinitions[0].deploymentName = env(WEBHOOK_DEPLOYMENT_NAME)' -i bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
-	@${YQ} e '.spec.install.spec.deployments[].spec.template.spec.containers[].image = env(IMG)' -i bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
 
 .PHONY: bundle-build
 ## Build the bundle image.
@@ -332,9 +328,10 @@ undeploy-coverage:
 
 
 # Generate manifests e.g. CRD, RBAC etc.
-manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..."
-
+manifests: controller-gen yq/install
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." && \
+	${YQ} e '.metadata.name = "idp-mgmt-installer-operator-role"' config/rbac/role.yaml > deploy/idp-mgmt-operator/clusterrole.yaml && \
+	${YQ} e '.metadata.name = "leader-election-operator-role" | .metadata.namespace = "{{ .Namespace }}"' config/rbac/leader_election_role.yaml > deploy/idp-mgmt-operator/leader_election_role.yaml
 
 # Run go fmt against code
 fmt:

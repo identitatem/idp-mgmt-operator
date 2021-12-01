@@ -1,0 +1,378 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: idp-mgmt-installer-operator-role
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - secrets
+      - serviceaccounts
+    verbs:
+      - create
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - create
+      - delete
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+      - services
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - ""
+      - events.k8s.io
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+      - update
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - create
+      - delete
+      - get
+      - update
+  - apiGroups:
+      - apiregistration.k8s.io
+    resources:
+      - apiservices
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - auth.identitatem.io
+    resources:
+      - dexclients
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - auth.identitatem.io
+    resources:
+      - dexclients
+      - dexclients/status
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - auth.identitatem.io
+    resources:
+      - dexservers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - auth.identitatem.io
+    resources:
+      - dexservers/status
+    verbs:
+      - update
+  - apiGroups:
+      - cluster.open-cluster-management.io
+    resources:
+      - managedclusters
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - cluster.open-cluster-management.io
+    resources:
+      - placementdecisions
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - cluster.open-cluster-management.io
+    resources:
+      - placementdecisions/finalizer
+    verbs:
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - cluster.open-cluster-management.io
+    resources:
+      - placements
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - config.openshift.io
+    resources:
+      - infrastructures
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - identityconfig.identitatem.io
+    resources:
+      - authrealms
+    verbs:
+      - get
+      - update
+      - watch
+  - apiGroups:
+      - identityconfig.identitatem.io
+    resources:
+      - authrealms
+      - strategies
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - identityconfig.identitatem.io
+    resources:
+      - authrealms/finalizers
+    verbs:
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - identityconfig.identitatem.io
+    resources:
+      - authrealms/status
+    verbs:
+      - update
+  - apiGroups:
+      - identityconfig.identitatem.io
+    resources:
+      - clusteroauths
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - identityconfig.identitatem.io
+    resources:
+      - clusteroauths/finalizers
+    verbs:
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - identityconfig.identitatem.io
+    resources:
+      - idpconfigs
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - identityconfig.identitatem.io
+    resources:
+      - strategies
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - identityconfig.identitatem.io
+    resources:
+      - strategies/finalizers
+    verbs:
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+      - rolebindings
+      - roles
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+    verbs:
+      - bind
+      - create
+      - delete
+      - escalate
+      - get
+      - list
+      - update
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - rolebindings
+    verbs:
+      - create
+      - delete
+      - get
+      - update
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - roles
+    verbs:
+      - bind
+      - create
+      - delete
+      - escalate
+      - get
+      - update
+  - apiGroups:
+      - view.open-cluster-management.io
+    resources:
+      - managedclusterviews
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - work.open-cluster-management.io
+    resources:
+      - manifestworks
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch

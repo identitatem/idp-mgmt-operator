@@ -143,8 +143,10 @@ func (r *IDPConfigReconciler) processIDPConfigCreation(idpConfig *identitatemv1a
 	//Deploy dex operator
 	files := []string{
 		"idp-mgmt-operator/service_account.yaml",
+		"idp-mgmt-operator/leader_election_role.yaml",
 		"idp-mgmt-operator/leader_election_role_binding.yaml",
-		"idp-mgmt-operator/role_binding.yaml",
+		"idp-mgmt-operator/clusterrole.yaml",
+		"idp-mgmt-operator/clusterrole_binding.yaml",
 	}
 
 	image := pod.Spec.Containers[0].Image

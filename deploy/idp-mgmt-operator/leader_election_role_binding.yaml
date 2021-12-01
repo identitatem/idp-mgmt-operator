@@ -8,7 +8,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: leader-election-role
+  name: leader-election-operator-role
 subjects:
 - kind: ServiceAccount
   name: idp-mgmt-operator-manager
