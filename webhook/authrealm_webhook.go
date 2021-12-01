@@ -13,6 +13,7 @@ import (
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
+	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -81,6 +82,23 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 				Message: "type is required",
 			}
 			return status
+		}
+
+		for _, idp := range authrealm.Spec.IdentityProviders {
+			if idp.Type == openshiftconfigv1.IdentityProviderTypeGitHub {
+				if len(idp.GitHub.Teams) > 0 {
+					for _, team := range idp.GitHub.Teams {
+						if len(strings.Split(team, "/")) != 2 {
+							status.Allowed = false
+							status.Result = &metav1.Status{
+								Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
+								Message: "team should be in formatt <org>/<team>",
+							}
+							return status
+						}
+					}
+				}
+			}
 		}
 
 		// This is the same regex used by kubernetes for ensuring a CR name is valid
