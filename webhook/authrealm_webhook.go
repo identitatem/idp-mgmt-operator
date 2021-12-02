@@ -13,7 +13,6 @@ import (
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
-	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -73,7 +72,7 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 	klog.V(4).Infof("Validate webhook for AuthRealm name: %s, type: %s, routeSubDomain: %s", authrealm.Name, authrealm.Spec.Type, authrealm.Spec.RouteSubDomain)
 	switch admissionSpec.Operation {
 	case admissionv1beta1.Create:
-		klog.V(4).Info("Validate AuthRealm create ", authrealm.Spec.IdentityProviders)
+		klog.V(4).Info("Validate AuthRealm create ")
 
 		if len(authrealm.Spec.Type) == 0 {
 			status.Allowed = false
@@ -84,24 +83,32 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 			return status
 		}
 		klog.V(4).Info("hello1")
-		for _, idp := range authrealm.Spec.IdentityProviders {
-			if idp.Type == openshiftconfigv1.IdentityProviderTypeGitHub {
-				klog.V(4).Info("hello2")
-				if len(idp.GitHub.Teams) > 0 {
-					for _, team := range idp.GitHub.Teams {
-						if len(strings.Split(team, "/")) != 2 {
-							klog.V(4).Info("hello2")
-							status.Allowed = false
-							status.Result = &metav1.Status{
-								Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
-								Message: "team should be in format <org>/<team>",
-							}
-							return status
-						}
-					}
-				}
+		if authrealm.Spec.IdentityProviders[0].Type == "GitHub" {
+			status.Allowed = false
+			status.Result = &metav1.Status{
+				Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
+				Message: "identity",
 			}
+			return status
 		}
+		// for _, idp := range authrealm.Spec.IdentityProviders {
+		// 	if idp.Type == openshiftconfigv1.IdentityProviderTypeGitHub {
+		// 		klog.V(4).Info("hello2")
+		// 		if len(idp.GitHub.Teams) > 0 {
+		// 			for _, team := range idp.GitHub.Teams {
+		// 				if len(strings.Split(team, "/")) != 2 {
+		// 					klog.V(4).Info("hello2")
+		// 					status.Allowed = false
+		// 					status.Result = &metav1.Status{
+		// 						Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
+		// 						Message: "team should be in format <org>/<team>",
+		// 					}
+		// 					return status
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
 
 		// This is the same regex used by kubernetes for ensuring a CR name is valid
 		domainRegex, _ := regexp.Compile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`) // DNS-1123 subdomain
