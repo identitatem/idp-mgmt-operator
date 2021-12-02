@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -32,6 +33,7 @@ func TestAuthRealmValidate(t *testing.T) {
 		namespace        string
 		proxytype        identitatemv1alpha1.AuthProxyType
 		routeSubDomain   string
+		team             []string
 		request          *admissionv1beta1.AdmissionRequest
 		expectedResponse *admissionv1beta1.AdmissionResponse
 	}{
@@ -238,11 +240,29 @@ func TestAuthRealmValidate(t *testing.T) {
 				},
 			},
 		},
+		{
+			title:     "invalidate creating AuthRealm invalid team",
+			name:      "authrealm-test",
+			namespace: "authrealm-test-ns",
+			proxytype: identitatemv1alpha1.AuthProxyDex,
+			team:      []string{"identitatem"},
+			request: &admissionv1beta1.AdmissionRequest{
+				Resource:  authrealmSchema,
+				Operation: admissionv1beta1.Create,
+			},
+			expectedResponse: &admissionv1beta1.AdmissionResponse{
+				Allowed: false,
+				Result: &metav1.Status{
+					Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
+					Message: fmt.Sprintf("team should be in format <org>/<team>"),
+				},
+			},
+		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
-			authrealm, _ := NewAuthRealm(c.name, c.namespace, c.proxytype, c.routeSubDomain)
+			authrealm, _ := NewAuthRealm(c.name, c.namespace, c.proxytype, c.routeSubDomain, c.team)
 			c.request.Object.Raw, _ = json.Marshal(authrealm)
 			admissionHook := &AuthRealmAdmissionHook{}
 			actualResponse := admissionHook.Validate(c.request)
@@ -266,7 +286,7 @@ func NewUnstructured(apiVersion, kind, namespace, name string) *unstructured.Uns
 	}
 }
 
-func NewAuthRealm(name string, namespace string, proxytype identitatemv1alpha1.AuthProxyType, routeSubDomain string) (*identitatemv1alpha1.AuthRealm, string) {
+func NewAuthRealm(name string, namespace string, proxytype identitatemv1alpha1.AuthProxyType, routeSubDomain string, team []string) (*identitatemv1alpha1.AuthRealm, string) {
 	authrealm := &identitatemv1alpha1.AuthRealm{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -275,6 +295,22 @@ func NewAuthRealm(name string, namespace string, proxytype identitatemv1alpha1.A
 		Spec: identitatemv1alpha1.AuthRealmSpec{
 			Type:           proxytype,
 			RouteSubDomain: routeSubDomain,
+			IdentityProviders: []openshiftconfigv1.IdentityProvider{
+				{
+					Name:          "github-idp",
+					MappingMethod: "claim",
+					IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+						Type: openshiftconfigv1.IdentityProviderTypeGitHub,
+						GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+							ClientID: "client-id",
+							ClientSecret: openshiftconfigv1.SecretNameReference{
+								Name: "client-secret",
+							},
+							Teams: team,
+						},
+					},
+				},
+			},
 		},
 	}
 
