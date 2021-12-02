@@ -126,12 +126,11 @@ oc cluster-info
 make deploy
 ```
 
-5. Verify the pods are running
+5. Verify the installer is running
 
-There are two pods that should be running:
+There is one pod that should be running:
 
-- idp-mgmt-operator-controller-manager
-- idp-mgmt-operator-webhook-service
+- idp-mgmt-installer-controller-manager
 
 Check using the following command:
 
@@ -139,6 +138,31 @@ Check using the following command:
 oc get pods -n idp-mgmt-config
 ```
 
+6. Create an idpconfig
+
+```bash
+echo '
+apiVersion: identityconfig.identitatem.io/v1alpha1
+kind: IDPConfig
+metadata:
+  name: idp-config
+  namespace: idp-mgmt-config
+spec:' | oc create -f -
+```
+
+7. Verify pods are running
+
+There is now three pods that should be running
+
+- idp-mgmt-installer-controller-manager
+- idp-mgmt-operator-manager
+- idp-mgmt-webhook-service
+
+Check using the following command:
+
+```bash
+oc get pods -n idp-mgmt-config
+```
 ### Method 2: Install the operator from a Catalog
 
 **NOTE**: To install via the catalog, you must be on OpenShift 4.8.12 or newer due to [this OLM bug](https://bugzilla.redhat.com/show_bug.cgi?id=1969902) - a backport to OCP 4.7 is in progress.
@@ -167,7 +191,19 @@ spec:
   sourceNamespace: idp-mgmt-config
   startingCSV: idp-mgmt-operator.v0.1.1
 ```
-5. Wait for the operator to install - then move on to the next step!
+5. Create an idpconfig
+
+```bash
+echo '
+apiVersion: identityconfig.identitatem.io/v1alpha1
+kind: IDPConfig
+metadata:
+  name: idp-config
+  namespace: idp-mgmt-config
+spec:' | oc create -f -
+```
+
+6. Wait for the operator to install - then move on to the next step!
 
 ## Create an AuthRealm, ManagedClusterSet, etc
 

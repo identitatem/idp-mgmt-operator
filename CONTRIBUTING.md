@@ -52,11 +52,12 @@ export KUBECONFIG=kind_kubeconfig.yaml
 and check the operator logs with:
 
 ```shell
-oc get pods -n identitatem
+oc get pods -n idp-mgmt-config
 ```
+2 pods must be running the installer and the operator one
 
 ```shell
-oc logs -n identitatem <pod_name> manager
+oc logs -n idp-mgmt-config <pod_name>
 ```
 
 

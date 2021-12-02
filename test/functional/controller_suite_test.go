@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -158,6 +159,31 @@ var _ = BeforeSuite(func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
+	By("Checking operator installation", func() {
+		Eventually(func() error {
+			l, err := kubeClient.CoreV1().Pods("idp-mgmt-config").List(context.TODO(), metav1.ListOptions{})
+			if err != nil {
+				return err
+			}
+			//1 pod for installer and 1 for operator
+			if len(l.Items) < 2 {
+				logf.Log.Info("operator pod not created yet", "name", "idp-mgmt-config")
+				return fmt.Errorf("operator pod not created yet")
+			}
+			allReady := true
+			for _, p := range l.Items {
+				if p.Status.Phase != corev1.PodRunning {
+					allReady = false
+					break
+				}
+			}
+			if !allReady {
+				logf.Log.Info("some pods are not ready yet", "name", "idp-mgmt-config")
+				return fmt.Errorf("some pods are not ready yet")
+			}
+			return nil
+		}, 30, 1).Should(BeNil())
+	})
 })
 
 var _ = AfterSuite(func() {
@@ -180,6 +206,20 @@ var _ = AfterSuite(func() {
 			}
 			return fmt.Errorf("clientSecret %s in ns %s still exist", "idpconfig", "idp-mgmt-config")
 		}, 60, 1).Should(BeNil())
+	})
+	By("Checking operator deletion", func() {
+		Eventually(func() error {
+			l, err := kubeClient.CoreV1().Pods("idp-mgmt-config").List(context.TODO(), metav1.ListOptions{})
+			if err != nil {
+				return err
+			}
+			//1 pod for installer remain
+			if len(l.Items) != 1 {
+				logf.Log.Info("operator pod not deleted yet", "name", "idp-mgmt-config")
+				return fmt.Errorf("operator pod not deleted yet")
+			}
+			return nil
+		}, 30, 1).Should(BeNil())
 	})
 
 })
