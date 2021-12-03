@@ -20,3 +20,6 @@ rules:
 - apiGroups: ["flowcontrol.apiserver.k8s.io"]
   resources: ["prioritylevelconfigurations", "flowschemas"]
   verbs: ["get", "list", "watch"]
+- apiGroups: ["identityconfig.identitatem.io"]
+  resources: ["idpconfigs"]
+  verbs: ["get","list","watch"]

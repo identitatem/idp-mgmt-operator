@@ -20,6 +20,15 @@ webhooks:
           - UPDATE
         resources:
           - authrealms
+      - apiGroups:
+          - identityconfig.identitatem.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - idpconfigs
     failurePolicy: Fail
     clientConfig:
       service:

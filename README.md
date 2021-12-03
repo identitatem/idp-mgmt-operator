@@ -123,7 +123,8 @@ oc cluster-info
 4. From the cloned idp-mgmt-operator directory:
 
 ```bash
-make deploy
+export IMG=quay.io/<your_user>/idp-mgmt-operator
+make docker-build docker-publish deploy
 ```
 
 5. Verify the installer is running
