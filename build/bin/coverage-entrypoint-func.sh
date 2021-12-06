@@ -188,6 +188,7 @@ wait_data() {
     done
 }
 
+#This method is not used, if used then kubectl must be installed in the coverage image.
 wait_finalizers() {
    n="10"
    pod=$(kubectl get pods -n $2 | grep $1 | cut -d ' ' -f 1)
