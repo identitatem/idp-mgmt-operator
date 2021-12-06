@@ -225,7 +225,10 @@ func (r *IDPConfigReconciler) processIDPConfigCreation(idpConfig *identitatemv1a
 		}
 	}
 
-	b, err = readerDeploy.Asset("webhook/webhook_apiservice.yaml")
+	b, err = applier.MustTempalteAsset(readerDeploy, values, "", "webhook/webhook_apiservice.yaml")
+	if err != nil {
+		return giterrors.WithStack(err)
+	}
 	if err != nil {
 		return giterrors.WithStack(err)
 	}

@@ -11,6 +11,6 @@ spec:
   version: v1alpha1
   service:
     name: idp-mgmt-webhook-service
-    namespace: idp-mgmt-config
+    namespace: {{ .Namespace }}
   groupPriorityMinimum: 10000
   versionPriority: 20

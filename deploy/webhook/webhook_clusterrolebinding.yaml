@@ -11,5 +11,5 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: idp-mgmt-webhook-service
-    namespace: idp-mgmt-config
+    namespace: {{ .Namespace }}
  
