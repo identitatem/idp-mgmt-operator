@@ -1,0 +1,84 @@
+# Copyright Red Hat
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: idp-mgmt-operator-manager
+  namespace: {{ .Namespace }}
+  labels:
+    control-plane: idp-mgmt-operator-manager
+spec:
+  selector:
+    matchLabels:
+      control-plane: idp-mgmt-operator-manager
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: idp-mgmt-operator-manager
+        idp-antiaffinity-selector: idp-mgmt-operator-controller
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: idp-antiaffinity-selector
+                      operator: In
+                      values:
+                        - idp-mgmt-operator-controller
+                topologyKey: topology.kubernetes.io/zone
+              weight: 70
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: idp-antiaffinity-selector
+                      operator: In
+                      values:
+                        - idp-mgmt-operator-controller
+                topologyKey: kubernetes.io/hostname
+              weight: 35
+      containers:
+        - args:
+            - manager
+            - --enable-leader-election
+            - "--health-probe-bind-address=:8081"
+          env:
+            - name: RELATED_IMAGE_DEX_OPERATOR
+              value: {{ .ImageDexOperator }}
+            - name: RELATED_IMAGE_DEX_SERVER
+              value: {{ .ImageDexServer }}
+          image: {{ .Image }}
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          name: manager
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: 300m
+              memory: 500Mi
+            requests:
+              cpu: 50m
+              memory: 150Mi
+      serviceAccountName: idp-mgmt-operator-manager
+      terminationGracePeriodSeconds: 10
+      tolerations:
+        - key: node-role.kubernetes.io/infra
+          operator: Exists
+          effect: NoSchedule
+        - key: dedicated
+          operator: Exists
+          effect: NoSchedule

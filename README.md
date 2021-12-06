@@ -123,15 +123,15 @@ oc cluster-info
 4. From the cloned idp-mgmt-operator directory:
 
 ```bash
-make deploy
+export IMG=quay.io/<your_user>/idp-mgmt-operator
+make docker-build docker-publish deploy
 ```
 
-5. Verify the pods are running
+5. Verify the installer is running
 
-There are two pods that should be running:
+There is one pod that should be running:
 
-- idp-mgmt-operator-controller-manager
-- idp-mgmt-operator-webhook-service
+- idp-mgmt-installer-controller-manager
 
 Check using the following command:
 
@@ -139,6 +139,31 @@ Check using the following command:
 oc get pods -n idp-mgmt-config
 ```
 
+6. Create an idpconfig
+
+```bash
+echo '
+apiVersion: identityconfig.identitatem.io/v1alpha1
+kind: IDPConfig
+metadata:
+  name: idp-config
+  namespace: idp-mgmt-config
+spec:' | oc create -f -
+```
+
+7. Verify pods are running
+
+There is now three pods that should be running
+
+- idp-mgmt-installer-controller-manager
+- idp-mgmt-operator-manager
+- idp-mgmt-webhook-service
+
+Check using the following command:
+
+```bash
+oc get pods -n idp-mgmt-config
+```
 ### Method 2: Install the operator from a Catalog
 
 **NOTE**: To install via the catalog, you must be on OpenShift 4.8.12 or newer due to [this OLM bug](https://bugzilla.redhat.com/show_bug.cgi?id=1969902) - a backport to OCP 4.7 is in progress.
@@ -167,7 +192,19 @@ spec:
   sourceNamespace: idp-mgmt-config
   startingCSV: idp-mgmt-operator.v0.1.1
 ```
-5. Wait for the operator to install - then move on to the next step!
+5. Create an idpconfig
+
+```bash
+echo '
+apiVersion: identityconfig.identitatem.io/v1alpha1
+kind: IDPConfig
+metadata:
+  name: idp-config
+  namespace: idp-mgmt-config
+spec:' | oc create -f -
+```
+
+6. Wait for the operator to install - then move on to the next step!
 
 ## Create an AuthRealm, ManagedClusterSet, etc
 
@@ -287,11 +324,11 @@ export IMAGE_TAG_BASE=quay.io/\<your-user\>/idp-mgmt-operator
   **If you don’t do this, you need push permissions to identitatem - and you’ll push straight to the source identitatem org. - Which only the build system should do!**
 
   **You might need to make these personal repos public to allow the images to be downloaded by OLM**
-1. Set the **VERSION** as a timestamp.  For example:
+2. Set the **VERSION** as a timestamp.  For example:
 ```bash
 export VERSION=`date -u "+0.0.0-%Y%m%d-%H-%M-%S"`
 ```
-1. If you want to use a specific idp-mgmt-operator image, set the **IMG** environment variable to that image. For example, to point to a PR built image:
+3. If you want to use a specific idp-mgmt-operator image, set the **IMG** environment variable to that image. For example, to point to a PR built image:
 ```bash
 export IMG=quay.io/identitatem/idp-mgmt-operator@sha256:f1303674fc463cbc3834d3dd6c9d023cc991144a3e170c496dac5d2a44459d5c
 ```
@@ -299,9 +336,9 @@ Otherwise use:
 ```bash
 export IMG=quay.io/identitatem/idp-mgmt-operator:latest
 ```
-1. `export` DOCKER_USER and DOCKER_PASS equal to a docker user and password that will allow you to push to the quay repositories outlined in step 1.
-1. run `make publish` - this should acquire any dependencies and push to quay!
-1. To test, run `make deploy-catalog`.  This will create a catalogsource on your hub cluster and you can install the test catalog from OperatorHub.
+4. `export` DOCKER_USER and DOCKER_PASS equal to a docker user and password that will allow you to push to the quay repositories outlined in step 1.
+5. run `make publish` - this should acquire any dependencies and push to quay!
+6. To test, run `make deploy-catalog`.  This will create a catalogsource on your hub cluster and you can install the test catalog from OperatorHub.
 
 # Tagging and Generating a Release
 

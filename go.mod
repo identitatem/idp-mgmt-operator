@@ -6,7 +6,7 @@ require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v0.4.0
 	github.com/identitatem/dex-operator v0.0.4-0.20211117165236-c10307ed4884
-	github.com/identitatem/idp-client-api v0.0.0-20211013014310-8d06d8024e0f
+	github.com/identitatem/idp-client-api v0.0.0-20211203161445-0c6174f5d45a
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.14.0
 	github.com/open-cluster-management/multicloud-operators-foundation v1.0.0-2021-09-22-22-06-10.0.20210923102123-b296cd01e3f7
@@ -22,6 +22,7 @@ require (
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/component-base v0.22.0
 	k8s.io/klog/v2 v2.10.0
+	k8s.io/kube-aggregator v0.21.2
 	k8s.io/kubectl v0.21.2
 	open-cluster-management.io/api v0.0.0-20210916013819-2e58cdb938f9
 	open-cluster-management.io/clusteradm v0.1.0-alpha.5

@@ -1,0 +1,25 @@
+# Copyright Red Hat
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: idp-mgmt-webhook-service
+rules:
+# Allow managedcluster admission to get/list/watch configmaps
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list", "watch"]
+# Allow managedcluster admission to create subjectaccessreviews
+- apiGroups: ["authorization.k8s.io"]
+  resources: ["subjectaccessreviews"]
+  verbs: ["create"]
+# API priority and fairness
+- apiGroups: ["flowcontrol.apiserver.k8s.io"]
+  resources: ["prioritylevelconfigurations", "flowschemas"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["identityconfig.identitatem.io"]
+  resources: ["idpconfigs"]
+  verbs: ["get","list","watch"]

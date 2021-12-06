@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	idpclientset "github.com/identitatem/idp-client-api/api/client/clientset/versioned"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
@@ -31,6 +32,7 @@ const (
 type AuthRealmAdmissionHook struct {
 	Client      dynamic.ResourceInterface
 	KubeClient  kubernetes.Interface
+	IDPClient   *idpclientset.Clientset
 	lock        sync.RWMutex
 	initialized bool
 }
@@ -52,11 +54,23 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 	klog.V(4).Infof("AuthRealm Validate %q operation for object %q, group: %s, resource: %s", admissionSpec.Operation, admissionSpec.Object, admissionSpec.Resource.Group, admissionSpec.Resource.Resource)
 
 	// only validate the request for authrealm
-	if !strings.HasSuffix(admissionSpec.Resource.Group, GROUP_SUFFIX) ||
-		admissionSpec.Resource.Resource != "authrealms" {
+	if !strings.HasSuffix(admissionSpec.Resource.Group, GROUP_SUFFIX) {
 		status.Allowed = true
 		return status
 	}
+
+	switch admissionSpec.Resource.Resource {
+	case "authrealms":
+		return a.ValidateAuthRealm(admissionSpec)
+	case "idpconfigs":
+		return a.ValidateIDPConfig(admissionSpec)
+	}
+	status.Allowed = true
+	return status
+}
+
+func (a *AuthRealmAdmissionHook) ValidateAuthRealm(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse {
+	status := &admissionv1beta1.AdmissionResponse{}
 
 	authrealm := &identitatemv1alpha1.AuthRealm{}
 
@@ -186,6 +200,45 @@ func (a *AuthRealmAdmissionHook) Validate(admissionSpec *admissionv1beta1.Admiss
 	return status
 }
 
+func (a *AuthRealmAdmissionHook) ValidateIDPConfig(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse {
+	status := &admissionv1beta1.AdmissionResponse{}
+
+	idpconfig := &identitatemv1alpha1.IDPConfig{}
+
+	err := json.Unmarshal(admissionSpec.Object.Raw, idpconfig)
+	if err != nil {
+		status.Allowed = false
+		status.Result = &metav1.Status{
+			Status: metav1.StatusFailure, Code: http.StatusBadRequest, Reason: metav1.StatusReasonBadRequest,
+			Message: err.Error(),
+		}
+		return status
+	}
+
+	klog.V(4).Infof("Validate webhook for IDPConfig name: %s, namespace: %s", idpconfig.Name, idpconfig.Namespace)
+
+	l, err := a.IDPClient.IdentityconfigV1alpha1().IDPConfigs(idpconfig.Namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		status.Allowed = false
+		status.Result = &metav1.Status{
+			Status: metav1.StatusFailure, Code: http.StatusBadRequest, Reason: metav1.StatusReasonInternalError,
+			Message: err.Error(),
+		}
+		return status
+	}
+	if len(l.Items) > 0 {
+		status.Allowed = false
+		status.Result = &metav1.Status{
+			Status: metav1.StatusFailure, Code: http.StatusBadRequest, Reason: metav1.StatusReasonForbidden,
+			Message: "an idpconfig custom resource already exists in the same namespace",
+		}
+		return status
+	}
+	status.Allowed = true
+	return status
+
+}
+
 // Initialize is called by generic-admission-server on startup to setup initialization that webhook needs.
 func (a *AuthRealmAdmissionHook) Initialize(kubeClientConfig *rest.Config, stopCh <-chan struct{}) error {
 	a.lock.Lock()
@@ -205,8 +258,8 @@ func (a *AuthRealmAdmissionHook) Initialize(kubeClientConfig *rest.Config, stopC
 	if err != nil {
 		return err
 	}
-
 	a.KubeClient = kubeClient
+
 	dynamicClient, err := dynamic.NewForConfig(&shallowClientConfigCopy)
 	if err != nil {
 		return err
@@ -217,6 +270,12 @@ func (a *AuthRealmAdmissionHook) Initialize(kubeClientConfig *rest.Config, stopC
 		// kind is the kind for the resource (e.g. 'Foo' is the kind for a resource 'foo')
 		Resource: "authrealms",
 	})
+
+	idpClient, err := idpclientset.NewForConfig(&shallowClientConfigCopy)
+	if err != nil {
+		return err
+	}
+	a.IDPClient = idpClient
 
 	return nil
 }

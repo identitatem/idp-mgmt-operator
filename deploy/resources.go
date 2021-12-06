@@ -7,7 +7,7 @@ import (
 	"open-cluster-management.io/clusteradm/pkg/helpers/asset"
 )
 
-//go:embed dex-operator
+//go:embed idp-mgmt-operator webhook dex-operator
 var files embed.FS
 
 func GetScenarioResourcesReader() *asset.ScenarioResourcesReader {

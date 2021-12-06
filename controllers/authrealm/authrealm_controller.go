@@ -31,9 +31,8 @@ import (
 	identitatemdexserverv1lapha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
-
-	idpoperatorconfig "github.com/identitatem/idp-client-api/config"
-	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
+	// idpoperatorconfig "github.com/identitatem/idp-client-api/config"
+	// clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 )
 
 // AuthRealmReconciler reconciles a AuthRealm object
@@ -172,17 +171,17 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	//Install CRD
-	applierBuilder := &clusteradmapply.ApplierBuilder{}
-	applier := applierBuilder.WithClient(r.KubeClient, r.APIExtensionClient, r.DynamicClient).Build()
+	// //Install CRD
+	// applierBuilder := &clusteradmapply.ApplierBuilder{}
+	// applier := applierBuilder.WithClient(r.KubeClient, r.APIExtensionClient, r.DynamicClient).Build()
 
-	readerIDPMgmtOperator := idpoperatorconfig.GetScenarioResourcesReader()
+	// readerIDPMgmtOperator := idpoperatorconfig.GetScenarioResourcesReader()
 
-	files := []string{"crd/bases/identityconfig.identitatem.io_authrealms.yaml",
-		"crd/bases/identityconfig.identitatem.io_strategies.yaml"}
-	if _, err := applier.ApplyDirectly(readerIDPMgmtOperator, nil, false, "", files...); err != nil {
-		return giterrors.WithStack(err)
-	}
+	// files := []string{"crd/bases/identityconfig.identitatem.io_authrealms.yaml",
+	// 	"crd/bases/identityconfig.identitatem.io_strategies.yaml"}
+	// if _, err := applier.ApplyDirectly(readerIDPMgmtOperator, nil, false, "", files...); err != nil {
+	// 	return giterrors.WithStack(err)
+	// }
 
 	if err := identitatemv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		return giterrors.WithStack(err)

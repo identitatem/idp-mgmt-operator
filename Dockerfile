@@ -3,38 +3,46 @@
 
 FROM registry.ci.openshift.org/open-cluster-management/builder:go1.16-linux AS builder
 
-ENV REMOTE_SOURCE='.'
-ENV REMOTE_SOURCE_DIR='/remote-source'
+WORKDIR /workspace
 
-COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR/app/
-WORKDIR $REMOTE_SOURCE_DIR/app
 COPY go.mod go.mod
 COPY go.sum go.sum
+
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-# RUN go mod download
+RUN go mod download
+
+COPY main.go main.go
+COPY main_test.go main_test.go
+COPY cmd/ cmd/
+COPY deploy/ deploy/
+COPY resources/ resources/
+COPY webhook/ webhook/
+COPY pkg/ pkg/
+COPY config/ config/
+COPY controllers/ controllers/
 
 RUN GOFLAGS="" go build -a -o idp-mgmt main.go
 
 RUN GOFLAGS="" go test -covermode=atomic \
-    -coverpkg=github.com/identitatem/idp-mgmt-operator/pkg/...,\
-github.com/identitatem/idp-mgmt-operator/controllers/... \
-     -c -tags testrunmain \ 
-     github.com/identitatem/idp-mgmt-operator/cmd/manager \
-     -o idp-mgmt-coverage
+    -coverpkg=github.com/identitatem/idp-mgmt-operator/controllers/...,\
+github.com/identitatem/idp-mgmt-operator/pkg/... \
+    -c -tags testrunmain \ 
+    github.com/identitatem/idp-mgmt-operator \
+    -o idp-mgmt-coverage
+
+COPY build/bin/ build/bin/
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 RUN microdnf update
-ENV REMOTE_SOURCE_DIR='/remote-source'
 
 ENV OPERATOR=/usr/local/bin/idp-mgmt \
     USER_UID=1001 \
     USER_NAME=idp-mgmt-operator
-    
-# install operator binary
-COPY --from=builder $REMOTE_SOURCE_DIR/app/idp-mgmt ${OPERATOR}
-COPY --from=builder $REMOTE_SOURCE_DIR/app/idp-mgmt-coverage ${OPERATOR}-coverage
-COPY --from=builder $REMOTE_SOURCE_DIR/app/build/bin /usr/local/bin
+
+COPY --from=builder /workspace/idp-mgmt ${OPERATOR}
+COPY --from=builder /workspace/idp-mgmt-coverage ${OPERATOR}-coverage
+COPY --from=builder /workspace/build/bin /usr/local/bin
 
 RUN  /usr/local/bin/user_setup
 

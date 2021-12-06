@@ -15,6 +15,7 @@ import (
 	utilflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/logs"
 
+	"github.com/identitatem/idp-mgmt-operator/cmd/installer"
 	"github.com/identitatem/idp-mgmt-operator/cmd/manager"
 	"github.com/identitatem/idp-mgmt-operator/cmd/webhook"
 )
@@ -44,6 +45,7 @@ func newWorkCommand() *cobra.Command {
 		},
 	}
 
+	cmd.AddCommand(installer.NewInstaller())
 	cmd.AddCommand(manager.NewManager())
 	cmd.AddCommand(webhook.NewAdmissionHook())
 

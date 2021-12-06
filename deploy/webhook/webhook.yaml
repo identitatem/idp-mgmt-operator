@@ -1,0 +1,68 @@
+# Copyright Red Hat
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: idp-mgmt-webhook-service
+  namespace: {{ .Namespace }}
+  labels:
+    control-plane: idp-mgmt-webhook-service
+spec:
+  selector:
+    matchLabels:
+      control-plane: idp-mgmt-webhook-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: idp-mgmt-webhook-service
+        idp-antiaffinity-selector: idp-mgmt-webhook
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: idp-antiaffinity-selector
+                      operator: In
+                      values:
+                        - idp-mgmt-webhook
+                topologyKey: topology.kubernetes.io/zone
+              weight: 70
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: idp-antiaffinity-selector
+                      operator: In
+                      values:
+                        - idp-mgmt-webhook
+                topologyKey: kubernetes.io/hostname
+              weight: 35
+      containers:
+        - args:
+            - webhook
+            - "--secure-port=6443"
+            - "--tls-cert-file=/serving-cert/tls.crt"
+            - "--tls-private-key-file=/serving-cert/tls.key"
+            - -v 5
+          image: {{ .Image }}
+          name: webhook
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: webhook-secret
+              mountPath: "/serving-cert"
+              readOnly: true
+      volumes:
+        - name: webhook-secret
+          secret:
+            secretName: idp-mgmt-webhook-service
+      serviceAccountName: idp-mgmt-webhook-service
+      terminationGracePeriodSeconds: 10
+      tolerations:
+        - key: node-role.kubernetes.io/infra
+          operator: Exists
+          effect: NoSchedule
+        - key: dedicated
+          operator: Exists
+          effect: NoSchedule
