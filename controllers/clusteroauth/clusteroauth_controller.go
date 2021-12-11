@@ -436,7 +436,7 @@ func (r *ClusterOAuthReconciler) restoreOriginalOAuth(clusterOAuth *identitatemv
 			Name:      helpers.ManifestWorkOriginalOAuthName(),
 			Namespace: clusterOAuth.GetNamespace(),
 			Annotations: map[string]string{
-				posthookAnnotation: "60",
+				posthookAnnotation: "managedcluster-import-controller.open-cluster-management.io/posthook-graceperiod",
 			},
 		},
 		Spec: manifestworkv1.ManifestWorkSpec{
