@@ -89,15 +89,6 @@ func (a *AuthRealmAdmissionHook) ValidateAuthRealm(admissionSpec *admissionv1bet
 	case admissionv1beta1.Create:
 		klog.V(4).Info("Validate AuthRealm create ")
 
-		if len(authrealm.Spec.Type) == 0 {
-			status.Allowed = false
-			status.Result = &metav1.Status{
-				Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
-				Message: "type is required",
-			}
-			return status
-		}
-
 		for _, idp := range authrealm.Spec.IdentityProviders {
 			if idp.Type == openshiftconfigv1.IdentityProviderTypeGitHub {
 				if len(idp.GitHub.Teams) > 0 {

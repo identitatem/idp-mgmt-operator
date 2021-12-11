@@ -152,7 +152,7 @@ func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.A
 	}
 	nbFound := 0
 	for _, authRealm := range authRealms.Items {
-		if authRealm.Spec.Type == identitatemv1alpha1.AuthProxyDex {
+		if authRealm.Spec.Type == identitatemv1alpha1.AuthProxyDex || authRealm.Spec.Type == "" {
 			nbFound++
 		}
 	}
