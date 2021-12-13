@@ -24,13 +24,9 @@ spec:
     **IMPORTANT** - The identity configuration management for Kubernetes is a Technology Preview feature only. Technology Preview features are not supported with Red Hat production service level agreements (SLAs) and might not be functionally complete. Red Hat does not recommend using them in production. These features provide early access to upcoming product features, enabling customers to test functionality and provide feedback during the development process. For more information about the support scope of Red Hat Technology Preview features, see [https://access.redhat.com/support/offerings/techpreview/](https://access.redhat.com/support/offerings/techpreview/).
 
     ## How to Install
-    Install the identity configuration management for Kubernetes operator by following
-    instructions presented when you click the `Install` button.
-    After installing the operator, create an instance of the `IDPConfig` resource
-    to install the necessary components that provide the management APIs.
+    Install the identity configuration management for Kubernetes operator by following instructions presented when you click the `Install` button. After installing the operator, create an instance of the `IDPConfig` resource to install the necessary components that provide the management APIs.
 
-    You can find additional installation guidance in the
-    [documentation](https://identitatem.github.io/idp-mgmt-docs/)
+    You can find additional installation guidance in the [documentation](https://identitatem.github.io/idp-mgmt-docs/).
 
   displayName: identity configuration management for Kubernetes
   icon:
