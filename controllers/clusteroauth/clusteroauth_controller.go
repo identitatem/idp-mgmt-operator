@@ -54,6 +54,7 @@ import (
 )
 
 const posthookAnnotation string = "managedcluster-import-controller.open-cluster-management.io/posthook-graceperiod"
+const postponeDeletionAnnotation string = "open-cluster-management/postpone-delete"
 
 const DEX_CLIENT_SECRET_LABEL = "auth.identitatem.io/dex-client-secret"
 
@@ -401,22 +402,26 @@ func (r *ClusterOAuthReconciler) unmanagedCluster(clusterOAuth *identitatemv1alp
 	}
 
 	if len(clusterOAuths.Items) == 1 {
-		r.Log.Info("delete for manifestwork", "name", helpers.ManifestWorkOAuthName(), "namespace", clusterOAuth.Namespace)
-		if err := r.deleteManifestWork(helpers.ManifestWorkOAuthName(), clusterOAuth.Namespace); err != nil {
-			return ctrl.Result{}, err
-		}
+		//r.Log.Info("delete for manifestwork", "name", helpers.ManifestWorkOAuthName(), "namespace", clusterOAuth.Namespace)
+		// if err := r.deleteManifestWork(helpers.ManifestWorkOAuthName(), clusterOAuth.Namespace); err != nil {
+		// 	return ctrl.Result{}, err
+		// }
 		if result, err := r.restoreOriginalOAuth(clusterOAuth); err != nil {
 			return result, err
 		}
 		if err := r.checkManifestWorkOriginalOAuthApplied(clusterOAuth.Namespace); err != nil {
 			return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, err
 		}
+		r.Log.Info("delete for manifestwork", "name", helpers.ManifestWorkOAuthName(), "namespace", clusterOAuth.Namespace)
+		if err := r.deleteManifestWork(helpers.ManifestWorkOAuthName(), clusterOAuth.Namespace); err != nil {
+			return ctrl.Result{}, err
+		}
 		if err := r.deleteOriginalOAuth(clusterOAuth.Namespace); err != nil {
 			return ctrl.Result{}, err
 		}
-		if err := r.deleteManifestWork(helpers.ManifestWorkOriginalOAuthName(), clusterOAuth.Namespace); err != nil {
-			return ctrl.Result{}, err
-		}
+		// if err := r.deleteManifestWork(helpers.ManifestWorkOriginalOAuthName(), clusterOAuth.Namespace); err != nil {
+		// 	return ctrl.Result{}, err
+		// }
 	}
 	return ctrl.Result{}, nil
 }
@@ -436,7 +441,8 @@ func (r *ClusterOAuthReconciler) restoreOriginalOAuth(clusterOAuth *identitatemv
 			Name:      helpers.ManifestWorkOriginalOAuthName(),
 			Namespace: clusterOAuth.GetNamespace(),
 			Annotations: map[string]string{
-				posthookAnnotation: "managedcluster-import-controller.open-cluster-management.io/posthook-graceperiod",
+				posthookAnnotation:         "60",
+				postponeDeletionAnnotation: "",
 			},
 		},
 		Spec: manifestworkv1.ManifestWorkSpec{
