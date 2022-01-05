@@ -1,7 +1,7 @@
 
 # Copyright Red Hat
 
-FROM registry.ci.openshift.org/open-cluster-management/builder:go1.17-linux AS builder
+FROM registry.ci.openshift.org/stolostron/builder:go1.17-linux AS builder
 
 WORKDIR /workspace
 
@@ -27,7 +27,7 @@ RUN GOFLAGS="" go build -a -o idp-mgmt main.go
 RUN GOFLAGS="" go test -covermode=atomic \
     -coverpkg=github.com/identitatem/idp-mgmt-operator/controllers/...,\
 github.com/identitatem/idp-mgmt-operator/pkg/... \
-    -c -tags testrunmain \ 
+    -c -tags testrunmain \
     github.com/identitatem/idp-mgmt-operator \
     -o idp-mgmt-coverage
 
