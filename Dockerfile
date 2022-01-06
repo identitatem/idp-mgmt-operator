@@ -1,7 +1,9 @@
 
 # Copyright Red Hat
 
-FROM registry.ci.openshift.org/stolostron/builder:go1.17-linux AS builder
+#Test old Image
+FROM registry.ci.openshift.org/open-cluster-management/builder:go1.17-linux AS builder
+#FROM registry.ci.openshift.org/stolostron/builder:go1.17-linux AS builder
 
 WORKDIR /workspace
 
