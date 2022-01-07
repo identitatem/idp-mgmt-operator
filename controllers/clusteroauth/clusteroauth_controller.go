@@ -54,7 +54,8 @@ import (
 )
 
 const posthookAnnotation string = "managedcluster-import-controller.open-cluster-management.io/posthook-graceperiod"
-const postponeDeletionAnnotation string = "open-cluster-management/postpone-delete"
+
+const postponeDeletionAnnotation = "open-cluster-management/postpone-delete"
 
 const DEX_CLIENT_SECRET_LABEL = "auth.identitatem.io/dex-client-secret"
 
@@ -121,8 +122,13 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	//case identitatemv1alpha1.BackplaneStrategyType:
 
 	if instance.DeletionTimestamp != nil {
-		if result, err := r.unmanagedCluster(instance); err != nil {
-			return result, err
+		// if result, err := r.unmanagedCluster(instance); err != nil {
+		// 	return result, err
+		// }
+
+		r.Log.Info("Create restore original manifestwork for", "name", instance.Name, "namespace", instance.Namespace)
+		if err := r.createRestoreManifestwork(instance); err != nil {
+			return ctrl.Result{}, err
 		}
 		r.Log.Info("remove finalizer", "Finalizer:", helpers.AuthrealmFinalizer, "name", instance.Name, "namespace", instance.Namespace)
 		controllerutil.RemoveFinalizer(instance, helpers.AuthrealmFinalizer)
@@ -145,12 +151,59 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return result, err
 	}
 
+	// r.Log.Info("Create restore original manifestwork for", "name", instance.Name, "namespace", instance.Namespace)
+	// if err := r.createRestoreManifestwork(instance); err != nil {
+	// 	return ctrl.Result{}, err
+	// }
+
 	r.Log.Info("generateManifestWork for", "name", instance.Name, "namespace", instance.Namespace)
 	if err := r.generateManifestWork(instance); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *ClusterOAuthReconciler) createRestoreManifestwork(clusterOAuth *identitatemv1alpha1.ClusterOAuth) (err error) {
+	r.Log.Info("prepare manifestwork", "name", helpers.ManifestWorkOAuthName(), "namespace", clusterOAuth.GetNamespace())
+	originalOAuth := &corev1.ConfigMap{}
+	if err := r.Get(context.TODO(), client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: clusterOAuth.Namespace}, originalOAuth); err != nil {
+		return err
+	}
+
+	jsonData, err := yaml.YAMLToJSON([]byte(originalOAuth.Data["json"]))
+	if err != nil {
+		return err
+	}
+	mw := &manifestworkv1.ManifestWork{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "idp-oauth-restore",
+			Namespace: clusterOAuth.GetNamespace(),
+			Annotations: map[string]string{
+				postponeDeletionAnnotation: "",
+			},
+		},
+		Spec: manifestworkv1.ManifestWorkSpec{
+			DeleteOption: &manifestworkv1.DeleteOption{
+				PropagationPolicy: manifestworkv1.DeletePropagationPolicyTypeOrphan,
+			},
+			Workload: manifestworkv1.ManifestsTemplate{
+				Manifests: []manifestworkv1.Manifest{
+					{RawExtension: runtime.RawExtension{Raw: jsonData}},
+				},
+			},
+		},
+	}
+
+	if err := r.CreateOrUpdateManifestWork(mw); err != nil {
+		return err
+	}
+
+	//TODO wait manifestwork applied
+
+	//TODO delete manifestwork
+
+	return nil
 }
 
 func (r *ClusterOAuthReconciler) generateManagedClusterViewForOAuth(clusterOAuth *identitatemv1alpha1.ClusterOAuth) (result ctrl.Result, err error) {
@@ -231,7 +284,8 @@ func (r *ClusterOAuthReconciler) generateManifestWork(clusterOAuth *identitatemv
 			Name:      helpers.ManifestWorkOAuthName(),
 			Namespace: clusterOAuth.GetNamespace(),
 			Annotations: map[string]string{
-				posthookAnnotation: "60",
+				//posthookAnnotation:         "60",
+				postponeDeletionAnnotation: "",
 			},
 		},
 		Spec: manifestworkv1.ManifestWorkSpec{
@@ -402,26 +456,22 @@ func (r *ClusterOAuthReconciler) unmanagedCluster(clusterOAuth *identitatemv1alp
 	}
 
 	if len(clusterOAuths.Items) == 1 {
-		//r.Log.Info("delete for manifestwork", "name", helpers.ManifestWorkOAuthName(), "namespace", clusterOAuth.Namespace)
-		// if err := r.deleteManifestWork(helpers.ManifestWorkOAuthName(), clusterOAuth.Namespace); err != nil {
-		// 	return ctrl.Result{}, err
-		// }
+		r.Log.Info("delete for manifestwork", "name", helpers.ManifestWorkOAuthName(), "namespace", clusterOAuth.Namespace)
+		if err := r.deleteManifestWork(helpers.ManifestWorkOAuthName(), clusterOAuth.Namespace); err != nil {
+			return ctrl.Result{}, err
+		}
 		if result, err := r.restoreOriginalOAuth(clusterOAuth); err != nil {
 			return result, err
 		}
 		if err := r.checkManifestWorkOriginalOAuthApplied(clusterOAuth.Namespace); err != nil {
 			return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, err
 		}
-		r.Log.Info("delete for manifestwork", "name", helpers.ManifestWorkOAuthName(), "namespace", clusterOAuth.Namespace)
-		if err := r.deleteManifestWork(helpers.ManifestWorkOAuthName(), clusterOAuth.Namespace); err != nil {
-			return ctrl.Result{}, err
-		}
 		if err := r.deleteOriginalOAuth(clusterOAuth.Namespace); err != nil {
 			return ctrl.Result{}, err
 		}
-		// if err := r.deleteManifestWork(helpers.ManifestWorkOriginalOAuthName(), clusterOAuth.Namespace); err != nil {
-		// 	return ctrl.Result{}, err
-		// }
+		if err := r.deleteManifestWork(helpers.ManifestWorkOriginalOAuthName(), clusterOAuth.Namespace); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 	return ctrl.Result{}, nil
 }
@@ -441,8 +491,7 @@ func (r *ClusterOAuthReconciler) restoreOriginalOAuth(clusterOAuth *identitatemv
 			Name:      helpers.ManifestWorkOriginalOAuthName(),
 			Namespace: clusterOAuth.GetNamespace(),
 			Annotations: map[string]string{
-				posthookAnnotation:         "60",
-				postponeDeletionAnnotation: "",
+				posthookAnnotation: "60",
 			},
 		},
 		Spec: manifestworkv1.ManifestWorkSpec{
