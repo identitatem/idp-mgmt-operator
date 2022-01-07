@@ -20,6 +20,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
@@ -59,7 +60,7 @@ type IDPConfigReconciler struct {
 
 var podName, podNamespace string
 
-// +kubebuilder:rbac:groups="",resources={pods},verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources={namespaces, pods},verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources={services,serviceaccounts},verbs=get;create;update;list;watch;delete
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources={roles,rolebindings,clusterrolebindings},verbs=get;create;update;list;watch;delete
 // +kubebuilder:rbac:groups="apps",resources={deployments},verbs=get;create;update;list;watch;delete
@@ -435,6 +436,13 @@ func (r *IDPConfigReconciler) processIDPConfigDeletion(idpConfig *identitatemv1a
 // SetupWithManager sets up the controller with the Manager.
 func (r *IDPConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
+	//Check pre-requisite
+	if ok, err := r.checkPreRequisite(); !ok {
+		return giterrors.WithMessage(err, "IDP prerequisites are not met")
+	} else {
+		r.Log.Info("IDP prerequisites are met")
+	}
+
 	if err := identitatemv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		return giterrors.WithStack(err)
 	}
@@ -471,4 +479,57 @@ func (r *IDPConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&identitatemv1alpha1.IDPConfig{}).
 		Complete(r)
+}
+
+func (r *IDPConfigReconciler) checkPreRequisite() (bool, error) {
+	rhacm, rhacmErr := r.isRHACM()
+	mce, mceErr := r.isMCE()
+	if rhacm || mce {
+		r.Log.Info("either Red Hat Advanced Cluster Management or Multicluster Engine are installed")
+		return true, nil
+	}
+	var msg string
+	if rhacmErr != nil {
+		msg = rhacmErr.Error()
+	}
+	if mceErr != nil {
+		msg = fmt.Sprintf("%s\n%s", msg, mceErr.Error())
+	}
+	return false, fmt.Errorf("neither Red Hat Advanced Cluster Management or Multicluster Engine installation has been detected, %s", msg)
+}
+
+func (r *IDPConfigReconciler) isRHACM() (bool, error) {
+	cms, err := r.getRHACMConfigMapList()
+	if err != nil {
+		return false, err
+	}
+	if len(cms.Items) == 0 {
+		return false, fmt.Errorf("the product Red Hat Advanced Cluster Management is not installed on this cluster")
+	}
+	return true, nil
+}
+
+func (r *IDPConfigReconciler) getRHACMConfigMapList() (cms *corev1.ConfigMapList, err error) {
+	kubeClient := r.KubeClient
+	return kubeClient.CoreV1().ConfigMaps("").List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%v = %v", "ocm-configmap-type", "image-manifest"),
+	})
+}
+
+func (r *IDPConfigReconciler) isMCE() (bool, error) {
+	cms, err := r.getMCEConfigMapList()
+	if err != nil {
+		return false, err
+	}
+	if len(cms.Items) == 0 {
+		return false, fmt.Errorf("the product Multicluster Engine is not installed on this cluster")
+	}
+	return true, nil
+}
+
+func (r *IDPConfigReconciler) getMCEConfigMapList() (cms *corev1.ConfigMapList, err error) {
+	kubeClient := r.KubeClient
+	return kubeClient.CoreV1().ConfigMaps("").List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%v = %v", "operators.coreos.com/multicluster-engine.multicluster-engine", ""),
+	})
 }
