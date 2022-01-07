@@ -148,15 +148,31 @@ var _ = BeforeSuite(func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	By("Creating idpconfig", func() {
-		idpConfig = &identitatemv1alpha1.IDPConfig{
+	By("Creating MCE config", func() {
+		mceConfig := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "idpconfig",
+				Name:      "mce",
 				Namespace: "idp-mgmt-config",
+				Labels: map[string]string{
+					"operators.coreos.com/multicluster-engine.multicluster-engine": "",
+				},
 			},
 		}
-		_, err := identitatemClientSet.IdentityconfigV1alpha1().IDPConfigs("idp-mgmt-config").Create(context.TODO(), idpConfig, metav1.CreateOptions{})
+		err := k8sClient.Create(context.TODO(), mceConfig)
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	By("Creating idpconfig", func() {
+		Eventually(func() error {
+			idpConfig = &identitatemv1alpha1.IDPConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "idpconfig",
+					Namespace: "idp-mgmt-config",
+				},
+			}
+			_, err := identitatemClientSet.IdentityconfigV1alpha1().IDPConfigs("idp-mgmt-config").Create(context.TODO(), idpConfig, metav1.CreateOptions{})
+			return err
+		}, 30, 1).Should(BeNil())
 	})
 
 	By("Checking operator installation", func() {
