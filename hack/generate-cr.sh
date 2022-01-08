@@ -55,12 +55,6 @@ if [ "${OS}" == "darwin" ]; then
     BASE64="base64"
 fi
 
-GITHUB_APP_CLIENT_SECRET_B64=`echo -n "$GITHUB_APP_CLIENT_SECRET" | $BASE64`OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-BASE64="base64 -w 0"
-if [ "${OS}" == "darwin" ]; then
-    BASE64="base64"
-fi
-
 GITHUB_APP_CLIENT_SECRET_B64=`echo -n "$GITHUB_APP_CLIENT_SECRET" | $BASE64`
 
 PS3="Choose the AuthRealms to generate:"
