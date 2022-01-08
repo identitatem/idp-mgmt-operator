@@ -234,6 +234,9 @@ func (r *ClusterOAuthReconciler) generateManifestWork(clusterOAuth *identitatemv
 			},
 		},
 		Spec: manifestworkv1.ManifestWorkSpec{
+			DeleteOption: &manifestworkv1.DeleteOption{
+				PropagationPolicy: manifestworkv1.DeletePropagationPolicyTypeOrphan,
+			},
 			Workload: manifestworkv1.ManifestsTemplate{
 				Manifests: []manifestworkv1.Manifest{},
 			},
