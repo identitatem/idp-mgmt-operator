@@ -31,8 +31,6 @@ import (
 	identitatemdexserverv1lapha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
-	// idpoperatorconfig "github.com/identitatem/idp-client-api/config"
-	// clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 )
 
 // AuthRealmReconciler reconciles a AuthRealm object

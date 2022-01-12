@@ -35,7 +35,7 @@ oc cluster-info
 
 This is required for the Dex server we will be using under the covers to authenticate
 the managed clusters OpenID OAuth requests. The quickest way to do this is using a tool from
-https://github.com/open-cluster-management/sre-tools/wiki/ACM---Day-1#add-an-acme-certificate.
+https://github.com/stolostron/sre-tools/wiki/ACM---Day-1#add-an-acme-certificate.
 
 Here is a summary of the commands you need to run for an AWS based hub:
 
@@ -124,7 +124,7 @@ oc cluster-info
 
 ```bash
 export IMG=quay.io/<your_user>/idp-mgmt-operator
-make docker-build docker-publish deploy
+make docker-build docker-push deploy
 ```
 
 5. Verify the installer is running
