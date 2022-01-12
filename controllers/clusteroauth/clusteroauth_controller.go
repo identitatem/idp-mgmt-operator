@@ -40,7 +40,7 @@ import (
 	// clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	manifestworkv1 "open-cluster-management.io/api/work/v1"
 
-	viewv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/view/v1beta1"
+	viewv1beta1 "github.com/stolostron/multicloud-operators-foundation/pkg/apis/view/v1beta1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
