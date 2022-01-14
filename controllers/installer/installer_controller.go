@@ -485,7 +485,7 @@ func (r *IDPConfigReconciler) checkPreRequisite() (bool, error) {
 	rhacm, rhacmErr := r.isRHACM()
 	mce, mceErr := r.isMCE()
 	if rhacm || mce {
-		r.Log.Info("either Red Hat Advanced Cluster Management or Multicluster Engine are installed")
+		r.Log.Info("either Red Hat Advanced Cluster Management or Multicluster Engine is installed")
 		return true, nil
 	}
 	var msg string

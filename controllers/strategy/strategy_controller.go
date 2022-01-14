@@ -31,7 +31,6 @@ import (
 	// identitatemdexserverv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemdexv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 
-	//ocm "github.com/open-cluster-management-io/api/cluster/v1alpha1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	workv1 "open-cluster-management.io/api/work/v1"
