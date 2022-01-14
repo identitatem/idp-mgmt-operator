@@ -348,6 +348,7 @@ export PREV_BUNDLE_INDEX_IMG=quay.io/<repo_name>/idp-mgmt-operator-catalog:<prev
 ```
 6. run `make publish` - this should acquire any dependencies and push to quay!
 7. To test, run `make deploy-catalog`.  This will create a catalogsource on your hub cluster and you can install the test catalog from OperatorHub.
+8. PS: Do not commit changes in bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
 
 # Tagging and Generating a Release
 
