@@ -123,7 +123,7 @@ oc cluster-info
 4. From the cloned idp-mgmt-operator directory:
 
 ```bash
-export IMG=quay.io/<your_user>/idp-mgmt-operator
+export IMG=quay.io/<your_user>/idp-mgmt-operator:<tag_you_want_to_use>
 make docker-build docker-push deploy
 ```
 
@@ -328,7 +328,8 @@ export IMAGE_TAG_BASE=quay.io/\<your-user\>/idp-mgmt-operator
 ```bash
 export VERSION=`date -u "+0.0.0-%Y%m%d-%H-%M-%S"`
 ```
-3. If you want to use a specific idp-mgmt-operator image, set the **IMG** environment variable to that image. For example, to point to a PR built image:
+3. `export` DOCKER_USER and DOCKER_PASS equal to a docker user and password that will allow you to push to the quay repositories outlined in step 1.
+4. If you want to use a specific idp-mgmt-operator image, set the **IMG** environment variable to that image. For example, to point to a PR built image:
 ```bash
 export IMG=quay.io/identitatem/idp-mgmt-operator@sha256:f1303674fc463cbc3834d3dd6c9d023cc991144a3e170c496dac5d2a44459d5c
 ```
@@ -336,9 +337,18 @@ Otherwise use:
 ```bash
 export IMG=quay.io/identitatem/idp-mgmt-operator:latest
 ```
-4. `export` DOCKER_USER and DOCKER_PASS equal to a docker user and password that will allow you to push to the quay repositories outlined in step 1.
-5. run `make publish` - this should acquire any dependencies and push to quay!
-6. To test, run `make deploy-catalog`.  This will create a catalogsource on your hub cluster and you can install the test catalog from OperatorHub.
+You can also use an image located in your own repo. To create such image run:
+```bash
+export IMG=quay.io/<your_user>/idp-mgmt-operator:<tag_you_want_to_use>
+make docker-build docker-push
+```
+5. If you upgrade from a prior version set the PREV_BUNDLE_INDEX_IMG to the previous catalog image
+```bash
+export PREV_BUNDLE_INDEX_IMG=quay.io/<repo_name>/idp-mgmt-operator-catalog:<previous_catalog_version>
+```
+6. run `make publish` - this should acquire any dependencies and push to quay!
+7. To test, run `make deploy-catalog`.  This will create a catalogsource on your hub cluster and you can install the test catalog from OperatorHub.
+8. PS: Do not commit changes in bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
 
 # ClusterServiceVersion updates
 After making changes to `config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml` you will need to run `make publish` (See preceding section) to get the changes into `bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml`.  After running `make publish`, revert changes to version numbers before checking in the changes.

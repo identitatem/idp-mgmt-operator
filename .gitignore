@@ -41,3 +41,5 @@ kind_kubeconfig_internal.yaml
 
 /operator-sdk
 /yq
+
+# bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
