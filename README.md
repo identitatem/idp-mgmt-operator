@@ -190,7 +190,7 @@ spec:
   name: idp-mgmt-operator
   source: idp-mgmt-config-catalog
   sourceNamespace: idp-mgmt-config
-  startingCSV: idp-mgmt-operator.v0.1.1
+  startingCSV: idp-mgmt-operator.v0.2.0
 ```
 5. Create an idpconfig
 
@@ -349,6 +349,9 @@ export PREV_BUNDLE_INDEX_IMG=quay.io/<repo_name>/idp-mgmt-operator-catalog:<prev
 6. run `make publish` - this should acquire any dependencies and push to quay!
 7. To test, run `make deploy-catalog`.  This will create a catalogsource on your hub cluster and you can install the test catalog from OperatorHub.
 8. PS: Do not commit changes in bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
+
+# ClusterServiceVersion updates
+After making changes to `config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml` you will need to run `make publish` (See preceding section) to get the changes into `bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml`.  After running `make publish`, revert changes to version numbers before checking in the changes.
 
 # Tagging and Generating a Release
 
