@@ -23,5 +23,5 @@ jobs:
         DOCKER_USER: ${{ secrets.DOCKER_USER }}
         DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
       run: |
-        export VERSION="0.1.1-$(date -u +'%Y%m%d-%H-%M-%S')"
+        export VERSION="0.2.0-$(date -u +'%Y%m%d-%H-%M-%S')"
         make publish
