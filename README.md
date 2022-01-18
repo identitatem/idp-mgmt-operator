@@ -377,15 +377,15 @@ date -u "+0.0.0-%Y%m%d-%H-%M-%S"
    into the idp-mgmt-operator.
 1. In your fork of the https://github.com/identitatem/idp-mgmt-operator repo, create a new branch
 1. Update `go.mod` entry `github.com/identitatem/dex-operator` to reference the new tag, for example `github.com/identitatem/dex-operator 0.0.0-20211028-14-34-26`  
-1. Run `go mod tidy`.  The `go.mod` entry will be updated to the correct value.
-1. Update https://github.com/identitatem/idp-mgmt-operator/blob/main/config/manager/manager.yaml
+1. Run `go mod tidy`.  The `go.mod` entry will be updated to the correct value.  Might need `go mod tidy -compat=1.17` now that we are using a newer version of Go.
+1. Update https://github.com/identitatem/idp-mgmt-operator/blob/main/config/installer/installer.yaml
 so RELATED_IMAGE_DEX_OPERATOR points to the new dex-operator image in quay.
 1. Export IMG variable to point to latest
 ```bash
 export IMG=quay.io/identitatem/idp-mgmt-operator:latest
 ```
 1. Run `make bundle` to update https://github.com/identitatem/idp-mgmt-operator/blob/main/bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml.  
-1. Test the changes using `make test` then `make deploy` and apply and AuthRealm to a managed cluster and be sure it works.
+1. Test the changes using `make test` then `make deploy`.  Apply an IDPConfig and apply an AuthRealm to a managed cluster and be sure it works.
 1. Commit the PR changes and get them reviewed and merged.
 1. Run the following command to generate the value we will use as part of the release and tag (OR possibly use the same tag dex-operator used)
 ```bash
