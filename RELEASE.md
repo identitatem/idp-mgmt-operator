@@ -25,7 +25,7 @@ In order to keep available previous version of the documetation for customer, a 
 1. Merge [Upstream repository](https://github.com/identitatem/idp-mgmt-docs-upstream) into this repository
 1. Update the version in [idp_mgmt_docs](https://github.com/identitatem/idp-mgmt-docs-upstream/blob/main/idp_mgmt_docs.adoc)
 1. Create PR for the above
-1. Once the PR is merged, from [idp-mgmt-docs repository](https://github.com/identitatem/idp-mgmt-docs) click `create a releae`
+1. Once the PR is merged, from [idp-mgmt-docs repository](https://github.com/identitatem/idp-mgmt-docs) click `create a release`
 1. Add a the same tag as in the above `Release Process IDP`
 1. Fill the Release title and the description
 1. Download the [ebook](https://identitatem.github.io/idp-mgmt-docs/ebook.pdf) on your local system.
