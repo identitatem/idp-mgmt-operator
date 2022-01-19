@@ -60,5 +60,9 @@ export CYPRESS_MANAGED_OCP_USER=$(echo $MANAGED_CREDS | jq -r '.username')
 export CYPRESS_MANAGED_OCP_PASS=$(echo $MANAGED_CREDS | jq -r '.password')
 export CYPRESS_PROW="true"
 
+echo "Configure OpenShift to use a signed certificate..." 
+./install-signed-cert.sh
+
+
 echo `Running ${CYPRESS_TEST_MODE} tests`
 ./start-cypress-tests.sh
