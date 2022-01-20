@@ -60,6 +60,12 @@ export CYPRESS_MANAGED_OCP_USER=$(echo $MANAGED_CREDS | jq -r '.username')
 export CYPRESS_MANAGED_OCP_PASS=$(echo $MANAGED_CREDS | jq -r '.password')
 export CYPRESS_PROW="true"
 
+echo "Check current hub cluster info"
+oc cluster-info
+
+echo "Show managed clusters"
+oc get managedclusters
+
 echo "Configure OpenShift to use a signed certificate..."
 ./install-signed-cert.sh
 

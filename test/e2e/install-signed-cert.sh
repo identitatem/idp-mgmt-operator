@@ -6,16 +6,13 @@ echo "Creating a signed certificate ..."
 
 # Based on info at https://github.com/open-cluster-management/sre-tools/wiki/ACM---Day-1#add-an-acme-certificate
 
-ls /etc
-ls /etc/e2e-secrets
-
 #In order to verify the signed certifiate, we need to use AWS for route53 domain stuff
-export AWS_ACCESS_KEY_ID=$(cat "/etc/e2e-secrets/aws-access-key")
-export AWS_SECRET_ACCESS_KEY=$(cat "/etc/e2e-secrets/aws-secret-access-key")
+export AWS_ACCESS_KEY_ID=$(cat "/etc/ocm-mgdsvcs-e2e-test/aws-access-key")
+export AWS_SECRET_ACCESS_KEY=$(cat "/etc/ocm-mgdsvcs-e2e-test/aws-secret-access-key")
 
 #export GITHUB_PRIVATE_URL=$(cat "/etc/e2e-secrets/github-private-url")
-export GITHUB_USER=$(cat "/etc/e2e-secrets/github-user")
-export GITHUB_TOKEN=$(cat "/etc/e2e-secrets/github-token")
+export GITHUB_USER=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-user")
+export GITHUB_TOKEN=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-token")
 #export GIT_PULL_NUMBER=$PULL_NUMBER
 #export GIT_REPO_SLUG=$GIT_REPO_SLUG
 
