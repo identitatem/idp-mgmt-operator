@@ -23,7 +23,7 @@ IMG_E2E_TEST ?= ${PROJECT_NAME}-e2e-test:${IMG_TAG}
 CRD_OPTIONS ?= "crd:crdVersions=v1"
 
 # Version to apply to generated artifacts (for bundling/publishing)
-export VERSION ?= 0.1.1
+export VERSION ?= 0.2.0
 
 # Bundle Prereqs
 IMAGE_TAG_BASE ?= quay.io/identitatem/$(PROJECT_NAME)
@@ -193,9 +193,9 @@ BUNDLE_IMGS ?= $(BUNDLE_IMG)
 # The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=quay.io/identitatem/idp-mgmt-config-catalog:0.1.1).
 CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION)
 
-# Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
-ifneq ($(origin CATALOG_BASE_IMG), undefined)
-FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
+# Set PREV_BUNDLE_INDEX_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
+ifneq ($(origin PREV_BUNDLE_INDEX_IMG), undefined)
+FROM_INDEX_OPT := --from-index $(PREV_BUNDLE_INDEX_IMG)
 endif
 
 
@@ -219,12 +219,21 @@ docker-login:
 ## Generate bundle manifests and metadata, patch the webhook deployment name, then validate generated files [NOTE: validate bundle is skipped for now].
 bundle: manifests kustomize yq/install operatorsdk
 	echo IMG=${IMG}
-	${OPERATOR_SDK} generate kustomize manifests --interactive=false -q
 	$(eval TMP_DIR := $(shell mktemp -d))
 	echo ${TMP_DIR}
+	${OPERATOR_SDK} generate kustomize manifests --interactive=false -q
+	$(eval REPLACES := $(shell echo ${PREV_BUNDLE_INDEX_IMG} | cut -d : -f 2))
+	echo ${REPLACES}
+	if [[ -n "${REPLACES}" ]]; then \
+	echo idp-mgmt-operator.${REPLACES}; \
+	  sed -i.bak "s/PREV_CATALOG_VERSION/idp-mgmt-operator.${REPLACES}/g" config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml; \
+	else \
+	  sed -i.bak "s/PREV_CATALOG_VERSION//g" config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml; \
+	fi;
 	cp -R config ${TMP_DIR}
 	cd ${TMP_DIR}/config/installer && $(KUSTOMIZE) edit set image controller=$(IMG)
-	kustomize build  ${TMP_DIR}/config/default | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
+	kustomize build ${TMP_DIR}/config/default | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
+	mv config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml.bak config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml
 
 .PHONY: bundle-build
 ## Build the bundle image.
