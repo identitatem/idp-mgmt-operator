@@ -63,12 +63,12 @@ export CYPRESS_PROW="true"
 echo "Check current hub cluster info"
 oc cluster-info
 
-echo "Show managed clusters"
+echo "Show managed cluster"
 oc get managedclusters
 
 echo "Configure OpenShift to use a signed certificate..."
 ./install-signed-cert.sh
 
 
-echo `Running ${CYPRESS_TEST_MODE} tests`
+echo "Running ${CYPRESS_TEST_MODE} tests"
 ./start-cypress-tests.sh

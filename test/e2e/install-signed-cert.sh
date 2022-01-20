@@ -71,8 +71,17 @@ oc patch ingresscontroller default -n openshift-ingress-operator --type=merge --
 popd
 
 
-echo "OpenShift nodes need about 10 minutes to restart and use new signed certificate ..."
-# TODO - Add a wait loop checking various pods that get restarted
-sleep 600
+echo "OpenShift nodes need several minutes to restart and use new signed certificate ..."
+# Wait a bit for the certificate change to trigger restarts
+sleep 10
+# show the current status
+oc get clusteroperator
+# Go ahead and sleep for a few minutes for things to settle down
+sleep 120
+# now check all the OpenShift clusteroperators to make sure they are available
+kubectl wait --for=condition=available clusteroperator --all --timeout=20m
+# final check to show we are ready to proceed
+oc get clusteroperator
+
 
 echo "Done setting up signed certificate"

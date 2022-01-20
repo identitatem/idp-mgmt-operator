@@ -32,6 +32,9 @@ oc login --server=$CYPRESS_OC_CLUSTER_URL -u $CYPRESS_OC_CLUSTER_USER -p $CYPRES
 echo "Show cluster info ..."
 oc cluster-info
 
+echo "Show managed cluster"
+oc get managedclusters
+
 echo "Show nodes ..."
 oc get nodes
 
