@@ -6,29 +6,20 @@ echo "Creating a signed certificate ..."
 
 # Based on info at https://github.com/open-cluster-management/sre-tools/wiki/ACM---Day-1#add-an-acme-certificate
 
+# from run-prow-e2e.sh
 #In order to verify the signed certifiate, we need to use AWS for route53 domain stuff
-export AWS_ACCESS_KEY_ID=$(cat "/etc/ocm-mgdsvcs-e2e-test/aws-access-key")
-export AWS_SECRET_ACCESS_KEY=$(cat "/etc/ocm-mgdsvcs-e2e-test/aws-secret-access-key")
-
-#export GITHUB_PRIVATE_URL=$(cat "/etc/e2e-secrets/github-private-url")
-export GITHUB_USER=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-user")
-export GITHUB_TOKEN=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-token")
-#export GIT_PULL_NUMBER=$PULL_NUMBER
-#export GIT_REPO_SLUG=$GIT_REPO_SLUG
+#export AWS_ACCESS_KEY_ID=$(cat "/etc/ocm-mgdsvcs-e2e-test/aws-access-key")
+#export AWS_SECRET_ACCESS_KEY=$(cat "/etc/ocm-mgdsvcs-e2e-test/aws-secret-access-key")
+#
+#export GITHUB_USER=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-user")
+#export GITHUB_TOKEN=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-token")
 
 acme_dir=$(mktemp -d -t acme-XXXXX)
 cd "$acme_dir" || exit 1
 export HOME="$acme_dir"
 
-# Set up git credentials.
-echo "Setting up git credentials."
-ACME_REPO=github.com/acmesh-official/acme.sh
-{
-    echo "https://${GITHUB_USER}:${GITHUB_TOKEN}@${ACME_REPO}.git"
-} >> ghcreds
-git config --global credential.helper 'store --file=ghcreds'
 
-# Set up repo URLs.
+# Set up repo for cloning
 acme_url="https://${ACME_REPO}.git"
 acme_git_dir="${acme_dir}/acme.sh"
 echo "Cloning repo..."

@@ -9,6 +9,11 @@ set -e
 
 echo $SHARED_DIR
 
+idp_dir=$(mktemp -d -t idp-XXXXX)
+cd "$idp_dir" || exit 1
+export HOME="$idp_dir"
+
+
 BROWSER=chrome
 BUILD_WEB_URL=https://prow.ci.openshift.org/view/gs/origin-ci-test/${JOB_NAME}/${BUILD_ID}
 GIT_PULL_NUMBER=$PULL_NUMBER
@@ -31,8 +36,14 @@ export CYPRESS_OC_CLUSTER_PASS=$(echo $HUB_CREDS | jq -r '.password')
 export BROWSER=$BROWSER
 export BUILD_WEB_URL=$BUILD_WEB_URL
 export CYPRESS_JOB_ID=$PROW_JOB_ID
-export CYPRESS_RBAC_TEST=$(cat "/etc/e2e-secrets/cypress-rbac-test")
+#export CYPRESS_RBAC_TEST=$(cat "/etc/e2e-secrets/cypress-rbac-test")
 export CYPRESS_TEST_MODE=BVT
+export GITHUB_USER=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-user")
+export GITHUB_TOKEN=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-token")
+
+export ACME_REPO="github.com/acmesh-official/acme.sh"
+export IDP_MGMT_OPERATOR_REPO="github.com/identitatem/idp-mgmt-operator"
+
 #export GITHUB_PRIVATE_URL=$(cat "/etc/e2e-secrets/github-private-url")
 #export GITHUB_USER=$(cat "/etc/e2e-secrets/github-user")
 #export GITHUB_TOKEN=$(cat "/etc/e2e-secrets/github-token")
@@ -47,6 +58,12 @@ export GIT_REPO_SLUG=$GIT_REPO_SLUG
 #export OBJECTSTORE_SECRET_KEY=$(cat "/etc/e2e-secrets/objectstore-secret-key")
 #export SLACK_TOKEN=$(cat "/etc/e2e-secrets/slack-token")
 
+#In order to verify the signed certifiate, we need to use AWS for route53 domain stuff
+export AWS_ACCESS_KEY_ID=$(cat "/etc/ocm-mgdsvcs-e2e-test/aws-access-key")
+export AWS_SECRET_ACCESS_KEY=$(cat "/etc/ocm-mgdsvcs-e2e-test/aws-secret-access-key")
+
+
+
 # Workaround for "error: x509: certificate signed by unknown authority" problem with oc login
 mkdir -p ${HOME}/certificates
 OAUTH_POD=$(oc -n openshift-authentication get pods -o jsonpath='{.items[0].metadata.name}')
@@ -60,6 +77,29 @@ export CYPRESS_MANAGED_OCP_USER=$(echo $MANAGED_CREDS | jq -r '.username')
 export CYPRESS_MANAGED_OCP_PASS=$(echo $MANAGED_CREDS | jq -r '.password')
 export CYPRESS_PROW="true"
 
+# Set up git credentials.
+echo "Setting up git credentials."
+{
+  echo "https://${GITHUB_USER}:${GITHUB_TOKEN}@${ACME_REPO}.git"
+  echo "https://${GITHUB_USER}:${GITHUB_TOKEN}@${IDP_MGMT_OPERATOR_REPO}.git"
+} >> ghcreds
+git config --global credential.helper 'store --file=ghcreds'
+
+
+
+# Set up Quay credentials.
+log "Setting up Quay credentials."
+if [[ ! -r "${QUAY_TOKEN_FILE}" ]]; then
+    log "ERROR Quay token file missing or not readable: $QUAY_TOKEN_FILE"
+    exit 1
+fi
+export QUAY_TOKEN=$(cat "$QUAY_TOKEN_FILE")
+
+
+cd ${acme_git_dir}
+
+
+
 echo "Check current hub cluster info"
 oc cluster-info
 
@@ -69,6 +109,8 @@ oc get managedclusters
 echo "Configure OpenShift to use a signed certificate..."
 ./install-signed-cert.sh
 
+echo "Install identity configuration management service for Kubernetes ..."
+./install-IDP.sh
 
 echo "Running ${CYPRESS_TEST_MODE} tests"
 ./start-cypress-tests.sh
