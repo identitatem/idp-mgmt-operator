@@ -45,7 +45,7 @@ export GIT_REPO_SLUG=$GIT_REPO_SLUG
 #export OBJECTSTORE_PRIVATE_URL=$(cat "/etc/e2e-secrets/objectstore-private-url")
 #export OBJECTSTORE_ACCESS_KEY=$(cat "/etc/e2e-secrets/objectstore-access-key")
 #export OBJECTSTORE_SECRET_KEY=$(cat "/etc/e2e-secrets/objectstore-secret-key")
-#export SLACK_TOKEN=$(cat "/etc/e2e-secrets/slack-token") 
+#export SLACK_TOKEN=$(cat "/etc/e2e-secrets/slack-token")
 
 # Workaround for "error: x509: certificate signed by unknown authority" problem with oc login
 mkdir -p ${HOME}/certificates
@@ -60,5 +60,15 @@ export CYPRESS_MANAGED_OCP_USER=$(echo $MANAGED_CREDS | jq -r '.username')
 export CYPRESS_MANAGED_OCP_PASS=$(echo $MANAGED_CREDS | jq -r '.password')
 export CYPRESS_PROW="true"
 
-echo `Running ${CYPRESS_TEST_MODE} tests`
+echo "Check current hub cluster info"
+oc cluster-info
+
+echo "Show managed cluster"
+oc get managedclusters
+
+echo "Configure OpenShift to use a signed certificate..."
+./install-signed-cert.sh
+
+
+echo "Running ${CYPRESS_TEST_MODE} tests"
 ./start-cypress-tests.sh
