@@ -45,7 +45,7 @@ export GIT_REPO_SLUG=$GIT_REPO_SLUG
 #export OBJECTSTORE_PRIVATE_URL=$(cat "/etc/e2e-secrets/objectstore-private-url")
 #export OBJECTSTORE_ACCESS_KEY=$(cat "/etc/e2e-secrets/objectstore-access-key")
 #export OBJECTSTORE_SECRET_KEY=$(cat "/etc/e2e-secrets/objectstore-secret-key")
-#export SLACK_TOKEN=$(cat "/etc/e2e-secrets/slack-token") 
+#export SLACK_TOKEN=$(cat "/etc/e2e-secrets/slack-token")
 
 # Workaround for "error: x509: certificate signed by unknown authority" problem with oc login
 mkdir -p ${HOME}/certificates
@@ -53,14 +53,15 @@ OAUTH_POD=$(oc -n openshift-authentication get pods -o jsonpath='{.items[0].meta
 export CYPRESS_OC_CLUSTER_INGRESS_CA=/certificates/ingress-ca.crt
 oc rsh -n openshift-authentication $OAUTH_POD cat /run/secrets/kubernetes.io/serviceaccount/ca.crt > ${HOME}${CYPRESS_OC_CLUSTER_INGRESS_CA}
 
-# managed cluster
-MANAGED_CREDS=$(cat "${SHARED_DIR}/managed-1.json")
-export CYPRESS_MANAGED_OCP_URL=$(echo $MANAGED_CREDS | jq -r '.api_url')
-export CYPRESS_MANAGED_OCP_USER=$(echo $MANAGED_CREDS | jq -r '.username')
-export CYPRESS_MANAGED_OCP_PASS=$(echo $MANAGED_CREDS | jq -r '.password')
-export CYPRESS_PROW="true"
+#TODO TEMP DISABLE MANAGED CLUSTER WHILE WE DEBUG HUB
+## managed cluster
+#MANAGED_CREDS=$(cat "${SHARED_DIR}/managed-1.json")
+#export CYPRESS_MANAGED_OCP_URL=$(echo $MANAGED_CREDS | jq -r '.api_url')
+#export CYPRESS_MANAGED_OCP_USER=$(echo $MANAGED_CREDS | jq -r '.username')
+#export CYPRESS_MANAGED_OCP_PASS=$(echo $MANAGED_CREDS | jq -r '.password')
+#export CYPRESS_PROW="true"
 
-echo "Configure OpenShift to use a signed certificate..." 
+echo "Configure OpenShift to use a signed certificate..."
 ./install-signed-cert.sh
 
 
