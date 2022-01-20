@@ -88,9 +88,9 @@ git config --global credential.helper 'store --file=ghcreds'
 
 
 # Set up Quay credentials.
-log "Setting up Quay credentials."
+echo "Setting up Quay credentials."
 if [[ ! -r "${QUAY_TOKEN_FILE}" ]]; then
-    log "ERROR Quay token file missing or not readable: $QUAY_TOKEN_FILE"
+    echo "ERROR Quay token file missing or not readable: $QUAY_TOKEN_FILE"
     exit 1
 fi
 export QUAY_TOKEN=$(cat "$QUAY_TOKEN_FILE")

@@ -13,12 +13,20 @@ echo "Cloning branch idp-mgmt-operator ${PULL_BASE_REF}"
 idp_mgmt_operator_url="https://${IDP_MGMT_OPERATOR_REPO}.git"
 idp_mgmt_operator_dir="${idp_dir}/idp-mgmt-operator"
 git clone -b "${PULL_BASE_REF}" "$idp_mgmt_operator_url" "$idp_mgmt_operator_dir" || {
-    log "ERROR Could not clone branch ${PULL_BAWE_REF} from idp-mgmt-operator repo $idp_mgmt_operator_url"
+    echo "ERROR Could not clone branch ${PULL_BAWE_REF} from idp-mgmt-operator repo $idp_mgmt_operator_url"
     exit 1
 }
 
 
 cd ${idp_mgmt_operator_dir}
+
+
+echo REPO_OWNER ${REPO_OWNER}
+echo REPO_NAME ${REPO_NAME}
+echo PULL_BASE_REF ${PULL_BASE_REF}
+echo PULL_BASE_SHA ${PULL_BASE_SHA}
+echo PULL_NUMBER ${PULL_NUMBER}
+echo PULL_PULL_SHA ${PULL_PULL_SHA}
 
 export IMG="quay.io/identitatem/idp-mgmt-operator:0.1-PR${PULL_NUMBER}-${PULL_PULL_SHA}"
 echo "Quay image is ${IMG}"
