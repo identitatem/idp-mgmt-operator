@@ -53,13 +53,12 @@ OAUTH_POD=$(oc -n openshift-authentication get pods -o jsonpath='{.items[0].meta
 export CYPRESS_OC_CLUSTER_INGRESS_CA=/certificates/ingress-ca.crt
 oc rsh -n openshift-authentication $OAUTH_POD cat /run/secrets/kubernetes.io/serviceaccount/ca.crt > ${HOME}${CYPRESS_OC_CLUSTER_INGRESS_CA}
 
-#TODO TEMP DISABLE MANAGED CLUSTER WHILE WE DEBUG HUB
-## managed cluster
-#MANAGED_CREDS=$(cat "${SHARED_DIR}/managed-1.json")
-#export CYPRESS_MANAGED_OCP_URL=$(echo $MANAGED_CREDS | jq -r '.api_url')
-#export CYPRESS_MANAGED_OCP_USER=$(echo $MANAGED_CREDS | jq -r '.username')
-#export CYPRESS_MANAGED_OCP_PASS=$(echo $MANAGED_CREDS | jq -r '.password')
-#export CYPRESS_PROW="true"
+# managed cluster
+MANAGED_CREDS=$(cat "${SHARED_DIR}/managed-1.json")
+export CYPRESS_MANAGED_OCP_URL=$(echo $MANAGED_CREDS | jq -r '.api_url')
+export CYPRESS_MANAGED_OCP_USER=$(echo $MANAGED_CREDS | jq -r '.username')
+export CYPRESS_MANAGED_OCP_PASS=$(echo $MANAGED_CREDS | jq -r '.password')
+export CYPRESS_PROW="true"
 
 echo "Configure OpenShift to use a signed certificate..."
 ./install-signed-cert.sh

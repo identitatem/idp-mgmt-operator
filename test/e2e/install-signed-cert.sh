@@ -6,6 +6,9 @@ echo "Creating a signed certificate ..."
 
 # Based on info at https://github.com/open-cluster-management/sre-tools/wiki/ACM---Day-1#add-an-acme-certificate
 
+ls /etc
+ls /etc/e2e-secrets
+
 #In order to verify the signed certifiate, we need to use AWS for route53 domain stuff
 export AWS_ACCESS_KEY_ID=$(cat "/etc/e2e-secrets/aws-access-key")
 export AWS_SECRET_ACCESS_KEY=$(cat "/etc/e2e-secrets/aws-secret-access-key")
@@ -45,6 +48,7 @@ oc cluster-info
 export API=$(oc whoami --show-server | cut -f 2 -d ':' | cut -f 3 -d '/' | sed 's/-api././')
 export WILDCARD=$(oc get ingresscontroller default -n openshift-ingress-operator -o jsonpath='{.status.domain}')
 
+echo "Register account"
 ./acme.sh --register-account -m cahl@redhat.com || {
     echo "ERROR Could not register email address"
     exit 1
