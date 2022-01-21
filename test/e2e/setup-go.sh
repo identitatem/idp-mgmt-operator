@@ -22,12 +22,14 @@ if [ "$ARCH" = "s390x" ]; then
         ln gcc s390x-linux-gnu-gcc
 fi
 
-# Need kustomize too!
+## Need kustomize too!
 KUSTOMIZE_TMP_DIR=$(mktemp -d)
 cd $KUSTOMIZE_TMP_DIR
-go mod init tmp
-GOBIN=$GOBIN; go get sigs.k8s.io/kustomize/kustomize/v3@v3.8.7
-#rm -rf $KUSTOMIZE_TMP_DIR
-
+#KUSTOMIZE_VERSION=3.8.7
+KUSTOMIZE_VERSION=3.2.3
+curl --silent --location --remote-name "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE_VERSION}/kustomize_kustomize.v${KUSTOMIZE_VERSION}_${OS}_${ARCH}"
+chmod a+x kustomize_kustomize.v${KUSTOMIZE_VERSION}_${OS}_${ARCH}
+mv kustomize_kustomize.v${KUSTOMIZE_VERSION}_${OS}_${ARCH} /usr/local/bin/kustomize
+ls -alh /usr/local/bin/kustomize
 which kustomize
-kustomize version
+kustomize
