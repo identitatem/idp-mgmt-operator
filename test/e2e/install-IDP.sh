@@ -35,9 +35,11 @@ echo "Quay image is ${IMG}"
 
 echo "Check namespace - before"
 oc get namespaces
-oc create ns idp-mgmt-config
-echo "Check namespace - before"
-oc get namespaces
+
+#oc create ns idp-mgmt-config
+
+#echo "Check namespace - before 2"
+#oc get namespaces
 
 echo "Start deploy"
 export CATALOG_DEPLOY_NAMESPACE=idp-mgmt-config
