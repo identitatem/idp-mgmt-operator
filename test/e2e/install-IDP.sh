@@ -33,10 +33,17 @@ cd ${idp_mgmt_operator_dir}
 export IMG="quay.io/identitatem/idp-mgmt-operator:0.1-PR${PULL_NUMBER}-${PULL_PULL_SHA}"
 echo "Quay image is ${IMG}"
 
+echo "Check namespace - before"
+oc get namespaces
+
 echo "Start deploy"
 make deploy
 
 sleep 20
+
+echo "Check namespace - after"
+oc get namespaces
+
 
 echo "Check that the pod is running"
 oc get pods -n idp-mgmt-config
