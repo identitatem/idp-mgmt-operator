@@ -21,7 +21,9 @@ import (
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -69,6 +71,9 @@ var podName, podNamespace string
 // +kubebuilder:rbac:groups="apiregistration.k8s.io",resources={apiservices},verbs=get;create;update;list;watch;delete
 
 // +kubebuilder:rbac:groups="identityconfig.identitatem.io",resources={idpconfigs},verbs=get;create;update;list;watch;delete
+
+// +kubebuilder:rbac:groups="multicluster.openshift.io",resources={multiclusterengines},verbs=get;list;watch
+// +kubebuilder:rbac:groups="operator.open-cluster-management.io",resources={multiclusterhubs},verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -499,21 +504,20 @@ func (r *IDPConfigReconciler) checkPreRequisite() (bool, error) {
 }
 
 func (r *IDPConfigReconciler) isRHACM() (bool, error) {
-	cms, err := r.getRHACMConfigMapList()
+	rhacmcr, err := r.getRHACMCRList()
 	if err != nil {
 		return false, err
 	}
-	if len(cms.Items) == 0 {
+	if len(rhacmcr.Items) == 0 {
 		return false, fmt.Errorf("the product Red Hat Advanced Cluster Management is not installed on this cluster")
 	}
 	return true, nil
 }
 
-func (r *IDPConfigReconciler) getRHACMConfigMapList() (cms *corev1.ConfigMapList, err error) {
-	kubeClient := r.KubeClient
-	return kubeClient.CoreV1().ConfigMaps("").List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%v = %v", "ocm-configmap-type", "image-manifest"),
-	})
+func (r *IDPConfigReconciler) getRHACMCRList() (*unstructured.UnstructuredList, error) {
+	dynamicClient := r.DynamicClient
+	gvr := schema.GroupVersionResource{Group: "operator.open-cluster-management.io", Version: "v1", Resource: "multiclusterhubs"}
+	return dynamicClient.Resource(gvr).Namespace("").List(context.TODO(), metav1.ListOptions{})
 }
 
 func (r *IDPConfigReconciler) isMCE() (bool, error) {
@@ -527,9 +531,8 @@ func (r *IDPConfigReconciler) isMCE() (bool, error) {
 	return true, nil
 }
 
-func (r *IDPConfigReconciler) getMCEConfigMapList() (cms *corev1.ConfigMapList, err error) {
-	kubeClient := r.KubeClient
-	return kubeClient.CoreV1().ConfigMaps("").List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%v = %v", "operators.coreos.com/multicluster-engine.multicluster-engine", ""),
-	})
+func (r *IDPConfigReconciler) getMCEConfigMapList() (*unstructured.UnstructuredList, error) {
+	dynamicClient := r.DynamicClient
+	gvr := schema.GroupVersionResource{Group: "multicluster.openshift.io", Version: "v1alpha1", Resource: "multiclusterengines"}
+	return dynamicClient.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
 }
