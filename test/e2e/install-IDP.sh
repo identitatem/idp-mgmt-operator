@@ -2,6 +2,8 @@
 
 # Copyright Red Hat
 
+#set -e
+
 echo "Install identity configuration management service for Kubernetes ..."
 
 idp_dir=$(mktemp -d -t idp-XXXXX)
@@ -32,7 +34,7 @@ export IMG="quay.io/identitatem/idp-mgmt-operator:0.1-PR${PULL_NUMBER}-${PULL_PU
 echo "Quay image is ${IMG}"
 
 echo "Start deploy"
-make deploy
+make kustomize deploy
 
 sleep 20
 
@@ -40,13 +42,15 @@ echo "Check that the pod is running"
 oc get pods -n idp-mgmt-config
 
 echo "Create IDPConfig"
-echo '
+cat > e2e-IDPConfig.yaml <<EOF
 apiVersion: identityconfig.identitatem.io/v1alpha1
 kind: IDPConfig
 metadata:
   name: idp-config
   namespace: idp-mgmt-config
-spec:' | oc create -f -
+spec:
+EOF
+oc create -f e2e-IDPConfig.yaml
 
 
 sleep 20
