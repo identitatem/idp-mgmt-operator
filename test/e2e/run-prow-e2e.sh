@@ -89,11 +89,7 @@ git config --global credential.helper 'store --file=ghcreds'
 
 # Set up Quay credentials.
 echo "Setting up Quay credentials."
-if [[ ! -r "${QUAY_TOKEN_FILE}" ]]; then
-    echo "ERROR Quay token file missing or not readable: $QUAY_TOKEN_FILE"
-    exit 1
-fi
-export QUAY_TOKEN=$(cat "$QUAY_TOKEN_FILE")
+export QUAY_TOKEN=$(cat "/etc/acm-cicd-quay-pull")
 
 
 cd ${acme_git_dir}
