@@ -19,6 +19,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -148,17 +150,18 @@ var _ = BeforeSuite(func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	By("Creating MCE config", func() {
-		mceConfig := &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "mce",
-				Namespace: "idp-mgmt-config",
-				Labels: map[string]string{
-					"operators.coreos.com/multicluster-engine.multicluster-engine": "",
+	By("Creating MCE CR", func() {
+		gvr := schema.GroupVersionResource{Group: "multicluster.openshift.io", Version: "v1alpha1", Resource: "multiclusterengines"}
+		mceu := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": gvr.Group + "/" + gvr.Version,
+				"kind":       "MultiClusterEngine",
+				"metadata": map[string]interface{}{
+					"name": "mce",
 				},
 			},
 		}
-		err := k8sClient.Create(context.TODO(), mceConfig)
+		_, err := dynamicClient.Resource(gvr).Create(context.TODO(), mceu, metav1.CreateOptions{})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
