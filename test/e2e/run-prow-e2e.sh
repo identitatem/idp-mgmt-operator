@@ -97,8 +97,8 @@ oc get managedclusters
 echo "Configure OpenShift to use a signed certificate..."
 ./install-signed-cert.sh
 
-echo "Setup Go"
-./setup-go.sh
+#echo "Setup Go"
+#./setup-go.sh
 
 echo "Install identity configuration management service for Kubernetes ..."
 ./install-IDP.sh

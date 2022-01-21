@@ -7,6 +7,14 @@ FROM quay.io/chrisahl/cypress-included:latest as production
 
 USER root
 
+ENV CYPRESS_CACHE_FOLDER=/idp-mgmt-operator-ui-tests/cypress_cache \
+    GOPATH=/go \
+    GOVERSION=1.17.6 \
+    GOCACHE=/go/pkg/cache \
+    SONAR_USER_HOME=/opt/sonar/.sonar \
+    PATH=/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin
+
+
 RUN mkdir -p /idp-mgmt-operator-ui-tests/cypress_cache
 ENV CYPRESS_CACHE_FOLDER=/idp-mgmt-operator-ui-tests/cypress_cache
 WORKDIR /idp-mgmt-operator-ui-tests
@@ -15,6 +23,7 @@ WORKDIR /idp-mgmt-operator-ui-tests/test
 
 #RUN npm ci
 RUN ./download-clis.sh
+RUN ./setup-go.sh
 # Make the directory writable by non-root users
 RUN chmod -R go+w /idp-mgmt-operator-ui-tests
 
