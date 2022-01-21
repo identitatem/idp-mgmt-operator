@@ -34,7 +34,7 @@ export IMG="quay.io/identitatem/idp-mgmt-operator:0.1-PR${PULL_NUMBER}-${PULL_PU
 echo "Quay image is ${IMG}"
 
 echo "Start deploy"
-make kustomize deploy
+make deploy
 
 sleep 20
 
