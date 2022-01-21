@@ -9,10 +9,6 @@ set -e
 
 echo $SHARED_DIR
 
-idp_dir=$(mktemp -d -t idp-XXXXX)
-cd "$idp_dir" || exit 1
-export HOME="$idp_dir"
-
 
 BROWSER=chrome
 BUILD_WEB_URL=https://prow.ci.openshift.org/view/gs/origin-ci-test/${JOB_NAME}/${BUILD_ID}
