@@ -92,10 +92,6 @@ echo "Setting up Quay credentials."
 export QUAY_TOKEN=$(cat "/etc/acm-cicd-quay-pull")
 
 
-cd ${acme_git_dir}
-
-
-
 echo "Check current hub cluster info"
 oc cluster-info
 
