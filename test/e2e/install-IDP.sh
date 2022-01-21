@@ -37,6 +37,7 @@ echo "Check namespace - before"
 oc get namespaces
 
 echo "Start deploy"
+export CATALOG_DEPLOY_NAMESPACE=idp-mgmt-config
 make deploy
 
 sleep 20
