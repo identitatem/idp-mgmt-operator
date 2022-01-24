@@ -13,7 +13,7 @@ metadata:
       for Kubernetes", "multicluster engine for Kubernetes"]'
     operators.operatorframework.io/builder: operator-sdk-v1.12.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
-  name: idp-mgmt-operator.v0.2.0
+  name: idp-mgmt-operator.v0.0.0-20220123-14-21-32
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -332,6 +332,22 @@ spec:
           - patch
           - update
         - apiGroups:
+          - multicluster.openshift.io
+          resources:
+          - multiclusterengines
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - operator.open-cluster-management.io
+          resources:
+          - multiclusterhubs
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
           - rbac.authorization.k8s.io
           resources:
           - clusterrolebindings
@@ -462,7 +478,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-                image: quay.io/identitatem/idp-mgmt-operator:latest
+                image: quay.io/itdove/idp-mgmt-operator:latest
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
