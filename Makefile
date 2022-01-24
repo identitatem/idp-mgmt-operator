@@ -401,3 +401,6 @@ build-e2e-test-image:
 #	-e BROWSER=$(BROWSER) \
 	-v $(shell pwd)/results/:/results/ \
 	${IMG_E2E_TEST}
+e2e-ginkgo-test:
+	@echo running e2e ginkgo tests
+	ginkgo -v test/e2e -- -v=5

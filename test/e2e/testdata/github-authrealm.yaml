@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: my-authrealm
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: ManagedClusterSet
+metadata:
+  name: clusterset-sample
+---
+apiVersion: cluster.open-cluster-management.io/v1alpha1
+kind: Placement
+metadata:
+  name: placement-sample
+  namespace: my-authrealm
+spec:
+  predicates:
+  - requiredClusterSelector:
+      labelSelector:
+        matchLabels:
+          authdeployment: east
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: ManagedClusterSetBinding
+metadata:
+  name: clusterset-sample
+  namespace: my-authrealm
+spec:
+  clusterSet: clusterset-sample
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: authrealm-sample-client-secret
+  namespace: my-authrealm
+data:
+  clientSecret: $GITHUB_CLIENT_SECRET
+type: Opaque
+---
+apiVersion: identityconfig.identitatem.io/v1alpha1
+kind: AuthRealm
+metadata:
+  name: authrealm-sample
+  namespace: my-authrealm
+spec:
+  type: dex
+  routeSubDomain: testdomain
+  placementRef:
+    name: placement-sample
+  identityProviders:
+    - name: my-idp-github
+      mappingMethod: claim
+      type: GitHub
+      github:
+        clientID: $GITHUB_CLIENT_ID
+        clientSecret:
+          name: authrealm-sample-client-secret
