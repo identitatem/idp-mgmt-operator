@@ -70,7 +70,13 @@ oc get clusteroperator
 # Go ahead and sleep for a few minutes for things to settle down
 sleep 120
 # now check all the OpenShift clusteroperators to make sure they are available
-kubectl wait --for=condition=available clusteroperator --all --timeout=20m
+oc wait --for=condition=progressing=false clusteroperator --all --timeout=20m
+oc wait --for=condition=available clusteroperator --all --timeout=20m
+# Go ahead and sleep for a few seconds to be sure clusteroperator changes did not trigger more changes
+sleep 10
+# one final check of all the OpenShift clusteroperators to make sure they are available
+oc wait --for=condition=progressing=false clusteroperator --all --timeout=20m
+oc wait --for=condition=available clusteroperator --all --timeout=20m
 # final check to show we are ready to proceed
 oc get clusteroperator
 

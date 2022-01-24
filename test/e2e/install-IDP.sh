@@ -42,7 +42,7 @@ oc get namespaces
 #oc get namespaces
 
 echo "Start deploy"
-export CATALOG_DEPLOY_NAMESPACE=idp-mgmt-config
+#export CATALOG_DEPLOY_NAMESPACE=idp-mgmt-config
 make deploy
 
 sleep 20
@@ -50,9 +50,11 @@ sleep 20
 echo "Check namespace - after"
 oc get namespaces
 
-
 echo "Check that the pod is running"
+oc wait --for=condition=ready pods --all --timeout=5m -n idp-mgmt-config
+
 oc get pods -n idp-mgmt-config
+
 
 echo "Create IDPConfig"
 cat > e2e-IDPConfig.yaml <<EOF
@@ -65,10 +67,10 @@ spec:
 EOF
 oc create -f e2e-IDPConfig.yaml
 
-
 sleep 20
 
 echo "Check for more pods running"
+oc wait --for=condition=ready pods --all --timeout=5m -n idp-mgmt-config
 oc get pods -n idp-mgmt-config
 
 echo "Done installing identity configuration management service for Kubernetes"
