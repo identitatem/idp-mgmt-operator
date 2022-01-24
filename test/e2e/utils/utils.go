@@ -235,7 +235,7 @@ func Apply(clientKube kubernetes.Interface, clientDynamic dynamic.Interface, yam
 	yamlsString = strings.Replace(yamlsString, "$GITHUB_CLIENT_SECRET", os.Getenv("GITHUB_CLIENT_SECRET"), -1)
 
 	yamls := strings.Split(yamlsString, "---")
-	// yamlFiles is an []string
+	// yamls is an []string
 	for _, f := range yamls {
 		if len(strings.TrimSpace(f)) == 0 {
 			continue
@@ -292,17 +292,6 @@ func Apply(clientKube kubernetes.Interface, clientDynamic dynamic.Interface, yam
 			if err != nil {
 				return err
 			}
-
-			// // TODO: Revisit this logic
-			// // Overwrite placeholder value of secret with real value from environment variable
-			// if _, ok := obj.Data["clientSecret"]; ok {
-			// 	clientSecretFromEnvVar := os.Getenv("GITHUB_CLIENT_SECRET")
-			// 	if len(clientSecretFromEnvVar) > 0 {
-			// 		obj.Data["clientSecret"] = []byte(clientSecretFromEnvVar)
-			// 	} else {
-			// 		return fmt.Errorf("unable to retrieve value for client secret from the environment")
-			// 	}		
-			// }
 			
 			existingObject, errGet := clientKube.CoreV1().
 				Secrets(obj.Namespace).
