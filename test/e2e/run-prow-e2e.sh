@@ -74,7 +74,7 @@ export CYPRESS_MANAGED_OCP_PASS=$(echo $MANAGED_CREDS | jq -r '.password')
 export CYPRESS_PROW="true"
 
 # Set up git credentials.
-echo "Setting up git credentials."
+echo "--- Setting up git credentials."
 {
   echo "https://${GITHUB_USER}:${GITHUB_TOKEN}@${ACME_REPO}.git"
   echo "https://${GITHUB_USER}:${GITHUB_TOKEN}@${IDP_MGMT_OPERATOR_REPO}.git"
@@ -84,24 +84,24 @@ git config --global credential.helper 'store --file=ghcreds'
 
 
 # Set up Quay credentials.
-echo "Setting up Quay credentials."
+echo "--- Setting up Quay credentials."
 export QUAY_TOKEN=$(cat "/etc/acm-cicd-quay-pull")
 
 
-echo "Check current hub cluster info"
+echo "--- Check current hub cluster info"
 oc cluster-info
 
-echo "Show managed cluster"
+echo "--- Show managed cluster"
 oc get managedclusters
 
-echo "Configure OpenShift to use a signed certificate..."
+echo "--- Configure OpenShift to use a signed certificate..."
 ./install-signed-cert.sh
 
 #echo "Setup Go"
 #./setup-go.sh
 
-echo "Install identity configuration management service for Kubernetes ..."
+echo "--- Install identity configuration management service for Kubernetes ..."
 ./install-IDP.sh
 
-echo "Running ${CYPRESS_TEST_MODE} tests"
-./start-cypress-tests.sh
+#echo "--- Running ${CYPRESS_TEST_MODE} tests"
+#./start-cypress-tests.sh

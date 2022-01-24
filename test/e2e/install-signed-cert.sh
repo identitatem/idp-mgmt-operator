@@ -2,7 +2,7 @@
 
 # Copyright Red Hat
 
-echo "Creating a signed certificate ..."
+echo "--- Creating a signed certificate ..."
 
 # Based on info at https://github.com/open-cluster-management/sre-tools/wiki/ACM---Day-1#add-an-acme-certificate
 
@@ -22,7 +22,7 @@ export HOME="$acme_dir"
 # Set up repo for cloning
 acme_url="https://${ACME_REPO}.git"
 acme_git_dir="${acme_dir}/acme.sh"
-echo "Cloning repo..."
+echo "--- Cloning repo..."
 git clone "$acme_url" "$acme_git_dir" || {
     echo "ERROR Could not clone release repo $acme_url"
     exit 1
@@ -30,19 +30,19 @@ git clone "$acme_url" "$acme_git_dir" || {
 
 cd ${acme_git_dir}
 
-echo "Check current cluster info"
+echo "--- Check current cluster info"
 oc cluster-info
 
 export API=$(oc whoami --show-server | cut -f 2 -d ':' | cut -f 3 -d '/' | sed 's/-api././')
 export WILDCARD=$(oc get ingresscontroller default -n openshift-ingress-operator -o jsonpath='{.status.domain}')
 
-echo "Register account"
+echo "--- Register account"
 ./acme.sh --register-account -m cahl@redhat.com || {
     echo "ERROR Could not register email address"
     exit 1
 }
 
-echo "Generate the signed certificate..."
+echo "--- Generate the signed certificate..."
 
 #./acme.sh  --issue   --dns dns_aws -d ${API} -d "*.${WILDCARD}"
 # The above sometimes returns a 503 error, so use a different server
@@ -52,7 +52,7 @@ echo "Generate the signed certificate..."
 }
 
 
-echo "Install the signed certificate ..."
+echo "--- Install the signed certificate ..."
 
 pushd ${PWD}
 #TODO - check to see if this will HOME dir will work, otherwise set $LE_WORKING_DIR before generating signed certificate
@@ -62,7 +62,7 @@ oc patch ingresscontroller default -n openshift-ingress-operator --type=merge --
 popd
 
 
-echo "OpenShift nodes need several minutes to restart and use new signed certificate ..."
+echo "--- OpenShift nodes need several minutes to restart and use new signed certificate ..."
 # Wait a bit for the certificate change to trigger restarts
 sleep 10
 # show the current status
@@ -81,4 +81,4 @@ oc wait --for=condition=available clusteroperator --all --timeout=20m
 oc get clusteroperator
 
 
-echo "Done setting up signed certificate"
+echo "--- Done setting up signed certificate"
