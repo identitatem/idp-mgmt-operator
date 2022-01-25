@@ -144,7 +144,12 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 
 	host = strings.Replace(host, "api", "apps", 1)
 
-	redirectURI := fmt.Sprintf("%s://oauth-openshift.%s/oauth2callback/%s", u.Scheme, host, authRealm.Name)
+	var redirectURI string
+	if authRealm.Spec.IdentityProviders[0].Type == "GitHub" {
+		redirectURI = "https://testdomain1.apps.aws-4-8-sno-2x-pxwhv.mgdsvcs.red-chesterfield.com/callback"
+	} else {
+		redirectURI = fmt.Sprintf("%s://oauth-openshift.%s/oauth2callback/%s", u.Scheme, host, authRealm.Name)
+	}
 	dexClient.Spec.RedirectURIs = []string{redirectURI}
 	switch dexClientExists {
 	case true:

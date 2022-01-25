@@ -262,7 +262,7 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 	if err := r.updateDexServer(authRealm, dexServer); err != nil {
 		return err
 	}
-
+	fmt.Println("dexserver: ", dexServer)
 	switch dexServerExists {
 	case true:
 		r.Log.V(1).Info("createDexServer update dexServer", "Name", dexServer.Name, "Namespace", dexServer.Namespace)
@@ -430,7 +430,32 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			r.Log.Info("generated connector", "c.LDAP", c.LDAP)
 			cs = append(cs, *c)
 			fmt.Println("cs: ", cs)
-			r.Log.Info("generated intermediate connextors", "cs", cs)
+			r.Log.Info("generated intermediate connectors", "cs", cs)
+		case openshiftconfigv1.IdentityProviderTypeOpenID:
+			r.Log.Info("create connector for OpenID")
+			c := &dexoperatorv1alpha1.ConnectorSpec{
+				Type: dexoperatorv1alpha1.ConnectorTypeOIDC,
+				Name: idp.Name,
+				Id:   idp.Name,
+				OIDC: dexoperatorv1alpha1.OIDCConfigSpec{
+					Issuer:   idp.OpenID.Issuer,
+					ClientID: idp.OpenID.ClientID,
+					ClientSecretRef: corev1.SecretReference{
+						Name:      idp.OpenID.ClientSecret.Name,
+						Namespace: authRealm.Namespace,
+					},
+					RedirectURI: dexServer.Spec.Issuer + "/callback",
+					ClaimMapping: dexoperatorv1alpha1.ClaimMappingSpec{
+						PreferredUsername: idp.OpenID.Claims.PreferredUsername,
+						Name:              idp.OpenID.Claims.Name,
+						Email:             idp.OpenID.Claims.Email,
+					},
+				},
+			}
+			r.Log.Info("generated connector", "c.OIDC", c.OIDC)
+			cs = append(cs, *c)
+			fmt.Println("cs: ", cs)
+			r.Log.Info("generated intermediate connectors", "cs", cs)
 		default:
 			return nil, giterrors.WithStack(fmt.Errorf("unsupported provider type %s", idp.Type))
 		}
