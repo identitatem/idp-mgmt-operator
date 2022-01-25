@@ -1,3 +1,4 @@
+[comment]: # ( Copyright Red Hat )
 ## Run E2E tests locally in OCP cluster
 
 #### Prerequisites:
