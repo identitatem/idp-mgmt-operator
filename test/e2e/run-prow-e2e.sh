@@ -97,11 +97,13 @@ oc get managedclusters
 echo "--- Configure OpenShift to use a signed certificate..."
 ./install-signed-cert.sh
 
-#echo "Setup Go"
-#./setup-go.sh
-
 echo "--- Install identity configuration management service for Kubernetes ..."
 ./install-IDP.sh
+
+echo "--- Running ginkgo E2E tests"
+./run-ginkgo-e2e-tests.sh
+
+
 
 #echo "--- Running ${CYPRESS_TEST_MODE} tests"
 #./start-cypress-tests.sh
