@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copyright Red Hat
-set -x
+
 set -e
 
 ###############################################################################
@@ -15,7 +15,7 @@ MANAGED_NAME=${MANAGED_NAME:-"managed-1"}
 HUB_KUBE=${HUB_KUBE:-"${SHARED_DIR}/${HUB_NAME}.kc"}
 HUB_CREDS=$(cat "${SHARED_DIR}/${HUB_NAME}.json")
 MANAGED_KUBE=${MANAGED_KUBE:-"${SHARED_DIR}/${MANAGED_NAME}.kc"}
-MANAGED_CREDS=$(cat "${SHARED_DIR}/${MANAGED_NAME}.json"}
+MANAGED_CREDS=$(cat "${SHARED_DIR}/${MANAGED_NAME}.json")
 
 # Hub cluster
 export KUBECONFIG=${HUB_KUBE}
@@ -31,6 +31,7 @@ export MANAGED_CLUSTER_SERVER_URL=$(echo $MANAGED_CREDS | jq -r '.api_url')
 export MANAGED_CLUSTER_NAME=${MANAGED_NAME}
 echo "--- Running ginkgo E2E tests"
 ls -alh Makefile
+grep test Makefile
 make e2e-ginkgo-test
 
 
