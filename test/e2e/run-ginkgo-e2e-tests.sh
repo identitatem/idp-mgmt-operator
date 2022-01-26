@@ -33,7 +33,8 @@ export MANAGED_CLUSTER_SERVER_URL=$(echo $MANAGED_CREDS | jq -r '.api_url')
 
 export MANAGED_CLUSTER_NAME=${MANAGED_NAME}
 echo "--- Running ginkgo E2E tests"
-go mod tidy
+go mod tidy -compat=1.17
+
 make e2e-ginkgo-test
 
 
