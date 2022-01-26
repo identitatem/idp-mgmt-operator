@@ -32,6 +32,13 @@ MANAGED_CREDS=$(cat "${SHARED_DIR}/managed-1.json")
 export MANAGED_CLUSTER_SERVER_URL=$(echo $MANAGED_CREDS | jq -r '.api_url')
 
 export MANAGED_CLUSTER_NAME=${MANAGED_NAME}
+
+echo "--- Show cluster info ..."
+oc cluster-info
+
+echo "--- Show managed cluster"
+oc get managedclusters
+
 echo "--- Running ginkgo E2E tests"
 go mod tidy -compat=1.17
 go install github.com/onsi/ginkgo/ginkgo@v1.16.4
