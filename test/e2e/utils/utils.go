@@ -288,7 +288,7 @@ func Apply(clientKube kubernetes.Interface, clientDynamic dynamic.Interface, yam
 				_, err = clientKube.CoreV1().Namespaces().Update(context.TODO(), existingObject, metav1.UpdateOptions{})
 			}
 		case "Secret":
-			klog.V(5).Infof("Install %s: %s\n", kind, f)
+			klog.V(5).Infof("Install %s\n", kind)
 			obj := &corev1.Secret{}
 			err = yaml.Unmarshal([]byte(f), obj)
 			if err != nil {
@@ -312,7 +312,7 @@ func Apply(clientKube kubernetes.Interface, clientDynamic dynamic.Interface, yam
 				return fmt.Errorf("resource %s not supported", kind)
 			}
 
-			klog.V(5).Infof("Install %s: %s\n", kind, f)
+			klog.V(5).Infof("Install %s\n", kind)
 
 			objName := obj.GetName()
 			klog.V(5).Infof("Install %s\n", objName)
