@@ -6,6 +6,9 @@ set -e
 ###############################################################################
 # Test Setup
 ###############################################################################
+cd ${IDP_MGMT_OPERATOR_DIR}
+
+
 export KUBECONFIG="${SHARED_DIR}/hub-1.kc"
 
 
@@ -30,8 +33,6 @@ export MANAGED_CLUSTER_SERVER_URL=$(echo $MANAGED_CREDS | jq -r '.api_url')
 
 export MANAGED_CLUSTER_NAME=${MANAGED_NAME}
 echo "--- Running ginkgo E2E tests"
-ls -alh Makefile
-grep test Makefile
 make e2e-ginkgo-test
 
 
