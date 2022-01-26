@@ -27,4 +27,9 @@ RUN ./setup-go.sh
 # Make the directory writable by non-root users
 RUN chmod -R go+w /idp-mgmt-operator-ui-tests
 
+# Need to include all of Repo for ginkgo tests
+RUN mkdir -p /idp-mgmt-operator
+COPY . /idp-mgmt-operator
+
+
 ENTRYPOINT ["./start-cypress-tests.sh"]

@@ -97,19 +97,25 @@ oc get managedclusters
 echo "--- Configure OpenShift to use a signed certificate..."
 ./install-signed-cert.sh
 
-# Grab the repo contents
-idp_dir=$(mktemp -d -t idp-XXXXX)
-cd "$idp_dir" || exit 1
-export HOME="$idp_dir"
+# Location of repo in docker test image
+export IDP_MGMT_OPERATOR_DIR=${IDP_MGMT_OPERATOR_DIR:-"/idp-mgmt-operator"}
 
-# Set up repo URLs.
-echo "--- Cloning branch idp-mgmt-operator ${PULL_BASE_REF}"
-idp_mgmt_operator_url="https://${IDP_MGMT_OPERATOR_REPO}.git"
-export IDP_MGMT_OPERATOR_DIR="${idp_dir}/idp-mgmt-operator"
-git clone -b "${PULL_BASE_REF}" "$idp_mgmt_operator_url" "$idp_mgmt_operator_dir" || {
-    echo "ERROR Could not clone branch ${PULL_BASE_REF} from idp-mgmt-operator repo $idp_mgmt_operator_url"
-    exit 1
-}
+
+## Grab the repo contents
+#idp_dir=$(mktemp -d -t idp-XXXXX)
+#cd "$idp_dir" || exit 1
+#export HOME="$idp_dir"
+
+## Set up repo URLs.
+## PULL_BASE_REF is a Prow variable as described here:
+## https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables
+#echo "--- Cloning branch idp-mgmt-operator ${PULL_BASE_REF}"
+#idp_mgmt_operator_url="https://${IDP_MGMT_OPERATOR_REPO}.git"
+#export IDP_MGMT_OPERATOR_DIR="${idp_dir}/idp-mgmt-operator"
+#git clone -b "${PULL_BASE_REF}" "$idp_mgmt_operator_url" "$IDP_MGMT_OPERATOR_DIR" || {
+#    echo "ERROR Could not clone branch ${PULL_BASE_REF} from idp-mgmt-operator repo $idp_mgmt_operator_url"
+#    exit 1
+#}
 
 
 
