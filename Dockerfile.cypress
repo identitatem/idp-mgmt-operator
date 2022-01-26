@@ -30,6 +30,8 @@ RUN chmod -R go+w /idp-mgmt-operator-ui-tests
 # Need to include all of Repo for ginkgo tests
 RUN mkdir -p /idp-mgmt-operator
 COPY . /idp-mgmt-operator
+RUN chmod -R go+w /idp-mgmt-operator
+
 
 
 ENTRYPOINT ["./start-cypress-tests.sh"]
