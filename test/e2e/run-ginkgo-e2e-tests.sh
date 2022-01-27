@@ -31,7 +31,9 @@ export MANAGED_CLUSTER_KUBECONFIG="${SHARED_DIR}/managed-1.kc"
 MANAGED_CREDS=$(cat "${SHARED_DIR}/managed-1.json")
 export MANAGED_CLUSTER_SERVER_URL=$(echo $MANAGED_CREDS | jq -r '.api_url')
 
-export MANAGED_CLUSTER_NAME=${MANAGED_NAME}
+# TODO until the prow job is changed to not specify the name "managed", we will have to hard code
+#export MANAGED_CLUSTER_NAME=${MANAGED_NAME}
+export MANAGED_CLUSTER_NAME="managed"
 
 echo "--- Show cluster info ..."
 oc cluster-info
