@@ -96,7 +96,7 @@ oc get managedclusters
 
 # Make sure the managed cluster is ready to be used
 echo "Waiting up to 10 minutes for managed cluster to be ready"
-local _timeout=600 _elapsed='' _step=30
+_timeout=600 _elapsed='' _step=30
 while true; do
     # Wait for _step seconds, except for first iteration.
     if [[ -z "$_elapsed" ]]; then
