@@ -36,7 +36,7 @@ metadata:
   name: authrealm-sample-client-secret
   namespace: my-authrealm
 data:
-  clientSecret: $GITHUB_CLIENT_SECRET
+  clientSecret: $GITHUB_APP_CLIENT_SECRET
 type: Opaque
 ---
 apiVersion: identityconfig.identitatem.io/v1alpha1
@@ -54,6 +54,6 @@ spec:
       mappingMethod: claim
       type: GitHub
       github:
-        clientID: $GITHUB_CLIENT_ID
+        clientID: $GITHUB_APP_CLIENT_ID
         clientSecret:
           name: authrealm-sample-client-secret

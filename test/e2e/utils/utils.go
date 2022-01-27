@@ -37,7 +37,7 @@ type Cluster struct {
 	KubeContext			string								`yaml:"kubeContext,omitempty"`
 	KubeClient 			kubernetes.Interface				`yaml:"kubeClient,omitempty"`
 	KubeClientDynamic	dynamic.Interface					`yaml:"kubeClientDynamic,omitempty"`
-	ApiExtensionsClient	apiextensionsclientset.Interface 	`yaml:"apiExtensionsClient,omitempty"` 
+	ApiExtensionsClient	apiextensionsclientset.Interface 	`yaml:"apiExtensionsClient,omitempty"`
 }
 
 // Get GVR for a resource kind
@@ -72,7 +72,7 @@ func GetGVRForResource (resourceKind string) (schema.GroupVersionResource, error
 		return schema.GroupVersionResource{
 			Group:    "identityconfig.identitatem.io",
 			Version:  "v1alpha1",
-			Resource: "clusteroauths"}, nil		
+			Resource: "clusteroauths"}, nil
 	case "PlacementDecision":
 		return schema.GroupVersionResource{
 			Group:    "cluster.open-cluster-management.io",
@@ -233,8 +233,8 @@ func NewKubeClientAPIExtension(url, kubeconfig, ctx string) apiextensionsclients
 func Apply(clientKube kubernetes.Interface, clientDynamic dynamic.Interface, yamlB []byte) error {
 	// Replace values of environment variables for GitHub client ID and Secret
 	yamlsString := string(yamlB)
-	yamlsString = strings.Replace(yamlsString, "$GITHUB_CLIENT_ID", os.Getenv("GITHUB_CLIENT_ID"), -1)
-	yamlsString = strings.Replace(yamlsString, "$GITHUB_CLIENT_SECRET", os.Getenv("GITHUB_CLIENT_SECRET"), -1)
+	yamlsString = strings.Replace(yamlsString, "$GITHUB_APP_CLIENT_ID", os.Getenv("GITHUB_APP_CLIENT_ID"), -1)
+	yamlsString = strings.Replace(yamlsString, "$GITHUB_APP_CLIENT_SECRET", os.Getenv("GITHUB_APP_CLIENT_SECRET"), -1)
 
 	yamls := strings.Split(yamlsString, "---")
 	// yamls is an []string
@@ -294,7 +294,7 @@ func Apply(clientKube kubernetes.Interface, clientDynamic dynamic.Interface, yam
 			if err != nil {
 				return err
 			}
-			
+
 			existingObject, errGet := clientKube.CoreV1().
 				Secrets(obj.Namespace).
 				Get(context.TODO(), obj.Name, metav1.GetOptions{})
@@ -304,7 +304,7 @@ func Apply(clientKube kubernetes.Interface, clientDynamic dynamic.Interface, yam
 				obj.ObjectMeta = existingObject.ObjectMeta
 				klog.Warningf("%s %s/%s already exists, updating!", obj.Kind, obj.Namespace, obj.Name)
 				_, err = clientKube.CoreV1().Secrets(obj.Namespace).Update(context.TODO(), obj, metav1.UpdateOptions{})
-			}	
+			}
 		default:
 			gvr, err := GetGVRForResource(kind)
 
@@ -340,7 +340,7 @@ func Apply(clientKube kubernetes.Interface, clientDynamic dynamic.Interface, yam
 					klog.Warningf("%s %s already exists, updating!", obj.GetKind(), obj.GetName())
 					_, err = clientDynamic.Resource(gvr).Update(context.TODO(), obj, metav1.UpdateOptions{})
 				}
-			}	
+			}
 		}
 
 		if err != nil {

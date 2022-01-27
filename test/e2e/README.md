@@ -44,8 +44,8 @@
      export MANAGED_CLUSTER_NAME=<name-of-the-managed-cluster>
      ```
 
-4. export `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` environment variables to contain the client ID and secret of the GitHub OAuth application that will be used as the IDP for the e2e tests. (Note: Make sure that the `Homepage URL` and `Authorization callback URL` in the GitHub Oauth app correspond to the OCP hub cluster you are using)
-   
+4. export `GITHUB_APP_CLIENT_ID` and `GITHUB_APP_CLIENT_SECRET` environment variables to contain the client ID and secret of the GitHub OAuth application that will be used as the IDP for the e2e tests. (Note: Make sure that the `Homepage URL` and `Authorization callback URL` in the GitHub Oauth app correspond to the OCP hub cluster you are using)
+
 5. Then execute the following command to run e2e testing:
 
     ```

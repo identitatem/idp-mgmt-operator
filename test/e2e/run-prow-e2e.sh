@@ -34,24 +34,21 @@ export BUILD_WEB_URL=$BUILD_WEB_URL
 export CYPRESS_JOB_ID=$PROW_JOB_ID
 #export CYPRESS_RBAC_TEST=$(cat "/etc/e2e-secrets/cypress-rbac-test")
 export CYPRESS_TEST_MODE=BVT
+# For pulling source from Git.  install-signed-cert.sh needs this
 export GITHUB_USER=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-user")
 export GITHUB_TOKEN=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-token")
+
+# GitHub OAuth App
+export GITHUB_APP_CLIENT_ID=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-app-client-id")
+export GITHUB_APP_CLIENT_SECRET=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-app-client-secret")
+
 
 export ACME_REPO="github.com/acmesh-official/acme.sh"
 export IDP_MGMT_OPERATOR_REPO="github.com/identitatem/idp-mgmt-operator"
 
 #export GITHUB_PRIVATE_URL=$(cat "/etc/e2e-secrets/github-private-url")
-#export GITHUB_USER=$(cat "/etc/e2e-secrets/github-user")
-#export GITHUB_TOKEN=$(cat "/etc/e2e-secrets/github-token")
 export GIT_PULL_NUMBER=$PULL_NUMBER
 export GIT_REPO_SLUG=$GIT_REPO_SLUG
-#export HELM_PRIVATE_URL=$(cat "/etc/e2e-secrets/helm-private-url")
-#export HELM_USERNAME=$(cat "/etc/e2e-secrets/github-user")
-#export HELM_PASSWORD=$(cat "/etc/e2e-secrets/github-token")
-#export HELM_CHART_NAME=$(cat "/etc/e2e-secrets/helm-chart-name")
-#export OBJECTSTORE_PRIVATE_URL=$(cat "/etc/e2e-secrets/objectstore-private-url")
-#export OBJECTSTORE_ACCESS_KEY=$(cat "/etc/e2e-secrets/objectstore-access-key")
-#export OBJECTSTORE_SECRET_KEY=$(cat "/etc/e2e-secrets/objectstore-secret-key")
 #export SLACK_TOKEN=$(cat "/etc/e2e-secrets/slack-token")
 
 #In order to verify the signed certifiate, we need to use AWS for route53 domain stuff
