@@ -262,7 +262,7 @@ func (r *AuthRealmReconciler) createDexServer(authRealm *identitatemv1alpha1.Aut
 	if err := r.updateDexServer(authRealm, dexServer); err != nil {
 		return err
 	}
-	fmt.Println("dexserver: ", dexServer)
+
 	switch dexServerExists {
 	case true:
 		r.Log.V(1).Info("createDexServer update dexServer", "Name", dexServer.Name, "Namespace", dexServer.Namespace)

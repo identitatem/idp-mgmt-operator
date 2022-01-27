@@ -594,10 +594,6 @@ var _ = Describe("Process AuthRealm: ", func() {
 			_, err := clientSetStrategy.IdentityconfigV1alpha1().Strategies(AuthRealmTestNameSpace).Get(context.TODO(), AuthRealmTestName+"-backplane", metav1.GetOptions{})
 			Expect(err).Should(BeNil())
 		})
-		// By("Checking GRC Strategy", func() {
-		// 	_, err := clientSetStrategy.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName+"-grc", metav1.GetOptions{})
-		// 	Expect(err).Should(BeNil())
-		// })
 		By("Checking Dex Operator Namespace", func() {
 			ns := &corev1.Namespace{}
 			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexOperatorNamespace()}, ns)
@@ -615,7 +611,6 @@ var _ = Describe("Process AuthRealm: ", func() {
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(3))
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientID).To(Equal(MyGithubAppClientID))
 			Expect(dexServer.Spec.Connectors[0].GitHub.ClientSecretRef.Name).To(Equal(AuthRealmTestName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
-			// Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Namespace).To(Equal(dexServerName))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
 			Expect(dexServer.Spec.IngressCertificateRef.Name).To(Equal(authRealm.Spec.CertificatesSecretRef.Name))
 			Expect(len(dexServer.Status.RelatedObjects)).To(Equal(1))
