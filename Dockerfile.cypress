@@ -10,6 +10,7 @@ USER root
 ENV CYPRESS_CACHE_FOLDER=/idp-mgmt-operator-ui-tests/cypress_cache \
     GOPATH=/go \
     GOVERSION=1.17.6 \
+    GOBIN=/go/bin \
     GOCACHE=/go/pkg/cache \
     SONAR_USER_HOME=/opt/sonar/.sonar \
     PATH=/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin
@@ -26,5 +27,12 @@ RUN ./download-clis.sh
 RUN ./setup-go.sh
 # Make the directory writable by non-root users
 RUN chmod -R go+w /idp-mgmt-operator-ui-tests
+
+# Need to include all of Repo for ginkgo tests
+RUN mkdir -p /idp-mgmt-operator
+COPY . /idp-mgmt-operator
+RUN chmod -R go+w /idp-mgmt-operator
+
+
 
 ENTRYPOINT ["./start-cypress-tests.sh"]
