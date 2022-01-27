@@ -59,4 +59,4 @@ spec:
     name: Red Hat
     url: https://github.com/identitatem
   replaces: PREV_CATALOG_VERSION
-  version: 0.2.0
+  version: 0.0.1
