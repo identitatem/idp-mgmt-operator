@@ -94,6 +94,36 @@ oc cluster-info
 echo "--- Show managed cluster"
 oc get managedclusters
 
+# Make sure the managed cluster is ready to be used
+echo "Waiting up to 10 minutes for managed cluster to be ready"
+local _timeout=600 _elapsed='' _step=30
+while true; do
+    # Wait for _step seconds, except for first iteration.
+    if [[ -z "$_elapsed" ]]; then
+        _elapsed=0
+    else
+        sleep $_step
+        _elapsed=$(( _elapsed + _step ))
+    fi
+
+    mc_url=`oc get managedclusters --selector name!=local-cluster --no-headers -o jsonpath='{.items[0].spec.managedClusterClientConfigs[0].url}'`
+    if [[ ! -z "$mc_url" ]]; then
+        echo "Managed cluster is ready after ${_elapsed}s"
+        break
+    fi
+
+    # Check timeout
+    if (( _elapsed > _timeout )); then
+            echo "Timeout (${_timeout}s) managed cluster is not ready"
+            return 1
+    fi
+
+    echo "Managed cluster is not ready. Will retry (${_elapsed}/${_timeout}s)"
+done
+
+echo "--- Show managed cluster"
+oc get managedclusters
+
 echo "--- Configure OpenShift to use a signed certificate..."
 ./install-signed-cert.sh
 
