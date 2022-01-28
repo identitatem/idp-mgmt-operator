@@ -67,7 +67,7 @@ spec:
       type: LDAP
       mappingMethod: add
       ldap:
-        url: ldaps.azureds.red-chesterfield.com:636
+        url: $LDAP_AZURE_HOST
         insecure: false
         bindDN: $LDAP_AZURE_BIND_DN
         ca:
