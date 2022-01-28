@@ -82,7 +82,7 @@ ifeq (, $(shell which controller-gen))
 	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$CONTROLLER_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.0 ;\
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0 ;\
 	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
 	)
 CONTROLLER_GEN=$(GOBIN)/controller-gen
@@ -92,11 +92,20 @@ endif
 
 
 .PHONY: kustomize
-## Find or download kustomize
-KUSTOMIZE = $(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
-
+ifeq (, $(shell which kustomize))
+	@{ \
+	set -e ;\
+	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get sigs.k8s.io/kustomize/kustomize/v3@v3.8.7 ;\
+	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
+	}
+KUSTOMIZE=$(GOBIN)/kustomize
+else
+KUSTOMIZE=$(shell which kustomize)
+endif
 
 CURL := $(shell which curl 2> /dev/null)
 YQ_VERSION ?= v4.5.1
@@ -117,7 +126,7 @@ OPERATOR_SDK ?= ${PWD}/operator-sdk
 .PHONY: operatorsdk
 ## Install operator-sdk to ${OPERATOR_SDK} (defaults to the current directory)
 operatorsdk:
-	@curl '-#' -fL -o ${OPERATOR_SDK} https://github.com/operator-framework/operator-sdk/releases/download/v1.13.0/operator-sdk_${OS}_${ARCH} && \
+	@curl '-#' -fL -o ${OPERATOR_SDK} https://github.com/operator-framework/operator-sdk/releases/download/v1.16.0/operator-sdk_${OS}_${ARCH} && \
 		chmod +x ${OPERATOR_SDK}
 
 
@@ -146,7 +155,7 @@ ifeq (,$(shell which opm 2>/dev/null))
 	set -e ;\
 	mkdir -p $(dir $(OPM)) ;\
 	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
-	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.15.3/$${OS}-$${ARCH}-opm ;\
+	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.19.1/$${OS}-$${ARCH}-opm ;\
 	chmod +x $(OPM) ;\
 	}
 else
@@ -219,8 +228,6 @@ docker-login:
 ## Generate bundle manifests and metadata, patch the webhook deployment name, then validate generated files [NOTE: validate bundle is skipped for now].
 bundle: manifests kustomize yq/install operatorsdk
 	echo IMG=${IMG}
-	$(eval TMP_DIR := $(shell mktemp -d))
-	echo ${TMP_DIR}
 	${OPERATOR_SDK} generate kustomize manifests --interactive=false -q
 	$(eval REPLACES := $(shell echo ${PREV_BUNDLE_INDEX_IMG} | cut -d : -f 2))
 	echo ${REPLACES}
@@ -230,9 +237,8 @@ bundle: manifests kustomize yq/install operatorsdk
 	else \
 	  sed -i.bak "s/PREV_CATALOG_VERSION//g" config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml; \
 	fi;
-	cp -R config ${TMP_DIR}
-	cd ${TMP_DIR}/config/installer && $(KUSTOMIZE) edit set image controller=$(IMG)
-	kustomize build ${TMP_DIR}/config/default | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
+	cd config/installer && $(KUSTOMIZE) edit set image controller=$(IMG)
+	$(KUSTOMIZE) build config/manifests | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
 	mv config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml.bak config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml
 
 .PHONY: bundle-build
@@ -284,7 +290,7 @@ check-copyright:
 	@build/check-copyright.sh
 
 test: fmt vet manifests
-	@go test ./... -coverprofile cover.out &&\
+	@go test ./... -coverprofile cover.out -coverpkg ./... &&\
 	COVERAGE=`go tool cover -func="cover.out" | grep "total:" | awk '{ print $$3 }' | sed 's/[][()><%]/ /g'` &&\
 	echo "-------------------------------------------------------------------------" &&\
 	echo "TOTAL COVERAGE IS $$COVERAGE%" &&\
@@ -306,27 +312,27 @@ run-coverage: fmt vet manifests
 
 # Install CRDs into a cluster
 install: manifests
-	kustomize build config/crd | kubectl apply -f -
+	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 
 # Uninstall CRDs from a cluster
 uninstall: manifests
-	kustomize build config/crd | kubectl delete -f -
+	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests
+deploy: kustomize manifests
 	cp config/installer/kustomization.yaml config/installer/kustomization.yaml.tmp
 	cd config/installer && kustomize edit set image controller=${IMG}
-	kustomize build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
 	mv config/installer/kustomization.yaml.tmp config/installer/kustomization.yaml
 
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy-coverage: manifests
+deploy-coverage: kustomize manifests
 	cp config/installer-coverage/kustomization.yaml config/installer-coverage/kustomization.yaml.tmp
-	cd config/installer-coverage && kustomize edit set image controller=${IMG_COVERAGE}
-	kustomize build config/default-coverage | kubectl apply -f -
+	cd config/installer-coverage && $(KUSTOMIZE) edit set image controller=${IMG_COVERAGE}
+	$(KUSTOMIZE) build config/default-coverage | kubectl apply -f -
 	mv config/installer-coverage/kustomization.yaml.tmp config/installer-coverage/kustomization.yaml
 
 

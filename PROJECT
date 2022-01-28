@@ -1,7 +1,13 @@
 domain: identitatem.io
 repo: github.com/identitatem/idp-mgmt-operator
+projectName: idp-mgmt-operator
+layout:
+- go.kubebuilder.io/v2
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
 resources:
-- group: identitatem.io
+- group: identityconfig.identitatem.io
   kind: AuthRealm
-  version: v1
-version: "2"
+  version: v1alpha1
+version: "3"

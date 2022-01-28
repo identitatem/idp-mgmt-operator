@@ -45,7 +45,6 @@ spec:
             - "--secure-port=6443"
             - "--tls-cert-file=/serving-cert/tls.crt"
             - "--tls-private-key-file=/serving-cert/tls.key"
-            - -v 5
           image: {{ .Image }}
           name: webhook
           imagePullPolicy: Always

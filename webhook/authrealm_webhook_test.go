@@ -254,7 +254,7 @@ func TestAuthRealmValidate(t *testing.T) {
 				Allowed: false,
 				Result: &metav1.Status{
 					Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
-					Message: fmt.Sprintf("team should be in format <org>/<team>"),
+					Message: "team should be in format <org>/<team>",
 				},
 			},
 		},
