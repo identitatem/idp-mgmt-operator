@@ -18,6 +18,7 @@ endif
 # Image URL to use all building/pushing image targets
 export IMG ?= ${PROJECT_NAME}:${IMG_TAG}
 IMG_COVERAGE ?= ${PROJECT_NAME}-coverage:${IMG_TAG}
+IMG_E2E_TEST ?= ${PROJECT_NAME}-e2e-test:${IMG_TAG}
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:crdVersions=v1"
 
@@ -50,7 +51,8 @@ ARCH=$(shell uname -m | sed 's/x86_64/amd64/g')
 DOCKER_USER ?=
 DOCKER_PASS ?=
 
-
+# For cypress E2E tests
+BROWSER ?= chrome
 
 #### UTILITIES #####
 
@@ -385,3 +387,21 @@ functional-test-full-clean:
 functional-test:
 	@echo running functional tests
 	ginkgo -tags functional -v --slowSpecThreshold=30 test/functional -- -v=5
+
+.PHONY: build-e2e-test-image
+build-e2e-test-image:
+	@echo "Building $(IMAGE_E2E_TEST)"
+	docker build . \
+	-f Dockerfile.cypress \
+	-t ${IMG_E2E_TEST}
+
+#.PHONY: run-e2e-test-image
+#run-e2e-test-image:
+#	docker run \
+#	-e BROWSER=$(BROWSER) \
+	-v $(shell pwd)/results/:/results/ \
+	${IMG_E2E_TEST}
+
+e2e-ginkgo-test:
+	@echo running e2e ginkgo tests
+	ginkgo -tags e2e -v test/e2e -- -v=5
