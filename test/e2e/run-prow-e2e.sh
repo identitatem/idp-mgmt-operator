@@ -42,6 +42,12 @@ export GITHUB_TOKEN=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-token")
 export GITHUB_APP_CLIENT_ID=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-app-client-id")
 export GITHUB_APP_CLIENT_SECRET=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-app-client-secret")
 
+# LDAP (Azure Active Directory)
+export LDAP_AZURE_HOST=$(cat "/etc/ocm-mgdsvcs-e2e-test/ldap-azure-host")
+export LDAP_AZURE_BIND_DN=$(cat "/etc/ocm-mgdsvcs-e2e-test/ldap-azure-bind-dn")
+export LDAP_AZURE_BIND_PASSWORD=$(cat "/etc/ocm-mgdsvcs-e2e-test/ldap-azure-bind-password")
+export LDAP_AZURE_BASE_DN=$(cat "/etc/ocm-mgdsvcs-e2e-test/ldap-azure-base-dn")
+export LDAP_AZURE_SERVER_CERT=$(cat "/etc/ocm-mgdsvcs-e2e-test/ldap-azure-server-cert")
 
 export ACME_REPO="github.com/acmesh-official/acme.sh"
 export IDP_MGMT_OPERATOR_REPO="github.com/identitatem/idp-mgmt-operator"
