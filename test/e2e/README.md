@@ -44,9 +44,30 @@
      export MANAGED_CLUSTER_NAME=<name-of-the-managed-cluster>
      ```
 
-4. export `GITHUB_APP_CLIENT_ID` and `GITHUB_APP_CLIENT_SECRET` environment variables to contain the client ID and secret of the GitHub OAuth application that will be used as the IDP for the e2e tests. (Note: Make sure that the `Homepage URL` and `Authorization callback URL` in the GitHub Oauth app correspond to the OCP hub cluster you are using)
+4. For the GitHub IDP export the following environment variables:
+    ```bash
+     # Client ID of the GitHub OAuth App
+     export GITHUB_APP_CLIENT_ID=...
+     # Client Secret of the GitHub OAuth App
+     export GITHUB_APP_CLIENT_SECRET=...   
+     ```
+    Note: The `Homepage URL` and `Authorization callback URL` in the GitHub OAuth app should correspond to the OCP hub cluster you are using.
 
-5. Then execute the following command to run e2e testing:
+5. For the LDAP (Azure Active Directory) IDP export the following environment variables:
+    ```bash
+     # Azure Active Directory Domain Services Secure LDAP Host
+     export LDAP_AZURE_HOST=...
+     # Bind DN
+     export LDAP_AZURE_BIND_DN=...
+     # Bind password (The bindDN and bindPW are used as credentials to search for users and passwords)
+     export LDAP_AZURE_BIND_PASSWORD=...
+     # Base DN to start the search from
+     export LDAP_AZURE_BASE_DN=...
+     # Signed certificate for secure LDAP
+     export LDAP_AZURE_SERVER_CERT=...     
+     ```
+ 
+6. Then execute the following command to run e2e testing:
 
     ```
     make e2e-ginkgo-test
