@@ -12,7 +12,7 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -26,7 +26,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -58,12 +57,17 @@ var testEnv *envtest.Environment
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecsWithDefaultAndCustomReporters(t,
+	// fetch the current config
+	suiteConfig, reporterConfig := GinkgoConfiguration()
+	// adjust it
+	suiteConfig.SkipStrings = []string{"NEVER-RUN"}
+	reporterConfig.FullTrace = true
+	RunSpecs(t,
 		"ClusterOAuth Controller Suite",
-		[]Reporter{printer.NewlineReporter{}})
+		reporterConfig)
 }
 
-var _ = BeforeSuite(func(done Done) {
+var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	readerIDP := idpconfig.GetScenarioResourcesReader()
@@ -72,7 +76,7 @@ var _ = BeforeSuite(func(done Done) {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDs: []client.Object{
+		CRDs: []*apiextensionsv1.CustomResourceDefinition{
 			clusterOAuthCRD,
 		},
 		CRDDirectoryPaths: []string{
@@ -142,9 +146,7 @@ var _ = BeforeSuite(func(done Done) {
 		err := k8sClient.Create(context.TODO(), infraConfig)
 		Expect(err).NotTo(HaveOccurred())
 	})
-	close(done)
-
-}, 60)
+})
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")

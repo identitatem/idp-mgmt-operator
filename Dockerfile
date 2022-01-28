@@ -21,19 +21,21 @@ COPY deploy/ deploy/
 COPY resources/ resources/
 COPY webhook/ webhook/
 COPY pkg/ pkg/
-COPY config/ config/
+#Only the rbac is needed to compile, the rest of the config will be copied later
+COPY config/rbac config/rbac
+COPY config/resources.go config/resources.go
 COPY controllers/ controllers/
 
 
 RUN GOFLAGS="" go build -a -o idp-mgmt main.go
 
-RUN GOFLAGS="" go test -covermode=atomic \
-    -coverpkg=github.com/identitatem/idp-mgmt-operator/controllers/...,\
-github.com/identitatem/idp-mgmt-operator/pkg/... \
+RUN GOFLAGS="" go test -cover -covermode=atomic \
+    -coverpkg=./... \
     -c -tags testrunmain \
     github.com/identitatem/idp-mgmt-operator \
     -o idp-mgmt-coverage
 
+COPY config/ config/
 COPY build/bin/ build/bin/
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest

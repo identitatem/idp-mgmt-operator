@@ -35,7 +35,7 @@ fi
 if ! which ginkgo > /dev/null; then
     echo "Installing ginkgo ..."
     pushd $(mktemp -d)
-    GOSUMDB=off go get github.com/onsi/ginkgo/ginkgo
+    GOSUMDB=off go get github.com/onsi/ginkgo/v2
     GOSUMDB=off go get github.com/onsi/gomega/...
     popd
 fi
