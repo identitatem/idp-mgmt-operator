@@ -5,6 +5,6 @@ config/
 deploy/
 kind_kubeconfig.yaml
 kind_kubeconfig_internal.yaml
-test/e2e/testdata/github-authrealm.yaml
 # directories to ignore
 bundle
+test/e2e/testdata
