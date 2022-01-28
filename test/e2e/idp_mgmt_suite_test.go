@@ -133,45 +133,6 @@ var _ = AfterSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter)))
 	SetDefaultEventuallyTimeout(20 * time.Second)
 	SetDefaultEventuallyPollingInterval(1 * time.Second)
-
-	// Remove labels from the managed cluster
-	gvr, err := utils.GetGVRForResource("ManagedCluster")
-	Expect(err).NotTo(HaveOccurred())
-	mcName := os.Getenv("MANAGED_CLUSTER_NAME")
-	managedCluster := &unstructured.Unstructured{}
-	Expect(err).NotTo(HaveOccurred())
-	Eventually(func() error {
-		managedCluster, err = TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-		Get(context.TODO(), mcName, metav1.GetOptions{})
-		if err != nil {
-			logf.Log.Info("Error while reading ManagedCluster", "Error", err)
-			return err
-		}
-		return nil
-	}, 120, 1).Should(BeNil())
-
-	labels := managedCluster.GetLabels()
-	_, authDepLabelFound := labels["authdeployment"]
-	if (authDepLabelFound) {
-		delete(labels, "authdeployment")
-	}
-	_, clusterSetLabelFound := labels["cluster.open-cluster-management.io/clusterset"]
-	if (clusterSetLabelFound) {
-		delete(labels, "cluster.open-cluster-management.io/clusterset")
-	}
-
-	// Update labels
-	managedCluster.SetLabels(labels)
-	Eventually(func() error {
-		_, err = TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-		Update(context.TODO(), managedCluster, metav1.UpdateOptions{})
-		if err != nil {
-			logf.Log.Info("Error while updating ManagedCluster", "Error", err)
-			return err
-		}
-		return nil
-	}, 120, 1).Should(BeNil())
-
 	// TODO: Deleting idpConfig and confirming deletion of operator and associated cleanup
 })
 

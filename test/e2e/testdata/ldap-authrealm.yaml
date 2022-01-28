@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: my-ldap-authrealm
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: ManagedClusterSet
+metadata:
+  name: clusterset-sample
+---
+apiVersion: cluster.open-cluster-management.io/v1alpha1
+kind: Placement
+metadata:
+  name: placement-sample
+  namespace: my-ldap-authrealm
+spec:
+  predicates:
+  - requiredClusterSelector:
+      labelSelector:
+        matchLabels:
+          authdeployment: east
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: ManagedClusterSetBinding
+metadata:
+  name: clusterset-sample
+  namespace: my-ldap-authrealm
+spec:
+  clusterSet: clusterset-sample
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: authrealm-ldap-bind-password
+  namespace: my-ldap-authrealm
+stringData:
+  bindPW: $LDAP_AZURE_BIND_PASSWORD
+type: Opaque
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: authrealm-ldap-ca
+  namespace: my-ldap-authrealm
+data:
+  ca.crt: $LDAP_AZURE_SERVER_CERT
+type: Opaque
+---  
+apiVersion: identityconfig.identitatem.io/v1alpha1
+kind: AuthRealm
+metadata:
+  name: authrealm-ldap
+  namespace: my-ldap-authrealm
+spec:
+  type: dex
+  routeSubDomain: ldaptestdomain
+  placementRef:
+    name: placement-sample
+  ldapExtraConfigs:
+    azureldap:
+      baseDN: $LDAP_AZURE_BASE_DN
+      filter: (objectClass=person) 
+  identityProviders:
+    - name: azureldap
+      type: LDAP
+      mappingMethod: add
+      ldap:
+        url: ldaps.azureds.red-chesterfield.com:636
+        insecure: false
+        bindDN: $LDAP_AZURE_BIND_DN
+        ca:
+          name: authrealm-ldap-ca
+          namespace: my-ldap-authrealm
+        bindPassword:
+          name: authrealm-ldap-bind-password
+          namespace: my-ldap-authrealm
+        attributes:
+          id:
+            - DN
+          preferredUsername:
+            - userPrincipalName
+          name:
+            - cn
+          email:
+            - userPrincipalName          
