@@ -4,12 +4,20 @@ go 1.17
 
 require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
+<<<<<<< HEAD
 	github.com/go-logr/logr v1.2.0
 	github.com/identitatem/dex-operator v0.0.4-0.20220127195054-da4176e7900f
 	github.com/identitatem/idp-client-api v0.0.0-20220128181808-d06576428b4d
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.1.1
 	github.com/onsi/gomega v1.18.0
+=======
+	github.com/go-logr/logr v0.4.0
+	github.com/identitatem/dex-operator v0.0.4-0.20220127190053-a702a444f6e0
+	github.com/identitatem/idp-client-api v0.0.0-20220112135418-a7c01547c8c4
+	github.com/onsi/ginkgo v1.16.4
+	github.com/onsi/gomega v1.15.0
+>>>>>>> 7d00f10 (update go mod)
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 	github.com/openshift/generic-admission-server v1.14.1-0.20210422140326-da96454c926d
 	github.com/pkg/errors v0.9.1
