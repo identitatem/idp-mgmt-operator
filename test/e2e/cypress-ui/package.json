@@ -1,0 +1,68 @@
+{
+  "name": "idp-ui-test",
+  "version": "0.2.0",
+  "description": "End to end test for IDP",
+  "scripts": {
+    "test": "npm run test:clean-reports && npm run test:headless && npm run test:merge-reports",
+    "test:clean-reports": "rm -rf ./results",
+    "test:debug": "cross-env NODE_ENV=debug ./start-tests.sh",
+    "test:headed": "export LIVE_MODE=true && sh ./start-tests.sh",
+    "test:headless": "export LIVE_MODE=false && sh ./start-tests.sh",
+    "test:cim-headless": "export NODE_ENV=cim && sh ./start-tests.sh",
+    "test:merge-json": "npx mochawesome-merge results/json/*.json -o results/json/mochawesome-merge-results.json",
+    "test:merge-reports": "npm run test:merge-xml && npm run test:merge-json",
+    "test:merge-xml": "npx junit-merge --dir=results -o results/merge-test-results.xml",
+    "test:production": "cross-env NODE_ENV=production ./start-tests.sh",
+    "test:e2e": "npx cypress run --browser $BROWSER $HEADLESS --reporter cypress-multi-reporters --env grepTags=\"@e2e+-create+-destroy\",grepFilterSpecs=true,grepOmitFiltered=true",
+    "test:destroy": "npx cypress run --browser $BROWSER $HEADLESS --reporter cypress-multi-reporters --env grepTags=\"@destroy\",grepFilterSpecs=true,grepOmitFiltered=true",
+    "test:create": "npx cypress run --browser $BROWSER $HEADLESS --reporter cypress-multi-reporters --env grepTags=\"@create\",grepFilterSpecs=true,grepOmitFiltered=true",
+    "test:create:aws": "npx cypress run --browser $BROWSER $HEADLESS --reporter cypress-multi-reporters --env grepTags=\"@create+aws\",grepFilterSpecs=true,grepOmitFiltered=true",
+    "test:create:gcp": "npx cypress run --browser $BROWSER $HEADLESS --reporter cypress-multi-reporters --env grepTags=\"@create+gcp\",grepFilterSpecs=true,grepOmitFiltered=true",
+    "test:create:azure": "npx cypress run --browser $BROWSER $HEADLESS --reporter cypress-multi-reporters --env grepTags=\"@create+azure\",grepFilterSpecs=true,grepOmitFiltered=true",
+    "test:create:ansible": "npx cypress run --browser $BROWSER $HEADLESS --reporter cypress-multi-reporters --env grepTags=\"@create+ansible\",grepFilterSpecs=true,grepOmitFiltered=true",
+    "test:create:vmware": "npx cypress run --browser $BROWSER $HEADLESS --reporter cypress-multi-reporters --env grepTags=\"@create+vmware\",grepFilterSpecs=true,grepOmitFiltered=true"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:open-cluster-management/clc-ui-e2e.git"
+  },
+  "author": "",
+  "license": "SEE LICENSE IN LICENSE",
+  "engines": {
+    "node": ">=10.15.3",
+    "npm": ">=6.9.0"
+  },
+  "dependencies": {
+    "axios": "^0.21.4",
+    "del": "^6.0.0",
+    "eslint": "^7.30.0",
+    "jest": "^26.6.3",
+    "jest-junit": "^13.0.0",
+    "log4js": "^6.3.0",
+    "nconf": "^0.11.3",
+    "nconf-yaml": "^1.0.2",
+    "supertest": "^6.0.1",
+    "xml2json": "^0.12.0",
+    "yamljs": "^0.3.0"
+  },
+  "devDependencies": {
+    "@cypress/code-coverage": "^3.8.1",
+    "chromedriver": "^87.0.5",
+    "cross-env": "^7.0.3",
+    "cypress": "^9.3.1",
+    "cypress-fill-command": "^1.0.2",
+    "cypress-grep": "^2.11.0",
+    "cypress-multi-reporters": "^1.4.0",
+    "cypress-terminal-report": "^2.0.0",
+    "cypress-wait-until": "^1.7.1",
+    "eslint-plugin-cypress": "^2.12.1",
+    "geckodriver": "^2.0.4",
+    "junit-report-merger": "^3.0.1",
+    "mocha": "^8.1.3",
+    "mocha-junit-reporter": "^2.0.2",
+    "mochawesome": "^7.0.1",
+    "mochawesome-merge": "^4.2.0",
+    "querystring": "^0.2.0",
+    "selenium-standalone": "^6.20.0"
+  }
+}
