@@ -43,7 +43,7 @@ oc get managedclusters
 
 echo "--- Running ginkgo E2E tests"
 go mod tidy -compat=1.17
-go install github.com/onsi/ginkgo/ginkgo@v2.1.1
+go install github.com/onsi/ginkgo/v2/ginkgo
 
 
 make e2e-ginkgo-test
