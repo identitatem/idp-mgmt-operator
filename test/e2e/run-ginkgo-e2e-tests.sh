@@ -42,7 +42,6 @@ echo "--- Show managed cluster"
 oc get managedclusters
 
 echo "--- Running ginkgo E2E tests"
-go mod tidy -compat=1.17
 go install github.com/onsi/ginkgo/v2/ginkgo
 
 
