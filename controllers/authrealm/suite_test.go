@@ -202,8 +202,11 @@ var _ = Describe("Process deployment: ", func() {
 var _ = Describe("Process AuthRealm: ", func() {
 	AuthRealmName := "my-authrealm"
 	AuthRealmNameSpace := "my-authrealm-ns"
+	AuthRealmTestName := "my-authrealm-test"
+	AuthRealmTestNameSpace := "my-authrealm-test"
 	RouteSubDomain := "myroute"
 	MyGithubAppClientID := "my-github-app-client-id"
+	MyOpenIDClientID := "my-openid-client-id"
 	CertificatesSecretRef := "my-certs"
 	It("Check CRDs availability", func() {
 		By("Checking authrealms CRD", func() {
@@ -482,6 +485,105 @@ var _ = Describe("Process AuthRealm: ", func() {
 			req.Namespace = AuthRealmNameSpace
 			_, err := r.Reconcile(context.TODO(), req)
 			Expect(err).ShouldNot(BeNil())
+		})
+	})
+
+	It("process a AuthRealm CR with OpenID identiity provider", func() {
+		By("creation test namespace", func() {
+			ns := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: AuthRealmTestNameSpace,
+				},
+			}
+			err := k8sClient.Create(context.TODO(), ns)
+			Expect(err).To(BeNil())
+		})
+		By("creating the certificate secret", func() {
+			secret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      CertificatesSecretRef,
+					Namespace: AuthRealmTestNameSpace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": []byte("tls.mycrt"),
+					"tls.key": []byte("tls.mykey"),
+					"ca.crt":  []byte("ca.crt"),
+				},
+			}
+			err := k8sClient.Create(context.TODO(), secret)
+			Expect(err).To(BeNil())
+
+		})
+		var authRealm *identitatemv1alpha1.AuthRealm
+		By("creating a AuthRealm CR type dex", func() {
+			authRealm = &identitatemv1alpha1.AuthRealm{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      AuthRealmTestName,
+					Namespace: AuthRealmTestNameSpace,
+				},
+				Spec: identitatemv1alpha1.AuthRealmSpec{
+					RouteSubDomain: RouteSubDomain,
+					Type:           identitatemv1alpha1.AuthProxyDex,
+					CertificatesSecretRef: corev1.LocalObjectReference{
+						Name: CertificatesSecretRef,
+					},
+					IdentityProviders: []openshiftconfigv1.IdentityProvider{
+						{
+							Name: "my-openid",
+							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+								Type: openshiftconfigv1.IdentityProviderTypeOpenID,
+								OpenID: &openshiftconfigv1.OpenIDIdentityProvider{
+									ClientID: MyOpenIDClientID,
+									ClientSecret: openshiftconfigv1.SecretNameReference{
+										Name: AuthRealmTestName + "-" + string(openshiftconfigv1.IdentityProviderTypeOpenID),
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			var err error
+			authRealm, err = clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmTestNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By("Run reconcile", func() {
+			req := ctrl.Request{}
+			req.Name = AuthRealmTestName
+			req.Namespace = AuthRealmTestNameSpace
+			_, err := r.Reconcile(context.TODO(), req)
+			Expect(err).Should(BeNil())
+		})
+		By("Checking AuthRealm", func() {
+			authRealm, err := clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmTestNameSpace).Get(context.TODO(), AuthRealmTestName, metav1.GetOptions{})
+			Expect(err).Should(BeNil())
+			status := meta.FindStatusCondition(authRealm.Status.Conditions, identitatemv1alpha1.AuthRealmApplied)
+			Expect(status).NotTo(BeNil())
+			Expect(meta.IsStatusConditionTrue(authRealm.Status.Conditions, identitatemv1alpha1.AuthRealmApplied)).To(BeTrue())
+		})
+		By("Checking Backplane Strategy", func() {
+			_, err := clientSetStrategy.IdentityconfigV1alpha1().Strategies(AuthRealmTestNameSpace).Get(context.TODO(), AuthRealmTestName+"-backplane", metav1.GetOptions{})
+			Expect(err).Should(BeNil())
+		})
+		By("Checking Dex Operator Namespace", func() {
+			ns := &corev1.Namespace{}
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexOperatorNamespace()}, ns)
+			Expect(err).Should(BeNil())
+		})
+		By("Checking Dex Deployment", func() {
+			ns := &appsv1.Deployment{}
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: "dex-operator", Namespace: helpers.DexOperatorNamespace()}, ns)
+			Expect(err).Should(BeNil())
+		})
+		By("Checking DexServer", func() {
+			dexServer := &identitatemdexserverv1lapha1.DexServer{}
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer)
+			Expect(err).Should(BeNil())
+			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
+			Expect(dexServer.Spec.Connectors[0].OIDC.ClientID).To(Equal(MyOpenIDClientID))
+			Expect(dexServer.Spec.Connectors[0].OIDC.ClientSecretRef.Name).To(Equal(AuthRealmTestName + "-" + string(openshiftconfigv1.IdentityProviderTypeOpenID)))
+			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeOIDC))
+
 		})
 	})
 
