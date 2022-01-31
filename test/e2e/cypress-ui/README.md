@@ -1,3 +1,5 @@
+[comment]: # ( Copyright Red Hat )
+
 # IDP Cypress Tests
 
 ## Running the tests locally

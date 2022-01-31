@@ -1,3 +1,4 @@
+# Copyright Red Hat
 #!/usr/bin/env bash
 
 # echo "Install awx cli tool"
