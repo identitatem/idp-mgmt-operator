@@ -1,7 +1,4 @@
-/** *****************************************************************************
- * Licensed Materials - Property of Red Hat, Inc.
- * Copyright (c) 2021 Red Hat, Inc.
- ****************************************************************************** */
+/* Copyright Red Hat */
 
 import { clustersPageMethods } from '../views/clusters/managedCluster'
 import { commonElementSelectors } from './common/commonSelectors'

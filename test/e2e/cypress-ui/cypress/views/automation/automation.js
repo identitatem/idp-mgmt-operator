@@ -1,3 +1,5 @@
+/* Copyright Red Hat */
+
 /// <reference types="cypress" />
 import { genericFunctions } from '../../support/genericFunctions';
 import { commonElementSelectors } from '../common/commonSelectors';

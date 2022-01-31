@@ -1,7 +1,4 @@
-/** *****************************************************************************
- * Licensed Materials - Property of Red Hat, Inc.
- * Copyright (c) 2021 Red Hat, Inc.
- ****************************************************************************** */
+/* Copyright Red Hat */
 
 import * as constants from '../support/constants';
 import { genericFunctions } from '../support/genericFunctions'

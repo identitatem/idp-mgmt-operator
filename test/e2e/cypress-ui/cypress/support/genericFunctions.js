@@ -1,3 +1,4 @@
+/* Copyright Red Hat */
 /// <reference types="cypress" />
 import { commonElementSelectors } from '../views/common/commonSelectors'
 export const genericFunctions = {

@@ -1,3 +1,4 @@
+/* Copyright Red Hat */
 /// <reference types="cypress"/>
 
 export const commonElementSelectors = {

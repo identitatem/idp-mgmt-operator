@@ -1,8 +1,4 @@
-
-/** *****************************************************************************
- * Licensed Materials - Property of Red Hat, Inc.
- * Copyright (c) 2021 Red Hat, Inc.
- ****************************************************************************** */
+/* Copyright Red Hat */
 
 const fs = require('fs')
 const path = require('path')

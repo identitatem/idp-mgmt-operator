@@ -1,3 +1,4 @@
+/* Copyright Red Hat */
 const exec = require('child_process').exec;
 const data = require('../fixtures/automation/automationTestData.js');
 
