@@ -42,8 +42,8 @@ do
     fi
 
     if [[ $FILE  == *".ts" || $FILE  == *".tsx" || $FILE  == *".js" ]]; then
-        COMMENT_START="/* "
-        COMMENT_END=" */"
+        COMMENT_START="/\* "
+        COMMENT_END=" \*/"
     fi
 
     if [[ $FILE  == *".md" ]]; then
