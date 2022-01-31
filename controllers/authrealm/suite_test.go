@@ -488,7 +488,7 @@ var _ = Describe("Process AuthRealm: ", func() {
 		})
 	})
 
-	It("process a AuthRealm CR with 3 identiity providers", func() {
+	It("process a AuthRealm CR with OpenID identiity provider", func() {
 		By("creation test namespace", func() {
 			ns := &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -528,35 +528,6 @@ var _ = Describe("Process AuthRealm: ", func() {
 						Name: CertificatesSecretRef,
 					},
 					IdentityProviders: []openshiftconfigv1.IdentityProvider{
-						{
-							Name: "my-github",
-							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
-								Type: openshiftconfigv1.IdentityProviderTypeGitHub,
-								GitHub: &openshiftconfigv1.GitHubIdentityProvider{
-									ClientID: MyGithubAppClientID,
-									ClientSecret: openshiftconfigv1.SecretNameReference{
-										Name: AuthRealmTestName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub),
-									},
-								},
-							},
-						},
-						{
-							Name: "my-ldap",
-							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
-								Type: openshiftconfigv1.IdentityProviderTypeLDAP,
-								LDAP: &openshiftconfigv1.LDAPIdentityProvider{
-									BindPassword: openshiftconfigv1.SecretNameReference{
-										Name: AuthRealmTestName + "-" + string(openshiftconfigv1.IdentityProviderTypeLDAP),
-									},
-									Attributes: openshiftconfigv1.LDAPAttributeMapping{
-										ID:                []string{"id"},
-										PreferredUsername: []string{"mail"},
-										Name:              []string{"name"},
-										Email:             []string{"mail"},
-									},
-								},
-							},
-						},
 						{
 							Name: "my-openid",
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
@@ -608,18 +579,10 @@ var _ = Describe("Process AuthRealm: ", func() {
 			dexServer := &identitatemdexserverv1lapha1.DexServer{}
 			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer)
 			Expect(err).Should(BeNil())
-			Expect(len(dexServer.Spec.Connectors)).To(Equal(3))
-			Expect(dexServer.Spec.Connectors[0].GitHub.ClientID).To(Equal(MyGithubAppClientID))
-			Expect(dexServer.Spec.Connectors[0].GitHub.ClientSecretRef.Name).To(Equal(AuthRealmTestName + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub)))
-			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeGitHub))
-			Expect(dexServer.Spec.IngressCertificateRef.Name).To(Equal(authRealm.Spec.CertificatesSecretRef.Name))
-			Expect(len(dexServer.Status.RelatedObjects)).To(Equal(1))
-			Expect(dexServer.Status.RelatedObjects[0].Kind).To(Equal("AuthRealm"))
-			Expect(dexServer.Spec.Connectors[1].LDAP.BindPWRef.Name).To(Equal(AuthRealmTestName + "-" + string(openshiftconfigv1.IdentityProviderTypeLDAP)))
-			Expect(dexServer.Spec.Connectors[1].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeLDAP))
-			Expect(dexServer.Spec.Connectors[2].OIDC.ClientID).To(Equal(MyOpenIDClientID))
-			Expect(dexServer.Spec.Connectors[2].OIDC.ClientSecretRef.Name).To(Equal(AuthRealmTestName + "-" + string(openshiftconfigv1.IdentityProviderTypeOpenID)))
-			Expect(dexServer.Spec.Connectors[2].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeOIDC))
+			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
+			Expect(dexServer.Spec.Connectors[0].OIDC.ClientID).To(Equal(MyOpenIDClientID))
+			Expect(dexServer.Spec.Connectors[0].OIDC.ClientSecretRef.Name).To(Equal(AuthRealmTestName + "-" + string(openshiftconfigv1.IdentityProviderTypeOpenID)))
+			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeOIDC))
 
 		})
 	})
