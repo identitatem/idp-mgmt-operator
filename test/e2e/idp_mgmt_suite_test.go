@@ -12,12 +12,11 @@ import (
 	"time"
 
 	"github.com/identitatem/idp-mgmt-operator/test/e2e/utils"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
@@ -139,7 +138,12 @@ var _ = AfterSuite(func() {
 func TestIdpMgmtOperatorE2E(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecsWithDefaultAndCustomReporters(t,
+	// fetch the current config
+	suiteConfig, reporterConfig := GinkgoConfiguration()
+	// adjust it
+	suiteConfig.SkipStrings = []string{"NEVER-RUN"}
+	reporterConfig.FullTrace = true
+	RunSpecs(t,
 		"IDP Management E2E Suite",
-		[]Reporter{printer.NewlineReporter{}})
+		reporterConfig)		
 }
