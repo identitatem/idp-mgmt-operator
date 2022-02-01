@@ -56,11 +56,12 @@ testCode=0
 #npx cypress run --config-file "./cypress.json" --browser $BROWSER
 #testCode=$?
 TEST_TAG=login
+npm install
 npx cypress run --browser $BROWSER --reporter cypress-multi-reporters --env grepTags=${TEST_TAG},grepFilterSpecs=true,grepOmitFiltered=true
 testCode=$?
 
 
-#testDirectory="/results"
+testDirectory="/results"
 
 if [ -d "$testDirectory" ]; then
   # move test results if $testDirectory exists.
