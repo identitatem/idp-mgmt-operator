@@ -4,6 +4,9 @@
 
 echo "Initiating tests..."
 
+cd ${IDP_MGMT_OPERATOR_DIR}\test\e2e\cypress-ui
+
+
 if [ -z "$CYPRESS_TEST_MODE" ]; then
   echo "CYPRESS_TEST_MODE not exported; setting to 'e2e' mode"
   export CYPRESS_TEST_MODE='e2e'
@@ -52,6 +55,10 @@ fi
 testCode=0
 #npx cypress run --config-file "./cypress.json" --browser $BROWSER
 #testCode=$?
+TEST_TAG=login
+npx cypress run --browser $BROWSER --reporter cypress-multi-reporters --env grepTags=${TEST_TAG},grepFilterSpecs=true,grepOmitFiltered=true
+testCode=$?
+
 
 #testDirectory="/results"
 

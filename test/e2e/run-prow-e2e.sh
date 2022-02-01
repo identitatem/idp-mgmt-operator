@@ -25,6 +25,10 @@ export CYPRESS_BASE_URL=$OCM_ADDRESS
 export CYPRESS_OC_CLUSTER_URL=$(echo $HUB_CREDS | jq -r '.api_url')
 export CYPRESS_OC_CLUSTER_USER=$(echo $HUB_CREDS | jq -r '.username')
 export CYPRESS_OC_CLUSTER_PASS=$(echo $HUB_CREDS | jq -r '.password')
+# Slightly different for IDP cypress tests
+export CYPRESS_OPTIONS_HUB_USER=${CYPRESS_OC_CLUSTER_USER}
+export CYPRESS_OPTIONS_HUB_PASSWORD=${CYPRESS_OC_CLUSTER_PASS}
+export CYPRESS_BASE_URL=${OCM_ADDRESS}
 
 # Cypress env variables
 #export ANSIBLE_URL=$(cat "/etc/e2e-secrets/ansible-url")
@@ -160,5 +164,5 @@ echo "--- Running ginkgo E2E tests"
 
 
 
-#echo "--- Running ${CYPRESS_TEST_MODE} tests"
-#./start-cypress-tests.sh
+echo "--- Running ${CYPRESS_TEST_MODE} tests"
+./start-cypress-tests.sh
