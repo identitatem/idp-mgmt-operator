@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/identitatem/idp-mgmt-operator/test/e2e/utils"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -56,7 +56,7 @@ var _ = Describe("Verify that CRDs exist", func() {
 	})		
 })
 
-var _ = Describe("Process AuthRealm with configuration for a GitHub IDP", func() {	
+var _ = Describe("Process AuthRealm configured for GitHub IDP", func() {
 	It("Hub: AuthRealm is successfully created", func() {
 		By("Reading the AuthRealm related resources from test data file")
 		// The following file includes the yamls for resources needed to create the AuthRealm 
@@ -303,7 +303,7 @@ var _ = Describe("Process AuthRealm with configuration for a GitHub IDP", func()
 				return err
 			}
 			return nil
-		}, 300, 1).Should(HaveOccurred())		
+		}, 300, 1).Should(HaveOccurred())	
 	})
 	It("Managed Cluster: Once AuthRealm is deleted on the hub, managed cluster Oauth should be restored to its original value", func() {
 		gvr, err := utils.GetGVRForResource("OAuth")
@@ -324,5 +324,54 @@ var _ = Describe("Process AuthRealm with configuration for a GitHub IDP", func()
 			}			
 			return found
 		}, 300, 1).Should(BeFalse())
+
+		By("Remove labels from the managed cluster")
+		gvr, err = utils.GetGVRForResource("ManagedCluster")
+		Expect(err).NotTo(HaveOccurred())
+		mcName := os.Getenv("MANAGED_CLUSTER_NAME")
+		managedCluster := &unstructured.Unstructured{}
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(func() error {
+			managedCluster, err = TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
+			Get(context.TODO(), mcName, metav1.GetOptions{})
+			if err != nil {
+				logf.Log.Info("Error while reading ManagedCluster", "Error", err)
+				return err
+			}
+			return nil
+		}, 120, 1).Should(BeNil())
+
+		labels := managedCluster.GetLabels()
+		_, authDepLabelFound := labels["authdeployment"]
+		if (authDepLabelFound) {
+			delete(labels, "authdeployment")
+		}
+		_, clusterSetLabelFound := labels["cluster.open-cluster-management.io/clusterset"]
+		if (clusterSetLabelFound) {
+			delete(labels, "cluster.open-cluster-management.io/clusterset")
+		}
+
+		// Update labels
+		managedCluster.SetLabels(labels)
+		Eventually(func() error {
+			_, err = TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
+			Update(context.TODO(), managedCluster, metav1.UpdateOptions{})
+			if err != nil {
+				logf.Log.Info("Error while updating ManagedCluster", "Error", err)
+				return err
+			}
+			return nil
+		}, 120, 1).Should(BeNil())
+		By("Wait for the idp-mgmt-dex namespace to be deleted")
+		Eventually(func() error {
+			_, err := TestOptions.HubCluster.KubeClient.CoreV1().
+				Namespaces().
+				Get(context.TODO(), "idp-mgmt-dex", metav1.GetOptions{})
+			if err != nil {
+				logf.Log.Info("Error retrieving idp-mgmt-dex namespace in hub cluster", "Error", err)
+				return err					
+			}
+			return nil				
+		}, 300, 1).Should(HaveOccurred())			
 	})
 })

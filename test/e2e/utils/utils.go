@@ -228,13 +228,29 @@ func NewKubeClientAPIExtension(url, kubeconfig, ctx string) apiextensionsclients
 	return clientset
 }
 
+// Replace values of environment variables in string representation of multi-resource yaml file
+func replaceEnvVariablesInYamlString(yamlsString string) string {
+	// Replace values of GitHub client ID and Secret
+	yamlsString = strings.Replace(yamlsString, "$GITHUB_APP_CLIENT_ID", os.Getenv("GITHUB_APP_CLIENT_ID"), -1)
+	yamlsString = strings.Replace(yamlsString, "$GITHUB_APP_CLIENT_SECRET", os.Getenv("GITHUB_APP_CLIENT_SECRET"), -1)
+
+	// Replace values of LDAP Azure AD Host, Bind DN, Bind Password, Base DN and certificate
+	yamlsString = strings.Replace(yamlsString, "$LDAP_AZURE_HOST", os.Getenv("LDAP_AZURE_HOST"), -1)
+	yamlsString = strings.Replace(yamlsString, "$LDAP_AZURE_BIND_DN", os.Getenv("LDAP_AZURE_BIND_DN"), -1)
+	yamlsString = strings.Replace(yamlsString, "$LDAP_AZURE_BIND_PASSWORD", os.Getenv("LDAP_AZURE_BIND_PASSWORD"), -1)
+	yamlsString = strings.Replace(yamlsString, "$LDAP_AZURE_BASE_DN", os.Getenv("LDAP_AZURE_BASE_DN"), -1)
+	yamlsString = strings.Replace(yamlsString, "$LDAP_AZURE_SERVER_CERT", os.Getenv("LDAP_AZURE_SERVER_CERT"), -1)
+	
+	return yamlsString	
+}
+
 // Apply a multi resources file to the cluster described by the provided kube client.
 // yamlB is a byte array containing the resources file
 func Apply(clientKube kubernetes.Interface, clientDynamic dynamic.Interface, yamlB []byte) error {
-	// Replace values of environment variables for GitHub client ID and Secret
 	yamlsString := string(yamlB)
-	yamlsString = strings.Replace(yamlsString, "$GITHUB_APP_CLIENT_ID", os.Getenv("GITHUB_APP_CLIENT_ID"), -1)
-	yamlsString = strings.Replace(yamlsString, "$GITHUB_APP_CLIENT_SECRET", os.Getenv("GITHUB_APP_CLIENT_SECRET"), -1)
+
+	// Replace values of environment variables for GitHub client ID and Secret
+	yamlsString = replaceEnvVariablesInYamlString(yamlsString)
 
 	yamls := strings.Split(yamlsString, "---")
 	// yamls is an []string
