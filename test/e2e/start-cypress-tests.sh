@@ -2,7 +2,7 @@
 
 # Copyright Red Hat
 
-echo "Initiating tests..."
+echo "--- Initiating tests..."
 
 cd ${IDP_MGMT_OPERATOR_DIR}/test/e2e/cypress-ui
 
@@ -29,16 +29,16 @@ else
   cp ./import-kubeconfig/* ./cypress/config/import-kubeconfig
 fi
 
-echo "Logging into Kube API server ..."
+echo "--- Logging into Kube API server ..."
 oc login --server=$CYPRESS_OC_CLUSTER_URL -u $CYPRESS_OC_CLUSTER_USER -p $CYPRESS_OC_CLUSTER_PASS --insecure-skip-tls-verify
 
-echo "Show cluster info ..."
+echo "--- Show cluster info ..."
 oc cluster-info
 
-echo "Show managed cluster"
+echo "--- Show managed cluster"
 oc get managedclusters
 
-echo "Show nodes ..."
+echo "--- Show nodes ..."
 oc get nodes
 
 
@@ -51,15 +51,15 @@ if [[ "$CLEAN_UP" == "true" ]]; then
 fi
 
 
-echo "Running tests on $CYPRESS_BASE_URL ..."
+echo "--- Start running Cypress tests against hub $CYPRESS_BASE_URL ..."
 testCode=0
 #npx cypress run --config-file "./cypress.json" --browser $BROWSER
 #testCode=$?
 TEST_TAG=login
 npm install
-npx cypress run --browser $BROWSER --reporter cypress-multi-reporters --env grepTags=${TEST_TAG},grepFilterSpecs=true,grepOmitFiltered=true
+#Turn off color ascii output when we run
+NO_COLOR=1 npx cypress run --browser $BROWSER --reporter cypress-multi-reporters --env grepTags=${TEST_TAG},grepFilterSpecs=true,grepOmitFiltered=true
 testCode=$?
-
 
 testDirectory="/results"
 

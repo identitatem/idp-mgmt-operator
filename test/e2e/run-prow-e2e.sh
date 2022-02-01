@@ -164,5 +164,5 @@ echo "--- Running ginkgo E2E tests"
 
 
 
-echo "--- Running ${CYPRESS_TEST_MODE} tests"
+echo "--- Running Cypress tests"
 ./start-cypress-tests.sh
