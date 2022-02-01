@@ -47,8 +47,13 @@ echo "--- Generate the signed certificate..."
 #./acme.sh  --issue   --dns dns_aws -d ${API} -d "*.${WILDCARD}"
 # The above sometimes returns a 503 error, so use a different server
 ./acme.sh  --issue   --dns dns_aws -d ${API} -d "*.${WILDCARD}" --server letsencrypt || {
-    echo "ERROR Could not create signed certificate"
-    exit 1
+    echo "ERROR Could not create signed certificate with letsencrypt server"
+
+    # retry using the default server
+    ./acme.sh  --issue   --dns dns_aws -d ${API} -d "*.${WILDCARD}"  || {
+        echo "ERROR Could not create signed certificate with default server"
+        exit 1
+    }
 }
 
 
