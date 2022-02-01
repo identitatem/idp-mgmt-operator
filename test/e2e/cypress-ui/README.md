@@ -11,10 +11,9 @@
 
 1. Run `npm install` to install Cypress and it's dependencies from `cypress-ui` directory.
 2. Export the following environment variables:
-    - `export CYPRESS_BASE_URL=http://localhost:3001`
     - `export CYPRESS_OPTIONS_HUB_USER=kubeadmin`
     - `export CYPRESS_OPTIONS_HUB_PASSWORD=xxxxxxxxx`
-    - `export CYPRESS_BASE_URL=https://multicloud-console.apps.{clusterName}.dev06.red-chesterfield.com` (URL of a working cluster)
+    - `export CYPRESS_BASE_URL=https://multicloud-console.apps.{clusterName}.dev06.red-chesterfield.com` (ACM URL of a working cluster)
 3. Run `npx cypress open` to run your test in headed mode.
 4. Select test to run.
 
