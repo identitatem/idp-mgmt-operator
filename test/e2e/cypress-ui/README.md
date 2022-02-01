@@ -9,7 +9,7 @@
   >  - OpenShift CLI (oc)
   >  - a browser - either chrome or firefox
 
-1. Run `npm install` to install Cypress and it's dependencies on the root directory.
+1. Run `npm install` to install Cypress and it's dependencies from `cypress-ui` directory.
 2. Export the following environment variables:
     - `export CYPRESS_BASE_URL=http://localhost:3001`
     - `export CYPRESS_OPTIONS_HUB_USER=kubeadmin`
