@@ -30,10 +30,15 @@ oc get namespaces
 echo "--- Start deploy"
 #export CATALOG_DEPLOY_NAMESPACE=idp-mgmt-config
 make deploy
-sleep 20
+sleep 60
+
 
 echo "--- Check that the installer pod is running"
-oc wait --for=condition=ready pods --all --timeout=5m -n idp-mgmt-config
+oc wait --for=condition=ready pods --all --timeout=5m -n idp-mgmt-config || {
+  echo "ERROR - No IDP pods running!"
+  oc get pods -n idp-mgmt-config
+  exit 1
+}
 oc get pods -n idp-mgmt-config
 oc get pods -n idp-mgmt-config | grep idp-mgmt-installer-controller-manager || {
   echo "ERROR idp-mgmt-controller-manager pod not found!"
