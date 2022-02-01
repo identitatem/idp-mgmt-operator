@@ -4,7 +4,7 @@
 
 echo "Initiating tests..."
 
-cd ${IDP_MGMT_OPERATOR_DIR}\test\e2e\cypress-ui
+cd ${IDP_MGMT_OPERATOR_DIR}/test/e2e/cypress-ui
 
 
 if [ -z "$CYPRESS_TEST_MODE" ]; then
@@ -51,7 +51,7 @@ if [[ "$CLEAN_UP" == "true" ]]; then
 fi
 
 
-#echo "Running tests on $CYPRESS_BASE_URL in $CYPRESS_TEST_MODE mode..."
+echo "Running tests on $CYPRESS_BASE_URL ..."
 testCode=0
 #npx cypress run --config-file "./cypress.json" --browser $BROWSER
 #testCode=$?
