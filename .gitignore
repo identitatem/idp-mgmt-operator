@@ -34,6 +34,8 @@
 
 /test/functional/coverage
 /test/functional/tmp
+/test/e2e/cypress-ui/node_modules
+/test/e2e/cypress-ui/results
 /vendor
 /_output
 kind_kubeconfig.yaml
