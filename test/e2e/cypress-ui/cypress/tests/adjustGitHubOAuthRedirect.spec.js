@@ -4,7 +4,7 @@
 describe('Adjust GitHub OAuth Redirect', {
     tags: ['@IDP', 'tag-test']
 }, function () {
-    it('Open the GitHub OAuth app', { tags: [] }, function () {         // These steps need to be in a single spec since Cypress clears out cookies between specs
+    it('Update homepage and callback URLs for the GitHub OAuth app', { tags: [] }, function () {         // These steps need to be in a single spec since Cypress clears out cookies between specs
         // Login to GitHub
         cy.loginToGitHubOAuthApp()
 

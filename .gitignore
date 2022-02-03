@@ -46,3 +46,4 @@ kind_kubeconfig_internal.yaml
 
 # bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
 /test/e2e/utils/kcfg.yaml
+test/e2e/cypress-ui/node_modules/
