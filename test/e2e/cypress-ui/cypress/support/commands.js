@@ -170,7 +170,7 @@ Cypress.Commands.add('loginToGitHubOAuthApp', (OPTIONS_GH_OAUTH_APPS_URL, OPTION
 
       // Sign in
       cy.get('input[name=login]').type(username);
-      cy.get('input[name=password]').type(`${password}{enter}`);
+      cy.get('input[name=password]').type(`${password}{enter}`, { log:false });
 
       // Should be signed in
       cy.get(`header > div > details > summary > img[alt="@${username}"]`, { timeout: 10000 }).should('exist');
