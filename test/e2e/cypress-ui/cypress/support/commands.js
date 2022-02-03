@@ -18,7 +18,7 @@ import { acm23xheaderMethods, acm23xheaderSelectors } from '../views/header'
 import { commonElementSelectors } from '../views/common/commonSelectors'
 import { oauthIssuer } from '../views/common/welcome'
 
-const authUrl = Cypress.config().baseUrl.replace("multicloud-console", "oauth-openshift");
+const authUrl = Cypress.config().baseUrl;
 
 Cypress.Commands.add('login', (OPTIONS_HUB_USER, OPTIONS_HUB_PASSWORD, OC_IDP) => {
   var user = OPTIONS_HUB_USER || Cypress.env('OPTIONS_HUB_USER');
@@ -153,3 +153,53 @@ Cypress.Commands.add(
     }
   }
 )
+
+// Cypress command to sign into GitHub OAuth Applications page
+Cypress.Commands.add('loginToGitHubOAuthApp', (OPTIONS_GH_OAUTH_APPS_URL, OPTIONS_GH_USER, OPTIONS_GH_PASSWORD) => {
+  Cypress.Cookies.debug(true)
+  
+  var oauthAppsURL = OPTIONS_GH_OAUTH_APPS_URL || Cypress.env('OPTIONS_GH_OAUTH_APPS_URL');
+  var username = OPTIONS_GH_USER || Cypress.env('OPTIONS_GH_USER');
+  var password = OPTIONS_GH_PASSWORD || Cypress.env('OPTIONS_GH_PASSWORD');
+  
+  cy.visit(oauthAppsURL, { failOnStatusCode: false });
+
+  cy.get('body').then(body => {
+    if (body.find(`header > div > details > summary > img[alt="@${username}"]`).length == 0) {
+      cy.log('Not signed in');
+
+      // Sign in
+      cy.get('input[name=login]').type(username);
+      cy.get('input[name=password]').type(`${password}{enter}`);
+
+      // Should be signed in
+      cy.get(`header > div > details > summary > img[alt="@${username}"]`, { timeout: 10000 }).should('exist');
+    } else {
+      cy.log('Signed in');
+    }
+  })
+})
+
+// Cypress command to logout of GitHub
+Cypress.Commands.add('logoutOfGitHub', (OPTIONS_GH_OAUTH_APP_URL, OPTIONS_GH_USER, OPTIONS_GH_PASSWORD) => {
+  cy.get('body').then(body => {
+    if (body.find('header.header-logged-out').length > 0) {
+      cy.log('Not signed in');
+    } else {
+      cy.log('Signed in');
+
+      cy.wait(500);
+
+      // Sign out
+      cy.get('header > div > details > summary[aria-label="View profile and more"]').then((selectedElement) => {
+        debugger
+          selectedElement.trigger("click");
+      })
+      cy.contains("form.logout-form > button", "Sign out").click();
+
+      cy.contains("header", "Sign in").should('exist');
+
+      cy.log('Signed out');
+    }
+  })
+})

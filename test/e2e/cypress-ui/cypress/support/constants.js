@@ -16,8 +16,8 @@ export const clusterpools_path = "/clusterpools"
 export const clusterclaims_path = "/clusterclaims"
 
 // API URL
-export const apiUrl = Cypress.config().baseUrl.replace("multicloud-console.apps", "api") + ":6443";
-export const ocpUrl = Cypress.config().baseUrl.replace("multicloud-console.apps", "console-openshift-console.apps");
-export const prometheusUrl = Cypress.config().baseUrl.replace("multicloud-console.apps", "prometheus-k8s-openshift-monitoring.apps");
+export const apiUrl = Cypress.config().baseUrl;
+export const ocpUrl = Cypress.config().baseUrl;
+export const prometheusUrl = Cypress.config().baseUrl;
 
 export const supportedOCPReleasesRegex = "4.6|4.8|4.9|4.10"

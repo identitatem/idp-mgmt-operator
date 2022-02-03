@@ -17,6 +17,24 @@
 3. Run `npx cypress open` to run your test in headed mode.
 4. Select test to run.
 
+## Adjust Redirect URI in GitHub
+
+* Export the following environment variables:
+```bash
+# URL to the GitHub OAuth apps UI
+export CYPRESS_OPTIONS_GH_OAUTH_APPS_URL=...
+# Name of the GitHub OAuth App
+export CYPRESS_OPTIONS_GH_OAUTH_APPNAME=...
+# GitHub login user
+export CYPRESS_OPTIONS_GH_USER=...
+# GitHub login password
+export CYPRESS_OPTIONS_GH_PASSWORD=...
+# GitHub OAuth Homepage URL constructed using route subdomain and Hub cluster URL
+export CYPRESS_OPTIONS_GH_OAUTH_HOMEPAGE_URL=...
+# GitHub OAuth callback URL constructed using route subdomain and Hub cluster URL
+export CYPRESS_OPTIONS_GH_OAUTH_CALLBACK_URL=...
+```
+
 ### Running in Headless Mode
 - If you want to run in headless mode and tag a specific test, instead of doing `npx cypress open`, try this instead:
     - `npx cypress run --headless --reporter cypress-multi-reporters --env grepTags=<test-tag>,grepFilterSpecs=true,grepOmitFiltered=true`
