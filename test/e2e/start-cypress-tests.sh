@@ -58,7 +58,7 @@ testCode=0
 TEST_TAG=login
 npm install
 #Turn off color ascii output when we run
-NO_COLOR=1 npx cypress run --browser $BROWSER --reporter cypress-multi-reporters --env grepTags=${TEST_TAG},grepFilterSpecs=true,grepOmitFiltered=true
+NO_COLOR=1 npx cypress run --browser $BROWSER --reporter cypress-multi-reporters
 testCode=$?
 
 testDirectory="/results"
