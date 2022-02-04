@@ -4,7 +4,7 @@ name: Publish
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, stable ]
 
 jobs:
   publish:
@@ -26,6 +26,6 @@ jobs:
         DOCKER_USER: ${{ secrets.DOCKER_USER }}
         DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
       run: |
-        export VERSION="0.0.1-$(date -u +'%Y%m%d-%H-%M-%S')-${GITHUB_SHA::7}"
+        export VERSION="0.0.1-$(date -u +'%Y%m%d-%H-%M-%S')-${GITHUB_SHA::7}-${GITHUB_REF}"
         export KUBEBUILDER_ASSETS=$HOME/kubebuilder/bin;
         make publish PUSH_LATEST=true

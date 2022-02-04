@@ -5,7 +5,8 @@ SHELL := /bin/bash
 export PROJECT_DIR            = $(shell 'pwd')
 export PROJECT_NAME			  = $(shell basename ${PROJECT_DIR})
 
-# Version to apply to generated artifacts (for bundling/publishing)
+# Version to apply to generated artifacts (for bundling/publishing). # This value is set by
+# GitHub workflows on push to main and tagging and is not expected to be bumped here.
 export VERSION ?= 0.0.1
 
 # Image URL to use all building/pushing image targets
