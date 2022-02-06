@@ -496,8 +496,8 @@ github.com/huandu/xstrings v1.3.2/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq
 github.com/iancoleman/strcase v0.2.0/go.mod h1:iwCmte+B7n89clKwxIoIXy/HfoL7AsD47ZCWhYzw7ho=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
-github.com/identitatem/dex-operator v0.0.4-0.20220127195054-da4176e7900f h1:BZJKd0wLB8df4iX+dWJ8ZZ4Q6TrSS/UTiSTOiY1p00o=
-github.com/identitatem/dex-operator v0.0.4-0.20220127195054-da4176e7900f/go.mod h1:uAcCS2K+XkfB2gJjC5LOPJBvnWAAQumRbtXJ2bpP8is=
+github.com/identitatem/dex-operator v0.0.4-0.20220204192727-f82645dbefa2 h1:T7wkFeIdlCgn1D/eaHJSK/yyIPODm9y5Y5U9pZNq8jE=
+github.com/identitatem/dex-operator v0.0.4-0.20220204192727-f82645dbefa2/go.mod h1:uAcCS2K+XkfB2gJjC5LOPJBvnWAAQumRbtXJ2bpP8is=
 github.com/identitatem/idp-client-api v0.0.0-20220128181808-d06576428b4d h1:pXGy4k8rp/yZC0aP7wK8l3dTuGBBRVY2/8B88Pr8yx0=
 github.com/identitatem/idp-client-api v0.0.0-20220128181808-d06576428b4d/go.mod h1:KyzKCajvk+RMr9pBDRm3+lWAj3cTK/NgE0fKlTBoh/E=
 github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
