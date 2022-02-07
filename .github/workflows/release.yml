@@ -29,7 +29,7 @@ jobs:
         DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
       run: |
         export VERSION=${GITHUB_REF##*/}
-        export IMG_TAG=${GITHUB_REF##*/}
         export IMG=quay.io/identitatem/idp-mgmt-operator:${GITHUB_REF##*/}
+        export PREV_BUNDLE_INDEX_IMG=quay.io/identitatem/idp-mgmt-operator-catalog:v0.2.0
         export KUBEBUILDER_ASSETS=$HOME/kubebuilder/bin; 
-        make publish-release
+        make publish

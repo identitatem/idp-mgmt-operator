@@ -346,12 +346,13 @@ make docker-build docker-push
 ```bash
 export PREV_BUNDLE_INDEX_IMG=quay.io/<repo_name>/idp-mgmt-operator-catalog:<previous_catalog_version>
 ```
-6. run `make publish` - this should acquire any dependencies and push to quay!
-7. To test, run `make deploy-catalog`.  This will create a catalogsource on your hub cluster and you can install the test catalog from OperatorHub.
-8. PS: Before commit, double check the file [idp-mgmt-operator.clusterserviceversion.yaml](bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml) to make sure it doesn't contain your own name, image and version as this file is used as-is by downstream.
+6. run `make bundle` to generate bundle manifests
+7. run `make publish` - this should acquire any dependencies and push to quay!
+8. To test, run `make deploy-catalog`.  This will create a catalogsource on your hub cluster and you can install the test catalog from OperatorHub.
+9. PS: Before commit, double check the file [idp-mgmt-operator.clusterserviceversion.yaml](bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml) to make sure it doesn't contain your own name, image and version as this file is used as-is by downstream.
 
 # ClusterServiceVersion updates
-After making changes to `config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml` you will need to run `make publish` (See preceding section) to get the changes into `bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml`.  After running `make publish`, revert changes to version numbers before checking in the changes.
+After making changes to `config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml` you will need to run `make bundle IMG=quay.io/identitatem/idp-mgmt-operator:latest` to get the changes into `bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml`.  You should not see any image or version changes in `bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml`. If you do, revert those changes before checking in the file.
 
 # Tagging and Generating a Release
 
@@ -416,5 +417,4 @@ date -u "+0.0.0-%Y%m%d-%H-%M-%S"
 In order to deploy this version - follow the Catalog deploy method but set:
 ```
 VERSION=<semver-tag>
-IMG_TAG=<semver-tag>
 ```

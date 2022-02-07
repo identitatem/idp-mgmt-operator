@@ -13,7 +13,7 @@ metadata:
       for Kubernetes", "multicluster engine for Kubernetes"]'
     operators.operatorframework.io/builder: operator-sdk-v1.15.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
-  name: idp-mgmt-operator.v0.2.0
+  name: idp-mgmt-operator.v0.0.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -535,4 +535,5 @@ spec:
   provider:
     name: Red Hat
     url: https://github.com/identitatem
-  version: 0.2.0
+  replaces: idp-mgmt-operator.v0.2.0
+  version: 0.0.1
