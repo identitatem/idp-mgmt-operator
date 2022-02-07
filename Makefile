@@ -5,28 +5,21 @@ SHELL := /bin/bash
 export PROJECT_DIR            = $(shell 'pwd')
 export PROJECT_NAME			  = $(shell basename ${PROJECT_DIR})
 
-# set docker image tag to branch name or "latest" if "master" or "main" branch
-GIT_BRANCH = $(shell git rev-parse --abbrev-ref HEAD)
-IMG_TAG = ${GIT_BRANCH}
-ifeq ("main",${IMG_TAG})
-IMG_TAG = latest
-endif
-ifeq ("master",${IMG_TAG})
-IMG_TAG = latest
-endif
+# Version to apply to generated artifacts (for bundling/publishing). # This value is set by
+# GitHub workflows on push to main and tagging and is not expected to be bumped here.
+export VERSION ?= 0.0.1
 
 # Image URL to use all building/pushing image targets
-export IMG ?= ${PROJECT_NAME}:${IMG_TAG}
-IMG_COVERAGE ?= ${PROJECT_NAME}-coverage:${IMG_TAG}
-IMG_E2E_TEST ?= ${PROJECT_NAME}-e2e-test:${IMG_TAG}
+IMAGE_TAG_BASE ?= quay.io/identitatem/$(PROJECT_NAME)
+export IMG ?= ${IMAGE_TAG_BASE}:${VERSION}
+
+GIT_BRANCH = $(shell git rev-parse --abbrev-ref HEAD)
+IMG_COVERAGE ?= ${PROJECT_NAME}-coverage:${GIT_BRANCH}
+IMG_E2E_TEST ?= ${PROJECT_NAME}-e2e-test:${GIT_BRANCH}
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:crdVersions=v1"
 
-# Version to apply to generated artifacts (for bundling/publishing)
-export VERSION ?= 0.2.0
-
 # Bundle Prereqs
-IMAGE_TAG_BASE ?= quay.io/identitatem/$(PROJECT_NAME)
 BUNDLE_IMG ?= ${IMAGE_TAG_BASE}-bundle:${VERSION}
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -207,16 +200,13 @@ ifneq ($(origin PREV_BUNDLE_INDEX_IMG), undefined)
 FROM_INDEX_OPT := --from-index $(PREV_BUNDLE_INDEX_IMG)
 endif
 
-
 .PHONY: publish
-## Upodate, build, and push the bundle, then build and push the catalog.
-publish: bundle bundle-build bundle-push catalog-build catalog-push
-
-
-.PHONY: publish-release
-## Upodate, build, and push the bundle on a semver release tag, then build and push the catalog.
-publish-release: docker-login docker-build docker-push bundle bundle-build bundle-push catalog-build catalog-push
-
+## Build and push the operator, bundle, and catalog
+publish: docker-login docker-build docker-push patch-bundle-version bundle-build bundle-push catalog-build catalog-push
+	if [[ "${PUSH_LATEST}" = true ]]; then \
+		echo "Tagging operator image as latest and pushing"; \
+		$(MAKE) docker-push-latest; \
+	fi;
 
 .PHONY: docker-login
 ## Log in to the docker registry for ${BUNDLE_IMG}
@@ -240,6 +230,17 @@ bundle: manifests kustomize yq/install operatorsdk
 	cd config/installer && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
 	mv config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml.bak config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml
+
+
+## Patch up the bundle manifest wtih correct image, version and replaces
+.PHONY: patch-bundle-version
+patch-bundle-version: yq/install
+	${YQ} eval -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image = env(IMG)' bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
+	${YQ} eval -i '.spec.version = env(VERSION)' bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
+	BUNDLE_NAME=$(shell echo "idp-mgmt-operator.v${VERSION}") ${YQ} eval -i '.metadata.name = env(BUNDLE_NAME)' bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
+	if [[ -z "${PREV_BUNDLE_INDEX_IMG}" ]]; then \
+		sed -i.bak '/replaces: idp-mgmt-operator\.v/d' bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml; \
+	fi;
 
 .PHONY: bundle-build
 ## Build the bundle image.
@@ -372,11 +373,14 @@ docker-build-coverage: docker-build
 	-f Dockerfile-coverage \
 	-t ${IMG_COVERAGE}
 
-
 # Push the docker image
 docker-push:
 	docker push ${IMG}
 
+# Tag the IMG as latest and docker push
+docker-push-latest:
+	docker tag ${IMG} ${IMAGE_TAG_BASE}:latest
+	$(MAKE) docker-push IMG=${IMAGE_TAG_BASE}:latest
 
 functional-test-crds:
 	@for FILE in "test/config/crd/external"; do kubectl apply -f $$FILE;done
