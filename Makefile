@@ -231,11 +231,16 @@ bundle: manifests kustomize yq/install operatorsdk
 	$(KUSTOMIZE) build config/manifests | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
 	mv config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml.bak config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml
 
+
+## Patch up the bundle manifest wtih correct image, version and replaces
 .PHONY: patch-bundle-version
 patch-bundle-version: yq/install
 	${YQ} eval -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image = env(IMG)' bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
 	${YQ} eval -i '.spec.version = env(VERSION)' bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
 	BUNDLE_NAME=$(shell echo "idp-mgmt-operator.v${VERSION}") ${YQ} eval -i '.metadata.name = env(BUNDLE_NAME)' bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml
+	if [[ -z "${PREV_BUNDLE_INDEX_IMG}" ]]; then \
+		sed -i.bak '/replaces: idp-mgmt-operator\.v/d' bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml; \
+	fi;
 
 .PHONY: bundle-build
 ## Build the bundle image.
