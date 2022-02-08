@@ -536,4 +536,4 @@ spec:
     name: Red Hat
     url: https://github.com/identitatem
   replaces: idp-mgmt-operator.v0.2.0
-  version: 0.0.0-20220115-00-41-28
+  version: 0.0.1
