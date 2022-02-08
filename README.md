@@ -376,8 +376,7 @@ date -u "+0.2.1-%Y%m%d-%H-%M-%S"
 1. In the **Find or create a new tag field**, paste the value from the date command above
 1. Select **Create new tab on publish**
 1. Select **Publish release**.
-   This will cause a github action to start.  Once the github action is complete, the new dex-operator quay image from https://quay.io/repository/identitatem/dex-operator?tab=tags.  Once the dex-operator quay image is available, move on to
-   the next part which will pull the new dex-operator quay image
+   This will cause a github action to start.  Once the github action is complete, the new dex-operator quay image will be available at https://quay.io/repository/identitatem/dex-operator?tab=tags.  Now we need to pull this new dex-operator image
    into the idp-mgmt-operator.
 1. In your fork of the https://github.com/identitatem/idp-mgmt-operator repo, create a new branch
 1. Update `go.mod` entry `github.com/identitatem/dex-operator` to reference the new tag, for example `github.com/identitatem/dex-operator 0.2.1-20211028-14-34-26`  
@@ -388,7 +387,7 @@ so RELATED_IMAGE_DEX_OPERATOR points to the new dex-operator image in quay.
 ```bash
 export IMG=quay.io/identitatem/idp-mgmt-operator:latest
 ```
-1. Run `make bundle` to update https://github.com/identitatem/idp-mgmt-operator/blob/main/bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml.  
+1. Run `make bundle` to update https://github.com/identitatem/idp-mgmt-operator/blob/main/bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml.  You should not see any changes to `image:`, `version:` or `replaces:` in `bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml`. If you do, revert those changes before checking in the file.
 1. Test the changes using `make test` then `make deploy`.  Apply an IDPConfig and apply an AuthRealm to a managed cluster and be sure it works.
 1. Commit the PR changes and get them reviewed and merged.
 1. Run the following command to generate the value we will use as part of the release and tag (OR possibly use the same tag dex-operator used)
