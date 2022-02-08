@@ -42,9 +42,14 @@ export CYPRESS_TEST_MODE=BVT
 export GITHUB_USER=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-user")
 export GITHUB_TOKEN=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-token")
 
-# GitHub OAuth App
+# GitHub OAuth App for testing Auth Realm with GitHub IDP
 export GITHUB_APP_CLIENT_ID=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-app-client-id")
 export GITHUB_APP_CLIENT_SECRET=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-app-client-secret")
+
+# GitHub Credentials for creating OAuth apps for testing
+export CYPRESS_OPTIONS_GH_USER=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-oauth-user")
+export CYPRESS_OPTIONS_GH_PASSWORD==$(cat "/etc/ocm-mgdsvcs-e2e-test/github-oauth-password")
+export CYPRESS_OPTIONS_GH_OAUTH_APPS_URL=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-oauth-apps-url")
 
 # LDAP (Azure Active Directory)
 export LDAP_AZURE_HOST=$(cat "/etc/ocm-mgdsvcs-e2e-test/ldap-azure-host")

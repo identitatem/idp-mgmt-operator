@@ -21,18 +21,20 @@
 
 * Export the following environment variables:
 ```bash
-# URL to the GitHub OAuth apps UI
+# URL to the GitHub OAuth apps UI (example: https://github.com/organizations/<org_name>/settings/applications/)
 export CYPRESS_OPTIONS_GH_OAUTH_APPS_URL=...
-# Name of the GitHub OAuth App
-export CYPRESS_OPTIONS_GH_OAUTH_APPNAME=...
 # GitHub login user
 export CYPRESS_OPTIONS_GH_USER=...
 # GitHub login password
 export CYPRESS_OPTIONS_GH_PASSWORD=...
-# GitHub OAuth Homepage URL constructed using route subdomain and Hub cluster URL
-export CYPRESS_OPTIONS_GH_OAUTH_HOMEPAGE_URL=...
+
+export APPS=$(oc get infrastructure cluster -ojsonpath='{.status.apiServerURL}' | cut -d':' -f2 | sed 's/\/\/api/apps/g')
+# Route subdomain used in Auth Realm
+export CYPRESS_OPTIONS_ROUTE_SUBDOMAIN=...
 # GitHub OAuth callback URL constructed using route subdomain and Hub cluster URL
-export CYPRESS_OPTIONS_GH_OAUTH_CALLBACK_URL=...
+export CYPRESS_OPTIONS_GH_OAUTH_CALLBACK_URL="https://${CYPRESS_OPTIONS_ROUTE_SUBDOMAIN}.${APPS}/callback"
+# GitHub OAuth Homepage URL constructed using route subdomain and Hub cluster URL
+export CYPRESS_OPTIONS_GH_OAUTH_HOMEPAGE_URL="https://${CYPRESS_OPTIONS_ROUTE_SUBDOMAIN}.${APPS}"
 ```
 
 ### Running in Headless Mode

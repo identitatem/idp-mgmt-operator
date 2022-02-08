@@ -155,7 +155,7 @@ Cypress.Commands.add(
 )
 
 // Cypress command to sign into GitHub OAuth Applications page
-Cypress.Commands.add('loginToGitHubOAuthApp', (OPTIONS_GH_OAUTH_APPS_URL, OPTIONS_GH_USER, OPTIONS_GH_PASSWORD) => {
+Cypress.Commands.add('loginToGitHubOAuthAppsPage', (OPTIONS_GH_OAUTH_APPS_URL, OPTIONS_GH_USER, OPTIONS_GH_PASSWORD) => {
   Cypress.Cookies.debug(true)
   
   var oauthAppsURL = OPTIONS_GH_OAUTH_APPS_URL || Cypress.env('OPTIONS_GH_OAUTH_APPS_URL');
@@ -202,4 +202,93 @@ Cypress.Commands.add('logoutOfGitHub', (OPTIONS_GH_OAUTH_APP_URL, OPTIONS_GH_USE
       cy.log('Signed out');
     }
   })
+})
+
+// Cypress command to create a GitHub OAuth app
+Cypress.Commands.add('createGitHubOAuthApp', () => {
+    // Login to GitHub
+    cy.loginToGitHubOAuthAppsPage()
+
+    // The OAuth apps page is currently open
+    cy.contains('h2', 'OAuth Apps').should('exist');
+
+    // Known exception returned on the New OAuth app form, bypass it
+    cy.on('uncaught:exception', (err, runnable) => {
+        // we expect an error with message 'n.subscriptions is not iterable'
+        // and don't want to fail the test so we return false
+        if (err.message.includes('n.subscriptions is not iterable')) {
+          return false
+        }
+        // we still want to ensure there are no other unexpected
+        // errors, so we let them fail the test
+    });
+
+    // Create an OAuth app
+    cy.contains('a.btn', 'New OAuth App').click();
+    cy.contains('h2.Subhead-heading', 'Register a new OAuth application').should('exist');
+
+    var oAuthNameSuffix = Math.floor(1000 + Math.random() * 9000);
+    var oAuthAppName = "test-e2e-" + oAuthNameSuffix;
+    cy.get('input[name="oauth_application[name]"]').type(oAuthAppName);
+
+    // Set OAuth app name (to be used later when the OAuth app is destroyed)
+    Cypress.env('OPTIONS_GH_OAUTH_APP_NAME', oAuthAppName);
+
+    // Enter OAuth Callback URL
+    var oauthCallbackURL = Cypress.env('OPTIONS_GH_OAUTH_CALLBACK_URL');
+    cy.get('input[name="oauth_application[callback_url]"]').type(oauthCallbackURL);
+
+    // Enter OAuth Homepage URL
+    var oauthHomepageURL = Cypress.env('OPTIONS_GH_OAUTH_HOMEPAGE_URL');
+    cy.get('input[name="oauth_application[url]"]').type(oauthHomepageURL);     
+
+    // Submit
+    cy.get('form.new_oauth_application > p > button[type=submit]').click();
+    
+    cy.contains('h2', oAuthAppName).should('exist');
+
+    // Create a Client Secret
+    cy.contains('form > input.btn[type=submit]', 'Generate a new client secret').click();
+
+    // Copy client secret and client ID into environment variables to be used in Cypress tests for GitHub IDP
+    cy.get('code[id=new-oauth-token]')
+      .invoke('text')
+      .then((clientSecret) => {
+        Cypress.env('OPTIONS_GH_OAUTH_CLIENT_SECRET', clientSecret);
+      });
+    cy.get('code.f4')
+      .invoke('text')
+      .then((clientID) => {
+        Cypress.env('OPTIONS_GH_OAUTH_CLIENT_ID', clientID);
+      });
+    
+    // Logout of GitHub
+    cy.logoutOfGitHub();
+})
+
+// Cypress command to delete a GitHub OAuth app after use
+Cypress.Commands.add('deleteGitHubOAuthApp', () => {
+    // Login to GitHub
+    cy.loginToGitHubOAuthAppsPage()
+
+    // The OAuth apps page is currently open
+    cy.contains('h2', 'OAuth Apps').should('exist');
+
+    // Open the UI for the specific OAuth app
+    var oAuthAppName = Cypress.env('OPTIONS_GH_OAUTH_APP_NAME');  // Get the OAuth app previously created
+    cy.contains('a.text-bold', oAuthAppName).click();
+    cy.contains('h2', oAuthAppName).should('exist');
+
+    // Delete application
+    cy.contains('a.js-selected-navigation-item', 'Advanced').click();
+    cy.contains('summary.btn-danger', 'Delete application').should('be.visible');
+    cy.contains('summary.btn-danger', 'Delete application').click();
+    cy.contains('details-dialog > div > form > button[type=submit]', 'Delete OAuth application').should('be.visible');
+    cy.contains('details-dialog > div > form > button[type=submit]', 'Delete OAuth application').click();
+
+    // The OAuth apps page is open
+    cy.contains('h2', 'OAuth Apps').should('exist');
+    
+    // Logout of GitHub
+    cy.logoutOfGitHub();
 })
