@@ -42,7 +42,7 @@ export CYPRESS_TEST_MODE=BVT
 export GITHUB_USER=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-user")
 export GITHUB_TOKEN=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-token")
 
-# GitHub OAuth App for testing Auth Realm with GitHub IDP
+# GitHub OAuth App for testing Auth Realm with GitHub IDP (Ginkgo tests)
 export GITHUB_APP_CLIENT_ID=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-app-client-id")
 export GITHUB_APP_CLIENT_SECRET=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-app-client-secret")
 
