@@ -43,6 +43,9 @@ oc get managedclusters
 
 echo "--- Running ginkgo E2E tests"
 go install github.com/onsi/ginkgo/v2/ginkgo
+go get github.com/onsi/ginkgo/v2/ginkgo/generators@v2.1.1
+go get github.com/onsi/ginkgo/v2/ginkgo/internal@v2.1.1
+go get github.com/onsi/ginkgo/v2/ginkgo/labels@v2.1.1
 
 
 make e2e-ginkgo-test
