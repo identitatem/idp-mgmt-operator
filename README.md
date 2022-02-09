@@ -358,13 +358,16 @@ After making changes to `config/manifests/bases/idp-mgmt-operator.clusterservice
 
 We have a GitHub action defined to generate a tagged bundle and catalog image when a SemVer GitHub tag is created on this repo.  To create a new release that will generate a versioned Bundle/Catalog there are two methods:
 
+**NOTE: The Major.Minor SemVer is watched by the mid/downstream processes.  If you must change the version from 0.2.*, you MUST notify CICD so they can change the tag_filter they use to watch for changes!!!**
+
+
 ## Method One - Use GitHub UI
 
 1. Run the following command to generate the value we will use as part of the release and tag for non-shipped releases
 ```bash
-date -u "+0.0.0-%Y%m%d-%H-%M-%S"
+date -u "+0.2.1-%Y%m%d-%H-%M-%S"
 ```
-  If you are building a release candidate, the format should be **0.1.1-rc#**.  (Where **#** is the release candidate number. Do not use UPPERCASE characters!)  If you are building the final release, the format should be **0.1.1**.
+  If you are building a release candidate, the format should be **0.2.1-rc#**.  (Where **#** is the release candidate number. Do not use UPPERCASE characters!)  If you are building the final release, the format should be **0.2.1**.
 
 1. Go to dex-operator github page and select **Releases** (https://github.com/identitatem/dex-operator/releases)
 1. Select **Draft a new release**
@@ -373,26 +376,25 @@ date -u "+0.0.0-%Y%m%d-%H-%M-%S"
 1. In the **Find or create a new tag field**, paste the value from the date command above
 1. Select **Create new tab on publish**
 1. Select **Publish release**.
-   This will cause a github action to start.  Once the github action is complete, move on to
-   the next part which will pull the new dex-operator quay image from https://quay.io/repository/identitatem/dex-operator?tab=tags
+   This will cause a github action to start.  Once the github action is complete, the new dex-operator quay image will be available at https://quay.io/repository/identitatem/dex-operator?tab=tags.  Now we need to pull this new dex-operator image
    into the idp-mgmt-operator.
 1. In your fork of the https://github.com/identitatem/idp-mgmt-operator repo, create a new branch
-1. Update `go.mod` entry `github.com/identitatem/dex-operator` to reference the new tag, for example `github.com/identitatem/dex-operator 0.0.0-20211028-14-34-26`  
-1. Run `go mod tidy`.  The `go.mod` entry will be updated to the correct value.  Might need `go mod tidy -compat=1.17` now that we are using a newer version of Go.
+1. Update `go.mod` entry `github.com/identitatem/dex-operator` to reference the new tag, for example `github.com/identitatem/dex-operator 0.2.1-20211028-14-34-26`  
+1. Run `go mod tidy -compat=1.17`.  The `go.mod` entry will be updated to the correct value and the end of the new value will have the dex-operator git tag commit id.  
 1. Update https://github.com/identitatem/idp-mgmt-operator/blob/main/config/installer/installer.yaml
 so RELATED_IMAGE_DEX_OPERATOR points to the new dex-operator image in quay.
 1. Export IMG variable to point to latest
 ```bash
 export IMG=quay.io/identitatem/idp-mgmt-operator:latest
 ```
-1. Run `make bundle` to update https://github.com/identitatem/idp-mgmt-operator/blob/main/bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml.  
+1. Run `make bundle` to update https://github.com/identitatem/idp-mgmt-operator/blob/main/bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml.  You should not see any changes to `image:`, `version:` or `replaces:` in `bundle/manifests/idp-mgmt-operator.clusterserviceversion.yaml`. If you do, revert those changes before checking in the file.
 1. Test the changes using `make test` then `make deploy`.  Apply an IDPConfig and apply an AuthRealm to a managed cluster and be sure it works.
 1. Commit the PR changes and get them reviewed and merged.
 1. Run the following command to generate the value we will use as part of the release and tag (OR possibly use the same tag dex-operator used)
 ```bash
-date -u "+0.0.0-%Y%m%d-%H-%M-%S"
+date -u "+0.2.1-%Y%m%d-%H-%M-%S"
 ```
- If you are building a release candidate, the format should be **0.1.1-rc#**.  (Where **#** is the release candidate number. Do not use UPPERCASE characters!)  If you are building the final release, the format should be **0.1.0**.
+ If you are building a release candidate, the format should be **0.2.1-rc#**.  (Where **#** is the release candidate number. Do not use UPPERCASE characters!)  If you are building the final release, the format should be **0.2.1**.
 
 1. Go to idp-mgmt-operator github page and select **Releases** (https://github.com/identitatem/idp-mgmt-operator/releases)
 1. Select **Draft a new release**
@@ -408,7 +410,7 @@ date -u "+0.0.0-%Y%m%d-%H-%M-%S"
 
 
 
-## Method Two - Create a tag in non-forked repo
+## Method Two - Create a tag in non-forked repo (NOT USED)
 1. `git tag <semver-tag>`
 2. `git push --tags`
 3. Wait for the [GitHub Action to complete](https://github.com/identitatem/idp-mgmt-operator/actions).
