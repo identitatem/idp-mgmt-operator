@@ -18,6 +18,8 @@ import { acm23xheaderMethods, acm23xheaderSelectors } from '../views/header'
 import { commonElementSelectors } from '../views/common/commonSelectors'
 import { oauthIssuer } from '../views/common/welcome'
 
+import { generateToken } from "authenticator"
+
 const authUrl = Cypress.config().baseUrl;
 
 Cypress.Commands.add('login', (OPTIONS_HUB_USER, OPTIONS_HUB_PASSWORD, OC_IDP) => {
@@ -39,7 +41,7 @@ Cypress.Commands.add('login', (OPTIONS_HUB_USER, OPTIONS_HUB_PASSWORD, OC_IDP) =
         cy.contains(idp).click()
       // cy.contains(idp).click()
       cy.get('#inputUsername', { timeout: 20000 }).click().focused().type(user)
-      cy.get('#inputPassword', { timeout: 20000 }).click().focused().type(password)
+      cy.get('#inputPassword', { timeout: 20000 }).click().focused().type(password, { log: false })
       cy.get('button[type="submit"]', { timeout: 20000 }).click()
       cy.get(acm23xheaderSelectors.mainHeader, { timeout: 30000 }).should('exist')
     }
@@ -171,6 +173,11 @@ Cypress.Commands.add('loginToGitHubOAuthAppsPage', (OPTIONS_GH_OAUTH_APPS_URL, O
       // Sign in
       cy.get('input[name=login]').type(username);
       cy.get('input[name=password]').type(`${password}{enter}`, { log:false });
+
+      // TOTP for 2FA
+      var secretKeyToGenerateToken = Cypress.env('OPTIONS_GH_SECRET_KEY_FOR_TOTP');
+      var totp = generateToken(secretKeyToGenerateToken);
+      cy.get('input[id=otp]').type(totp, { log:false });
 
       // Should be signed in
       cy.get('header > div > details > summary[aria-label="View profile and more"]', { timeout: 10000 }).should('exist');
