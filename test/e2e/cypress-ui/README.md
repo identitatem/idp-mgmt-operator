@@ -35,6 +35,8 @@ export CYPRESS_OPTIONS_ROUTE_SUBDOMAIN=...
 export CYPRESS_OPTIONS_GH_OAUTH_CALLBACK_URL="https://${CYPRESS_OPTIONS_ROUTE_SUBDOMAIN}.${APPS}/callback"
 # GitHub OAuth Homepage URL constructed using route subdomain and Hub cluster URL
 export CYPRESS_OPTIONS_GH_OAUTH_HOMEPAGE_URL="https://${CYPRESS_OPTIONS_ROUTE_SUBDOMAIN}.${APPS}"
+# Secret key for retrieving TOTP for GitHub 2FA (These tests work with a GitHub account set up for 2FA)
+export CYPRESS_OPTIONS_GH_SECRET_KEY_FOR_TOTP=...
 ```
 
 ### Running in Headless Mode
