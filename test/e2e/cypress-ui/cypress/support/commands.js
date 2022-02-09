@@ -216,7 +216,7 @@ Cypress.Commands.add('createGitHubOAuthApp', () => {
     cy.on('uncaught:exception', (err, runnable) => {
         // we expect an error with message 'n.subscriptions is not iterable'
         // and don't want to fail the test so we return false
-        if (err.message.includes('n.subscriptions is not iterable')) {
+        if (err.message.includes('n.subscriptions is not iterable') || err.message.includes('o.subscriptions is not iterable')) {
           return false
         }
         // we still want to ensure there are no other unexpected
@@ -225,7 +225,7 @@ Cypress.Commands.add('createGitHubOAuthApp', () => {
 
     // Create an OAuth app
     cy.contains('a.btn', 'New OAuth App').click();
-    cy.contains('h2.Subhead-heading', 'Register a new OAuth application').should('exist');
+    cy.get('h2[id=oauth_application_form_label]').should('exist');
 
     var oAuthNameSuffix = Math.floor(1000 + Math.random() * 9000);
     var oAuthAppName = "test-e2e-" + oAuthNameSuffix;
