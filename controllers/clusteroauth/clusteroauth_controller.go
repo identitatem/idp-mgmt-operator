@@ -10,6 +10,7 @@ import (
 
 	giterrors "github.com/pkg/errors"
 
+	hypershiftv1alpha1 "github.com/openshift/hypershift/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -74,6 +75,7 @@ type ClusterOAuthReconciler struct {
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies},verbs=get;list;watch
 
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources={manifestworks},verbs=get;list;watch;create;update;delete
+//+kubebuilder:rbac:groups=hypershift.openshift.io,resources={hostedclusters},verbs=get;list;watch;create;update
 
 //+kubebuilder:rbac:groups=view.open-cluster-management.io,resources={managedclusterviews},verbs=get;list;watch;create;update;patch;delete;watch
 
@@ -144,11 +146,21 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return result, err
 	}
 
-	r.Log.Info("generateManifestWork for", "name", instance.Name, "namespace", instance.Namespace)
-	if err := r.generateManifestWork(instance); err != nil {
+	isHypershiftCluster, err := helpers.IsHypershiftCluster(r.Client, instance.Namespace)
+	if err != nil {
 		return ctrl.Result{}, err
 	}
-
+	if !isHypershiftCluster {
+		r.Log.Info("generateManifestWork for", "name", instance.Name, "namespace", instance.Namespace)
+		if err := r.generateManifestWork(instance); err != nil {
+			return ctrl.Result{}, err
+		}
+	} else {
+		r.Log.Info("update hostedcluster for", "name", instance.Name, "namespace", instance.Namespace)
+		if err := r.updateHostedCluster(instance); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 	return ctrl.Result{}, nil
 }
 
@@ -359,6 +371,146 @@ func (r *ClusterOAuthReconciler) generateManifestWork(clusterOAuth *identitatemv
 	if err := r.CreateOrUpdateManifestWork(manifestWorkOAuth); err != nil {
 		r.Log.Error(err, "Failed to create manifest work for component")
 		// Error reading the object - requeue the request.
+		return giterrors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *ClusterOAuthReconciler) updateHostedCluster(clusterOAuth *identitatemv1alpha1.ClusterOAuth) (err error) {
+	// Create empty manifest work
+	r.Log.Info("read hc", "name", clusterOAuth.GetNamespace(), "namespace", "clusters")
+	hc := &hypershiftv1alpha1.HostedCluster{}
+	err = r.Client.Get(context.TODO(), client.ObjectKey{Name: clusterOAuth.GetNamespace(), Namespace: "clusters"}, hc)
+	if err != nil {
+		return giterrors.WithStack(err)
+	}
+	// Get a list of all clusterOAuth
+	clusterOAuths := &identitatemv1alpha1.ClusterOAuthList{}
+	//	singleOAuth := &openshiftconfigv1.OAuth{}
+	singleOAuth := &openshiftconfigv1.OAuth{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: openshiftconfigv1.SchemeGroupVersion.String(),
+			Kind:       "OAuth",
+		},
+
+		ObjectMeta: metav1.ObjectMeta{
+			Name: clusterOAuth.GetNamespace(),
+		},
+
+		Spec: openshiftconfigv1.OAuthSpec{},
+	}
+
+	r.Log.Info("search the clusterOAuths in namepsace", "namespace", clusterOAuth.GetNamespace())
+	if err := r.List(context.TODO(), clusterOAuths, &client.ListOptions{Namespace: clusterOAuth.GetNamespace()}); err != nil {
+		// Error reading the object - requeue the request.
+		return giterrors.WithStack(err)
+	}
+
+	for _, clusterOAuth := range clusterOAuths.Items {
+		//build OAuth and add to manifest work
+		r.Log.Info(" build clusterOAuth", "name: ", clusterOAuth.GetName(), " namespace:", clusterOAuth.GetNamespace(), "identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
+
+		for j, idp := range clusterOAuth.Spec.OAuth.Spec.IdentityProviders {
+
+			r.Log.Info("process identityProvider", "identityProvider  ", j, " name:", idp.Name)
+
+			idp.OpenID.ClientSecret.Name = clusterOAuth.GetNamespace() + "-" + idp.OpenID.ClientSecret.Name
+			//build oauth by appending first clusterOAuth entry into single OAuth
+			singleOAuth.Spec.IdentityProviders = append(singleOAuth.Spec.IdentityProviders, idp)
+		}
+	}
+
+	// create manifest for single OAuth
+	data, err := json.Marshal(singleOAuth)
+	if err != nil {
+		return giterrors.WithStack(err)
+	}
+
+	if hc.Spec.Configuration == nil {
+		hc.Spec.Configuration = &hypershiftv1alpha1.ClusterConfiguration{}
+	}
+	if len(hc.Spec.Configuration.Items) == 0 {
+		hc.Spec.Configuration.Items = make([]runtime.RawExtension, 0)
+	}
+
+	index := -1
+	for i, re := range hc.Spec.Configuration.Items {
+		existingOAuth := &openshiftconfigv1.OAuth{}
+		err := json.Unmarshal(re.Raw, existingOAuth)
+		if err != nil {
+			continue
+		}
+		if existingOAuth.GetName() == clusterOAuth.GetNamespace() {
+			index = i
+		}
+	}
+	if index == -1 {
+		hc.Spec.Configuration.Items = append(hc.Spec.Configuration.Items, runtime.RawExtension{Raw: data})
+	} else {
+		hc.Spec.Configuration.Items[index] = runtime.RawExtension{Raw: data}
+	}
+
+	if len(hc.Spec.Configuration.SecretRefs) == 0 {
+		hc.Spec.Configuration.SecretRefs = make([]corev1.LocalObjectReference, 0)
+	}
+
+	for _, clusterOAuth := range clusterOAuths.Items {
+		//build OAuth and add to manifest work
+		r.Log.Info(" build clusterOAuth", "name: ", clusterOAuth.GetName(), " namespace:", clusterOAuth.GetNamespace(), "identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
+		found := false
+		for _, r := range hc.Spec.Configuration.SecretRefs {
+			if r.Name == clusterOAuth.GetNamespace()+"-"+clusterOAuth.Name {
+				found = true
+				break
+			}
+		}
+		if found {
+			continue
+		}
+
+		for _, idp := range clusterOAuth.Spec.OAuth.Spec.IdentityProviders {
+
+			//Look for secret for Identity Provider and if found, add to manifest work
+			secret := &corev1.Secret{}
+
+			r.Log.Info("retrieving client secret", "name", clusterOAuth.Name, "namespace", clusterOAuth.Namespace)
+			if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: clusterOAuth.Namespace, Name: clusterOAuth.Name}, secret); err != nil {
+				return giterrors.WithStack(err)
+			}
+			//add secret to manifest
+
+			//TODO TEMP PATCH
+			newSecret := &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: corev1.SchemeGroupVersion.String(),
+					Kind:       "Secret",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      clusterOAuth.GetNamespace() + "-" + secret.Name,
+					Namespace: "clusters",
+				},
+			}
+
+			newSecret.Data = secret.Data
+			newSecret.Type = secret.Type
+
+			r.Log.Info("add secret to clusters ns for idp", "name", idp.Name)
+
+			if err := r.Client.Create(context.TODO(), newSecret, &client.CreateOptions{}); err != nil {
+				if !errors.IsAlreadyExists(err) {
+					return giterrors.WithStack(err)
+				}
+				if err = r.Client.Update(context.TODO(), newSecret, &client.UpdateOptions{}); err != nil {
+					return giterrors.WithStack(err)
+				}
+			}
+			hc.Spec.Configuration.SecretRefs = append(hc.Spec.Configuration.SecretRefs, corev1.LocalObjectReference{Name: newSecret.Name})
+		}
+	}
+
+	r.Log.Info("Update hc for", "cluster", clusterOAuth.GetNamespace())
+	if err := r.Client.Update(context.TODO(), hc, &client.UpdateOptions{}); err != nil {
+		r.Log.Error(err, "Failed to update hc for component")
 		return giterrors.WithStack(err)
 	}
 	return nil
@@ -583,6 +735,10 @@ func (r *ClusterOAuthReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	if err := viewv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
+		return giterrors.WithStack(err)
+	}
+
+	if err := hypershiftv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		return giterrors.WithStack(err)
 	}
 

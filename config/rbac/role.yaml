@@ -216,6 +216,16 @@ rules:
   - update
   - watch
 - apiGroups:
+  - hypershift.openshift.io
+  resources:
+  - hostedclusters
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
   - identityconfig.identitatem.io
   resources:
   - authrealms

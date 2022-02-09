@@ -164,6 +164,11 @@ Check using the following command:
 ```bash
 oc get pods -n idp-mgmt-config
 ```
+
+8. Redeploy
+
+As the installer contains the different yamls to deploy other pods, after redeploying you may need (specially if you keep the same image tag) to delete the idpconfig and recreated in order to upgrade the several pods.
+
 ### Method 2: Install the operator from a Catalog
 
 **NOTE**: To install via the catalog, you must be on OpenShift 4.8.12 or newer due to [this OLM bug](https://bugzilla.redhat.com/show_bug.cgi?id=1969902) - a backport to OCP 4.7 is in progress.

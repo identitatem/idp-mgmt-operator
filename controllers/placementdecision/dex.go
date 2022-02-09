@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/ghodss/yaml"
 	dexoperatorv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	giterrors "github.com/pkg/errors"
@@ -132,21 +133,53 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 		return giterrors.WithStack(fmt.Errorf("api url not found for cluster %s", decision.ClusterName))
 	}
 
-	u, err := url.Parse(mc.Spec.ManagedClusterClientConfigs[0].URL)
+	isHypershiftCluster, err := helpers.IsHypershiftCluster(r.Client, decision.ClusterName)
 	if err != nil {
 		return giterrors.WithStack(err)
 	}
+	if isHypershiftCluster {
+		cm := &corev1.ConfigMap{}
+		if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: "oauth-openshift", Namespace: "clusters-" + decision.ClusterName}, cm); err != nil {
+			return giterrors.WithStack(err)
+		}
+		var ok bool
+		var configYaml string
+		if configYaml, ok = cm.Data["config.yaml"]; !ok {
+			return giterrors.WithStack(fmt.Errorf("config.yaml not found for cluster %s", decision.ClusterName))
+		}
+		m := make(map[string]interface{})
+		if err := yaml.Unmarshal([]byte(configYaml), &m); err != nil {
+			return giterrors.WithStack(err)
+		}
+		var ioauthConfig interface{}
+		if ioauthConfig, ok = m["oauthConfig"]; !ok {
+			return giterrors.WithStack(fmt.Errorf("config.yaml/oauthConfig not found for cluster %s", decision.ClusterName))
+		}
+		oauthConfig := ioauthConfig.(map[string]interface{})
+		var imasterPublicURL interface{}
+		if imasterPublicURL, ok = oauthConfig["masterPublicURL"]; !ok {
+			return giterrors.WithStack(fmt.Errorf("config.yaml/oauthConfig not found for cluster %s", decision.ClusterName))
+		}
+		redirectURI := fmt.Sprintf("%s/oauth2callback/%s", imasterPublicURL.(string), authRealm.Name)
 
-	host, _, err := net.SplitHostPort(u.Host)
-	if err != nil {
-		return giterrors.WithStack(err)
+		dexClient.Spec.RedirectURIs = []string{redirectURI}
+	} else {
+		u, err := url.Parse(mc.Spec.ManagedClusterClientConfigs[0].URL)
+		if err != nil {
+			return giterrors.WithStack(err)
+		}
+
+		host, _, err := net.SplitHostPort(u.Host)
+		if err != nil {
+			return giterrors.WithStack(err)
+		}
+
+		host = strings.Replace(host, "api", "apps", 1)
+
+		redirectURI := fmt.Sprintf("%s://oauth-openshift.%s/oauth2callback/%s", u.Scheme, host, authRealm.Name)
+
+		dexClient.Spec.RedirectURIs = []string{redirectURI}
 	}
-
-	host = strings.Replace(host, "api", "apps", 1)
-
-	redirectURI := fmt.Sprintf("%s://oauth-openshift.%s/oauth2callback/%s", u.Scheme, host, authRealm.Name)
-
-	dexClient.Spec.RedirectURIs = []string{redirectURI}
 	switch dexClientExists {
 	case true:
 		return giterrors.WithStack(r.Client.Update(context.TODO(), dexClient))
