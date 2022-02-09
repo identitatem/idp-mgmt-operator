@@ -32,6 +32,11 @@ fi
 echo "--- Logging into Kube API server ..."
 oc login --server=$CYPRESS_OC_CLUSTER_URL -u $CYPRESS_OC_CLUSTER_USER -p $CYPRESS_OC_CLUSTER_PASS --insecure-skip-tls-verify
 
+export APPS=$(oc get infrastructure cluster -ojsonpath='{.status.apiServerURL}' | cut -d':' -f2 | sed 's/\/\/api/apps/g')
+export CYPRESS_OPTIONS_ROUTE_SUBDOMAIN="testdomain"
+export CYPRESS_OPTIONS_GH_OAUTH_CALLBACK_URL="https://${CYPRESS_OPTIONS_ROUTE_SUBDOMAIN}.${APPS}/callback"
+export CYPRESS_OPTIONS_GH_OAUTH_HOMEPAGE_URL="https://${CYPRESS_OPTIONS_ROUTE_SUBDOMAIN}.${APPS}"
+
 echo "--- Show cluster info ..."
 oc cluster-info
 
@@ -58,7 +63,7 @@ testCode=0
 TEST_TAG=login
 npm install
 #Turn off color ascii output when we run
-NO_COLOR=1 npx cypress run --browser $BROWSER --reporter cypress-multi-reporters --env grepTags=${TEST_TAG},grepFilterSpecs=true,grepOmitFiltered=true
+NO_COLOR=1 npx cypress run --browser $BROWSER --reporter cypress-multi-reporters
 testCode=$?
 
 testDirectory="/results"

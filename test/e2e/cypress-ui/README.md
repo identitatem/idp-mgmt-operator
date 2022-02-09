@@ -17,6 +17,28 @@
 3. Run `npx cypress open` to run your test in headed mode.
 4. Select test to run.
 
+## Adjust Redirect URI in GitHub
+
+* Export the following environment variables:
+```bash
+# URL to the GitHub OAuth apps UI (example: https://github.com/organizations/<org_name>/settings/applications/)
+export CYPRESS_OPTIONS_GH_OAUTH_APPS_URL=...
+# GitHub login user
+export CYPRESS_OPTIONS_GH_USER=...
+# GitHub login password
+export CYPRESS_OPTIONS_GH_PASSWORD=...
+
+export APPS=$(oc get infrastructure cluster -ojsonpath='{.status.apiServerURL}' | cut -d':' -f2 | sed 's/\/\/api/apps/g')
+# Route subdomain used in Auth Realm
+export CYPRESS_OPTIONS_ROUTE_SUBDOMAIN=...
+# GitHub OAuth callback URL constructed using route subdomain and Hub cluster URL
+export CYPRESS_OPTIONS_GH_OAUTH_CALLBACK_URL="https://${CYPRESS_OPTIONS_ROUTE_SUBDOMAIN}.${APPS}/callback"
+# GitHub OAuth Homepage URL constructed using route subdomain and Hub cluster URL
+export CYPRESS_OPTIONS_GH_OAUTH_HOMEPAGE_URL="https://${CYPRESS_OPTIONS_ROUTE_SUBDOMAIN}.${APPS}"
+# Secret key for retrieving TOTP for GitHub 2FA (These tests work with a GitHub account set up for 2FA)
+export CYPRESS_OPTIONS_GH_SECRET_KEY_FOR_TOTP=...
+```
+
 ### Running in Headless Mode
 - If you want to run in headless mode and tag a specific test, instead of doing `npx cypress open`, try this instead:
     - `npx cypress run --headless --reporter cypress-multi-reporters --env grepTags=<test-tag>,grepFilterSpecs=true,grepOmitFiltered=true`

@@ -1,5 +1,5 @@
 [comment]: # ( Copyright Red Hat )
-## Run E2E tests locally in OCP cluster
+## Run E2E tests (Ginkgo) locally in OCP cluster
 
 #### Prerequisites:
 - An OCP cluster with ACM or MCE installed (Hub cluster)
