@@ -138,8 +138,8 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, err
 	}
 
-	if err := r.processPlacementDecision(authRealm, instance); err != nil {
-		return reconcile.Result{}, err
+	if result, err := r.processPlacementDecision(authRealm, instance); err != nil {
+		return result, err
 	}
 
 	return ctrl.Result{}, nil
@@ -148,12 +148,12 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 //processPlacementDecision generates resources for the Backplane strategy
 func (r *PlacementDecisionReconciler) processPlacementDecision(
 	authRealm *identitatemv1alpha1.AuthRealm,
-	placement *clusterv1alpha1.Placement) error {
+	placement *clusterv1alpha1.Placement) (ctrl.Result, error) {
 	r.Log.Info("run backplane strategy")
-	if err := r.syncDexClients(authRealm, placement); err != nil {
-		return err
+	if result, err := r.syncDexClients(authRealm, placement); err != nil {
+		return result, err
 	}
-	return nil
+	return ctrl.Result{}, nil
 }
 
 func (r *PlacementDecisionReconciler) isLinkedToStrategy(placement *clusterv1alpha1.Placement) (bool, error) {

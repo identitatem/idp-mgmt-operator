@@ -10,20 +10,23 @@ import (
 )
 
 const (
-	manifestWorkOAuthName         string = "idp-oauth"
-	manifestWorkOriginalOAuthName string = "idp-oauth-original"
-	manifestWorkSecretName        string = "idp-secret"
-	managedClusterViewOAuth       string = "oauth-view"
-	configMapOriginalOAuth        string = "idp-oauth-original"
-	dexServerName                 string = "dex-server"
-	dexOperatorNamespace          string = "idp-mgmt-dex"
-	dexServerNamespacePrefix      string = "idp-mgmt"
-	idpConfigLabel                       = "auth.identitatem.io/installer-config"
+	manifestWorkOAuthName            string = "idp-oauth"
+	manifestWorkOriginalOAuthName    string = "idp-oauth-original"
+	manifestWorkSecretName           string = "idp-secret"
+	managedClusterViewOAuth          string = "oauth-view"
+	managedClusterViewOAuthOpenshift string = "oauth-openshift-view"
+	configMapOriginalOAuth           string = "idp-oauth-original"
+	dexServerName                    string = "dex-server"
+	dexOperatorNamespace             string = "idp-mgmt-dex"
+	dexServerNamespacePrefix         string = "idp-mgmt"
+	idpConfigLabel                          = "auth.identitatem.io/installer-config"
 )
 
 const (
 	ClusterNameLabel          string = "cluster.identitatem.io/name"
 	IdentityProviderNameLabel string = "identityprovider.identitatem.io/name"
+	//This is a temporary label, need to be set to the final one when decided
+	HypershiftClusterLabel string = "hypershift.open-cluster-management.io"
 )
 
 func ManifestWorkOAuthName() string {
@@ -44,6 +47,14 @@ func ManagedClusterViewOAuthName() string {
 
 func ConfigMapOriginalOAuthName() string {
 	return configMapOriginalOAuth
+}
+
+func ManagedClusterViewOAuthOpenshiftName() string {
+	return managedClusterViewOAuthOpenshift
+}
+
+func ManagedClusterViewOAuthOpenshiftNamespace(clusterName string) string {
+	return "clusters-" + clusterName
 }
 
 func DexOperatorNamespace() string {

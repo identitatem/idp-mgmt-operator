@@ -46,6 +46,7 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 }
 
 func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv1alpha1.AuthRealm,
+	strategy *identitatemv1alpha1.Strategy,
 	decision clusterv1alpha1.ClusterDecision,
 	clientSecret *corev1.Secret) error {
 	r.Log.Info("create clusterOAuth for", "cluster", decision.ClusterName, "authRealm", authRealm.Name)
@@ -62,6 +63,10 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 				Namespace: decision.ClusterName,
 			},
 			Spec: identitatemv1alpha1.ClusterOAuthSpec{
+				StrategyRef: corev1.ObjectReference{
+					Name:      strategy.Name,
+					Namespace: strategy.Namespace,
+				},
 				OAuth: &openshiftconfigv1.OAuth{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      helpers.ClusterOAuthName(authRealm),

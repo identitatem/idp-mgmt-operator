@@ -150,6 +150,10 @@ func (r *StrategyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		if err := r.backplanePlacementStrategy(instance, authRealm, placement, placementStrategy); err != nil {
 			return reconcile.Result{}, err
 		}
+	case identitatemv1alpha1.HypershiftStrategyType:
+		if err := r.hypershiftPlacementStrategy(instance, authRealm, placement, placementStrategy); err != nil {
+			return reconcile.Result{}, err
+		}
 	// case identitatemv1alpha1.GrcStrategyType:
 	// 	if err := r.grcPlacementStrategy(instance, authRealm, placement, placementStrategy); err != nil {
 	// 		return reconcile.Result{}, err

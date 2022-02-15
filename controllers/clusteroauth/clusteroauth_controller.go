@@ -146,20 +146,23 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return result, err
 	}
 
-	isHypershiftCluster, err := helpers.IsHypershiftCluster(r.Client, instance.Namespace)
-	if err != nil {
+	strategy := identitatemv1alpha1.Strategy{}
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: instance.Spec.StrategyRef.Name, Namespace: instance.Spec.StrategyRef.Namespace}, &strategy); err != nil {
 		return ctrl.Result{}, err
 	}
-	if !isHypershiftCluster {
-		r.Log.Info("generateManifestWork for", "name", instance.Name, "namespace", instance.Namespace)
-		if err := r.generateManifestWork(instance); err != nil {
-			return ctrl.Result{}, err
-		}
-	} else {
+	switch strategy.Spec.Type {
+	case identitatemv1alpha1.HypershiftStrategyType:
 		r.Log.Info("update hostedcluster for", "name", instance.Name, "namespace", instance.Namespace)
 		if err := r.updateHostedCluster(instance); err != nil {
 			return ctrl.Result{}, err
 		}
+	case identitatemv1alpha1.BackplaneStrategyType:
+		r.Log.Info("generateManifestWork for", "name", instance.Name, "namespace", instance.Namespace)
+		if err := r.generateManifestWork(instance); err != nil {
+			return ctrl.Result{}, err
+		}
+	default:
+		return ctrl.Result{}, giterrors.WithStack(fmt.Errorf("unsupported strategy %s for cluster %s", strategy.Spec.Type, instance.Namespace))
 	}
 	return ctrl.Result{}, nil
 }
