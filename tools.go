@@ -3,6 +3,7 @@
 // Used ot keep `go mod tidy -compat=1.17` from removing ginkgo modules from go.mod and go.sum
 // Based on https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module
 
+//go:build tools
 // +build tools
 
 // Place any runtime dependencies as imports in this file.
@@ -10,7 +11,7 @@
 package tools
 
 import (
-  _ "github.com/onsi/ginkgo/v2/ginkgo/generators"
-  _ "github.com/onsi/ginkgo/v2/ginkgo/internal"
-  _ "github.com/onsi/ginkgo/v2/ginkgo/labels"
+	_ "github.com/onsi/ginkgo/v2/ginkgo/generators"
+	_ "github.com/onsi/ginkgo/v2/ginkgo/internal"
+	_ "github.com/onsi/ginkgo/v2/ginkgo/labels"
 )
