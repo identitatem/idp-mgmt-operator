@@ -366,6 +366,9 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 					RedirectURI: dexServer.Spec.Issuer + "/callback",
 				},
 			}
+			if githubExtraConfig, ok := authRealm.Spec.GitHubExtraConfigs[idp.Name]; ok {
+				c.GitHub.LoadAllGroups = githubExtraConfig.LoadAllGroups
+			}
 			c.GitHub.Orgs = make([]dexoperatorv1alpha1.Org, len(idp.GitHub.Organizations))
 			for i, org := range idp.GitHub.Organizations {
 				c.GitHub.Orgs[i].Name = org
@@ -425,6 +428,7 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 						EmailAttr: idp.LDAP.Attributes.Email[0],
 						NameAttr:  idp.LDAP.Attributes.Name[0],
 					},
+					GroupSearch: authRealm.Spec.LDAPExtraConfigs[idp.Name].GroupSearch,
 				},
 			}
 			r.Log.Info("generated connector", "c.LDAP", c.LDAP)
