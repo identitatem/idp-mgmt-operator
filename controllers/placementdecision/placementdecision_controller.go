@@ -260,6 +260,37 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&clusterv1alpha1.Placement{}).
+		Watches(&source.Kind{Type: &identitatemv1alpha1.AuthRealm{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+			authrealm := o.(*identitatemv1alpha1.AuthRealm)
+			req := make([]reconcile.Request, 0)
+			// if authrealm.DeletionTimestamp != nil {
+			// 	r.Log.Info("authrealm changed but deletion timestamp set",
+			// 		"authrealm name", authrealm.Name,
+			// 		"authrealm namespace", authrealm.Namespace)
+			// 	return req
+			// }
+			strategies := &identitatemv1alpha1.StrategyList{}
+			if err := r.Client.List(context.TODO(), strategies, &client.ListOptions{Namespace: authrealm.Namespace}); err == nil {
+				for _, strategy := range strategies.Items {
+					placement := &clusterv1alpha1.Placement{}
+					if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: strategy.Spec.PlacementRef.Name, Namespace: authrealm.Namespace}, placement); err != nil {
+						continue
+					}
+					r.Log.Info("Reconcile placement because authrealm changed",
+						"placement name", strategy.Spec.PlacementRef.Name,
+						"placement namespace", authrealm.Namespace,
+						"authrealm name", authrealm.Name,
+						"authrealm namespace", authrealm.Namespace)
+					req = append(req, reconcile.Request{
+						NamespacedName: types.NamespacedName{
+							Name:      strategy.Spec.PlacementRef.Name,
+							Namespace: authrealm.Namespace,
+						},
+					})
+				}
+			}
+			return req
+		})).
 		Watches(&source.Kind{Type: &dexoperatorv1alpha1.DexClient{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
 			dexClient := o.(*dexoperatorv1alpha1.DexClient)
 			req := make([]reconcile.Request, 0)
