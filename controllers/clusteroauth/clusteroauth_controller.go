@@ -284,6 +284,9 @@ func (r *ClusterOAuthReconciler) generateManifestWork(clusterOAuth *identitatemv
 
 	for _, clusterOAuth := range clusterOAuths.Items {
 		//build OAuth and add to manifest work
+		if clusterOAuth.DeletionTimestamp != nil {
+			continue
+		}
 		r.Log.Info(" build clusterOAuth", "name: ", clusterOAuth.GetName(), " namespace:", clusterOAuth.GetNamespace(), "identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
 
 		for j, idp := range clusterOAuth.Spec.OAuth.Spec.IdentityProviders {
@@ -296,7 +299,10 @@ func (r *ClusterOAuthReconciler) generateManifestWork(clusterOAuth *identitatemv
 	}
 
 	for _, clusterOAuth := range clusterOAuths.Items {
-		//build OAuth and add to manifest work
+		//build Secrets and add to manifest work
+		if clusterOAuth.DeletionTimestamp != nil {
+			continue
+		}
 		r.Log.Info(" build clusterOAuth", "name: ", clusterOAuth.GetName(), " namespace:", clusterOAuth.GetNamespace(), "identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
 
 		for _, idp := range clusterOAuth.Spec.OAuth.Spec.IdentityProviders {
@@ -420,6 +426,10 @@ func (r *ClusterOAuthReconciler) unmanagedCluster(clusterOAuth *identitatemv1alp
 		if err := r.deleteManifestWork(helpers.ManifestWorkOriginalOAuthName(), clusterOAuth.Namespace); err != nil {
 			return ctrl.Result{}, err
 		}
+		return ctrl.Result{}, nil
+	}
+	if err := r.generateManifestWork(clusterOAuth); err != nil {
+		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
 }
