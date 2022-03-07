@@ -398,7 +398,7 @@ func (r *ClusterOAuthReconciler) CreateOrUpdateManifestWork(
 		}
 		return nil
 	}
-	return nil
+	return err
 }
 
 // unmanagedCluster deletes a manifestwork
