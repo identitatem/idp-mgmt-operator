@@ -11,23 +11,54 @@ set -e
 KEYCLOAK_NAMESPACE=${KEYCLOAK_NAMESPACE:-'mykeycloak'}
 echo "Using namespace ${KEYCLOAK_NAMESPACE}"
 
+if [ -z $KEYCLOAK_REDIRECT_URI ]; then
+  echo "KEYCLOAK_REDIRECT_URI for the Keycloak client was not specified"
+  exit
+fi
+
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 BASE64="base64 -w 0"
 if [ "${OS}" == "darwin" ]; then
     BASE64="base64"
 fi
 
-wait_for_command() {
+
+# This only works for kubectl output that returns true or false
+wait_for_kubectl_true() {
     CMD=$1
     CMDOPTS=$2
     TIMEOUT=600
-    until kubectl ${CMD} ${CMDOPTS} || test $TIMEOUT -le 0; do
-        let TIMEOUT=TIMEOUT-10 && sleep 10
+    until test $TIMEOUT -le 0; do
+      #NOTE:
+      #  When this method is called the CR might not yet be created or
+      #  right after creation there may be no status at all so
+      #  this must be accounted for
+      set +e
+      CMD_OUTPUT=`kubectl ${CMD} ${CMDOPTS}`
+      CMD_RC=$?
+      set -e
+      if [ $CMD_RC -eq 0 ]; then
+        if [ "$CMD_OUTPUT" == "true" ]; then
+          break
+        fi
+      else
+        # Don't fail on first check, the CR might not be created yet
+        if [ $TIMEOUT -lt 600 ]; then
+          echo "Command failed! $CMD $CMDOPTS"
+          echo "Return code was $CMD_RC"
+          exit 1
+        fi
+      fi
+
+      #until kubectl ${CMD} ${CMDOPTS} || test $TIMEOUT -le 0; do
+      let TIMEOUT=TIMEOUT-10 && sleep 10
+      echo -n "."
     done
     if [ $TIMEOUT -le 0 ]; then
         echo "ERROR: ${CMD}"
         exit 1
     fi
+    echo ""
 }
 
 
@@ -36,12 +67,13 @@ wait_for_command() {
 echo "Check to be sure keycloak operator is installed and ready to use..."
 # CMD="rollout status -w deploy/keycloak-operator -n ${KEYCLOAK_NAMESPACE}"
 # CMDOPTS=""
-# wait_for_command "${CMD}" "${CMDOPTS}"
+# wait_for_kubectl_true "${CMD}" "${CMDOPTS}"
 
 kubectl wait --for=condition=available deploy/keycloak-operator --timeout 600s -n ${KEYCLOAK_NAMESPACE}
 
 
 echo "Create keycloak instance and wait for it to be ready (this will take several minutes)..."
+
 cat << EOF > keycloak.yaml
 apiVersion: keycloak.org/v1alpha1
 kind: Keycloak
@@ -59,9 +91,9 @@ EOF
 
 kubectl create -f keycloak.yaml
 
-CMD="get keycloak/mykeycloak -o jsonpath='{.status.ready}' -n ${KEYCLOAK_NAMESPACE}"
-CMDOPTS=""
-wait_for_command "${CMD}" "${CMDOPTS}"
+CMD="get keycloak/mykeycloak -o jsonpath={.status.ready}"
+CMDOPTS="-n ${KEYCLOAK_NAMESPACE}"
+wait_for_kubectl_true "${CMD}" "${CMDOPTS}"
 
 
 echo "Create keycloak realm"
@@ -87,15 +119,15 @@ EOF
 
 kubectl create -f keycloak-realm.yaml
 
-CMD="get keycloakrealm/myrealm -o jsonpath='{.status.ready}' -n ${KEYCLOAK_NAMESPACE}"
-CMDOPTS=""
-wait_for_command "${CMD}" "${CMDOPTS}"
+CMD="get keycloakrealm/myrealm -o jsonpath={.status.ready}"
+CMDOPTS="-n ${KEYCLOAK_NAMESPACE}"
+wait_for_kubectl_true "${CMD}" "${CMDOPTS}"
 
 SECRET_NAME=`kubectl get keycloak mykeycloak --output="jsonpath={.status.credentialSecret}" -n ${KEYCLOAK_NAMESPACE}`
-echo "Keycloak secret name is ${SECRET_NAME}"
+echo "Keycloak admin secret name is ${SECRET_NAME}"
 
 KEYCLOAK_CREDS=`kubectl get secret ${SECRET_NAME} -n ${KEYCLOAK_NAMESPACE} -o go-template='{{range $k,$v := .data}}{{printf "%s: " $k}}{{if not $v}}{{$v}}{{else}}{{$v | base64decode}}{{end}}{{"\n"}}{{end}}'`
-echo "Keycloak credentials are:"
+echo "Keycloak admin credentials are:"
 echo ${KEYCLOAK_CREDS}
 
 KEYCLOAK_HOST=`oc get route keycloak -n ${KEYCLOAK_NAMESPACE} --template='{{ .spec.host }}'`
@@ -135,10 +167,12 @@ EOF
 
 kubectl create -f keycloak-user.yaml
 
-CMD="get keycloakuser/myuser -o jsonpath='{.status.ready}' -n ${KEYCLOAK_NAMESPACE}"
-CMDOPTS=""
-wait_for_command "${CMD}" "${CMDOPTS}"
+CMD="get keycloakuser/myuser -o jsonpath={.spec.user.enabled}"
+CMDOPTS="-n ${KEYCLOAK_NAMESPACE}"
+wait_for_kubectl_true "${CMD}" "${CMDOPTS}"
 
+#wait for user secret to be created
+sleep 5
 
 USER_CREDS=`kubectl get secret credential-myrealm-myuser-${KEYCLOAK_NAMESPACE} -n ${KEYCLOAK_NAMESPACE} -o go-template='{{range $k,$v := .data}}{{printf "%s: " $k}}{{if not $v}}{{$v}}{{else}}{{$v | base64decode}}{{end}}{{"\n"}}{{end}}'`
 echo "User info: "
@@ -163,17 +197,33 @@ spec:
   client:
     clientId: myclient
     protocol: openid-connect
-    rootUrl: https://www.keycloak.org/app/
+    redirectUris:
+    - ${KEYCLOAK_REDIRECT_URI}
+    standardFlowEnabled: true
 
 EOF
 
 kubectl create -f keycloak-client.yaml
 
-CMD="get keycloakclient/myclient -o jsonpath='{.status.ready}' -n ${KEYCLOAK_NAMESPACE}"
-CMDOPTS=""
-wait_for_command "${CMD}" "${CMDOPTS}"
+CMD="get keycloakclient/myclient -o jsonpath={.status.ready}"
+CMDOPTS="-n ${KEYCLOAK_NAMESPACE}"
+wait_for_kubectl_true "${CMD}" "${CMDOPTS}"
 
+#wait for client secret to be created
+sleep 5
 
+KEYCLOAK_CLIENT_SECRET_NAME=`oc get keycloakclient -n ${KEYCLOAK_NAMESPACE} -o jsonpath='{.items[0].status.secondaryResources.Secret[0]}'`
+
+KEYCLOAK_CLIENT_CREDS=`kubectl get secret ${KEYCLOAK_CLIENT_SECRET_NAME} -n ${KEYCLOAK_NAMESPACE} -o go-template='{{range $k,$v := .data}}{{printf "%s: " $k}}{{if not $v}}{{$v}}{{else}}{{$v | base64decode}}{{end}}{{"\n"}}{{end}}'`
+echo "Keycloak client info: "
+echo $KEYCLOAK_CLIENT_CREDS
 
 
 echo "Done"
+exit 0
+
+# To remove this keycloak configuration you can run:
+# oc delete -f ../keycloak-user.yaml
+# oc delete -f ../keycloak-client.yaml
+# oc delete -f ../keycloak-realm.yaml
+# oc delete -f ../keycloak.yaml
