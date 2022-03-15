@@ -449,12 +449,19 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 						Namespace: authRealm.Namespace,
 					},
 					RedirectURI: dexServer.Spec.Issuer + "/callback",
-					ClaimMapping: dexoperatorv1alpha1.ClaimMappingSpec{
-						PreferredUsername: idp.OpenID.Claims.PreferredUsername,
-						Name:              idp.OpenID.Claims.Name,
-						Email:             idp.OpenID.Claims.Email,
-					},
 				},
+			}
+			if len(idp.OpenID.Claims.PreferredUsername) > 0 || len(idp.OpenID.Claims.Name) > 0 || len(idp.OpenID.Claims.Email) > 0 {
+				c.OIDC.ClaimMapping = dexoperatorv1alpha1.ClaimMappingSpec{}
+			}
+			if len(idp.OpenID.Claims.PreferredUsername) > 0 {
+				c.OIDC.ClaimMapping.PreferredUsername = idp.OpenID.Claims.PreferredUsername[0]
+			}
+			if len(idp.OpenID.Claims.Name) > 0 {
+				c.OIDC.ClaimMapping.Name = idp.OpenID.Claims.Name[0]
+			}
+			if len(idp.OpenID.Claims.Email) > 0 {
+				c.OIDC.ClaimMapping.Email = idp.OpenID.Claims.Email[0]
 			}
 			r.Log.Info("generated connector", "c.OIDC", c.OIDC)
 			cs = append(cs, *c)
