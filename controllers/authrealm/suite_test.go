@@ -651,8 +651,11 @@ var _ = Describe("Process AuthRealm LDAP: ", func() {
 
 var _ = Describe("Process AuthRealm OpenID: ", func() {
 	AuthRealmName := "my-authrealm-openid-test"
+	AuthRealmNameTest := "my-authrealm-openid-test-claims"
 	AuthRealmNameSpace := "my-authrealm-openid-test"
+	AuthRealmNameSpaceTest := "my-authrealm-openid-test-claims"
 	RouteSubDomain := "myroute-openid"
+	RouteSubDomainTest := "myroute-openid-claims"
 	MyOpenIDClientID := "my-openid-client-id"
 	CertificatesSecretRef := "my-certs"
 	It("Check CRDs availability", func() {
@@ -757,6 +760,115 @@ var _ = Describe("Process AuthRealm OpenID: ", func() {
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].OIDC.ClientID).To(Equal(MyOpenIDClientID))
 			Expect(dexServer.Spec.Connectors[0].OIDC.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeOpenID)))
+			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeOIDC))
+
+		})
+	})
+
+	It("process a AuthRealm CR with OpenID identiity provider with claims", func() {
+		By("creation test namespace", func() {
+			ns := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: AuthRealmNameSpaceTest,
+				},
+			}
+			err := k8sClient.Create(context.TODO(), ns)
+			Expect(err).To(BeNil())
+		})
+		By("creating the certificate secret", func() {
+			secret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      CertificatesSecretRef,
+					Namespace: AuthRealmNameSpaceTest,
+				},
+				Data: map[string][]byte{
+					"tls.crt": []byte("tls.mycrt"),
+					"tls.key": []byte("tls.mykey"),
+					"ca.crt":  []byte("ca.crt"),
+				},
+			}
+			err := k8sClient.Create(context.TODO(), secret)
+			Expect(err).To(BeNil())
+
+		})
+		var authRealm *identitatemv1alpha1.AuthRealm
+		By("creating a AuthRealm CR type dex", func() {
+			authRealm = &identitatemv1alpha1.AuthRealm{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      AuthRealmNameTest,
+					Namespace: AuthRealmNameSpaceTest,
+				},
+				Spec: identitatemv1alpha1.AuthRealmSpec{
+					RouteSubDomain: RouteSubDomainTest,
+					Type:           identitatemv1alpha1.AuthProxyDex,
+					CertificatesSecretRef: corev1.LocalObjectReference{
+						Name: CertificatesSecretRef,
+					},
+					IdentityProviders: []openshiftconfigv1.IdentityProvider{
+						{
+							Name: "my-openid",
+							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+								Type: openshiftconfigv1.IdentityProviderTypeOpenID,
+								OpenID: &openshiftconfigv1.OpenIDIdentityProvider{
+									Issuer:   "http://example.com",
+									ClientID: MyOpenIDClientID,
+									ClientSecret: openshiftconfigv1.SecretNameReference{
+										Name: AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeOpenID),
+									},
+									Claims: openshiftconfigv1.OpenIDClaims{
+										PreferredUsername: []string{"name"},
+										Name:              []string{"name"},
+										Email:             []string{"mail"},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			var err error
+			authRealm, err = clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpaceTest).Create(context.TODO(), authRealm, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By("Run reconcile", func() {
+			req := ctrl.Request{}
+			req.Name = AuthRealmNameTest
+			req.Namespace = AuthRealmNameSpaceTest
+			_, err := r.Reconcile(context.TODO(), req)
+			Expect(err).Should(BeNil())
+		})
+		By("Checking AuthRealm", func() {
+			authRealm, err := clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpaceTest).Get(context.TODO(), AuthRealmNameTest, metav1.GetOptions{})
+			Expect(err).Should(BeNil())
+			status := meta.FindStatusCondition(authRealm.Status.Conditions, identitatemv1alpha1.AuthRealmApplied)
+			Expect(status).NotTo(BeNil())
+			Expect(meta.IsStatusConditionTrue(authRealm.Status.Conditions, identitatemv1alpha1.AuthRealmApplied)).To(BeTrue())
+		})
+		By("Checking Backplane Strategy", func() {
+			_, err := clientSetStrategy.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpaceTest).Get(context.TODO(), AuthRealmNameTest+"-backplane", metav1.GetOptions{})
+			Expect(err).Should(BeNil())
+		})
+		By("Checking Dex Operator Namespace", func() {
+			ns := &corev1.Namespace{}
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexOperatorNamespace()}, ns)
+			Expect(err).Should(BeNil())
+		})
+		By("Checking Dex Deployment", func() {
+			ns := &appsv1.Deployment{}
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: "dex-operator", Namespace: helpers.DexOperatorNamespace()}, ns)
+			Expect(err).Should(BeNil())
+		})
+		By("Checking DexServer", func() {
+			dexServer := &identitatemdexserverv1lapha1.DexServer{}
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer)
+			Expect(err).Should(BeNil())
+			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
+			Expect(dexServer.Spec.Connectors[0].OIDC.ClientID).To(Equal(MyOpenIDClientID))
+			Expect(dexServer.Spec.Connectors[0].OIDC.ClientSecretRef.Name).To(Equal(AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeOpenID)))
+			Expect(dexServer.Spec.Connectors[0].OIDC.Issuer).To(Equal("http://example.com"))
+			Expect(dexServer.Spec.Connectors[0].OIDC.ClaimMapping.PreferredUsername).To(Equal("name"))
+			Expect(dexServer.Spec.Connectors[0].OIDC.ClaimMapping.Name).To(Equal("name"))
+			Expect(dexServer.Spec.Connectors[0].OIDC.ClaimMapping.Email).To(Equal("mail"))
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeOIDC))
 
 		})
