@@ -450,9 +450,9 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 					},
 					RedirectURI: dexServer.Spec.Issuer + "/callback",
 					ClaimMapping: dexoperatorv1alpha1.ClaimMappingSpec{
-						PreferredUsername: idp.OpenID.Claims.PreferredUsername,
-						Name:              idp.OpenID.Claims.Name,
-						Email:             idp.OpenID.Claims.Email,
+						PreferredUsername: idp.OpenID.Claims.PreferredUsername[0],
+						Name:              idp.OpenID.Claims.Name[0],
+						Email:             idp.OpenID.Claims.Email[0],
 					},
 				},
 			}
