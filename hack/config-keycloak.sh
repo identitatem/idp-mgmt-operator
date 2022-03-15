@@ -8,8 +8,19 @@ set -e
 
 #
 
-KEYCLOAK_NAMESPACE=${KEYCLOAK_NAMESPACE:-'mykeycloak'}
-echo "Using namespace ${KEYCLOAK_NAMESPACE}"
+
+if [ -z $KEYCLOAK_NAMESPACE ]; then
+  echo "KEYCLOAK_NAMESPACE for the Keycloak client was not specified"
+  exit
+fi
+
+NS=$(kubectl get namespace $KEYCLOAK_NAMESPACE --ignore-not-found);
+if [[ "$NS" ]]; then
+  echo "Namespace $KEYCLOAK_NAMESPACE already exists";
+else
+  echo "Creating namespace $KEYCLOAK_NAMESPACE";
+  kubectl create namespace $KEYCLOAK_NAMESPACE;
+fi;
 
 if [ -z $KEYCLOAK_REDIRECT_URI ]; then
   echo "KEYCLOAK_REDIRECT_URI for the Keycloak client was not specified"

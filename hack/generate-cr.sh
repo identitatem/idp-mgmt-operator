@@ -49,8 +49,9 @@ export AUTHREALM_OPENID_NAME=${AUTHREALM_OPENID_NAME:-"authrealm-sample-openid"}
 export AUTHREALM_OPENID_NS=${AUTHREALM_OPENID_NS:-"authrealm-sample-openid-ns"}
 export OPENID_CLIENT_ID=${OPENID_CLIENT_ID:-"openclientid"}
 export OPENID_CLIENT_SECRET=${OPENID_CLIENT_SECRET:-"openidclientsecret"}
-export OPENID_HOST=${OPENID_HOST:-"openid host"}
+export OPENID_ISSUER=${OPENID_ISSUER:-"openid issuer"}
 export OPENID_FILENAME=/tmp/"demo-openid-authrealm.yaml"
+export OPENID_ROUTE_SUBDOMAIN=${OPENID_ROUTE_SUBDOMAIN:-"openid-subdomain"}
 
 
 
@@ -155,6 +156,7 @@ printf "${BLUE}2) Add the following labels to any managed cluster you want in th
 printf "    ${GREEN}authdeployment=east${CLEAR}\n"
 printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${AUTHREALM_GITHUB_NAME}-clusterset${CLEAR}\n"
 printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}<managed cluster name> <label>${BLUE}\"${CLEAR}\n\n"
+printf "${BLUE}NOTE: You may need to specify the \"${GREEN}--overwrite ${BLUE}\" parameter if the label is already set.${CLEAR}\n\n"
 
 printf "${BLUE}YAML file ${GREEN}${GITHUB_FILENAME}${BLUE} is generated.  Apply using \"${GREEN}oc apply -f ${GITHUB_FILENAME}${BLUE}\"${CLEAR}\n\n"
           break
@@ -246,6 +248,7 @@ printf "${BLUE} Add the following labels to any managed cluster you want in the 
 printf "    ${GREEN}authdeployment=east${CLEAR}\n"
 printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${AUTHREALM_LDAP_NAME}-clusterset${CLEAR}\n"
 printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}<managed cluster name> <label>${BLUE}\"${CLEAR}\n\n"
+printf "${BLUE}NOTE: You may need to specify the \"${GREEN}--overwrite ${BLUE}\" parameter if the label is already set.${CLEAR}\n\n"
 
 
 printf "${BLUE}YAML file ${GREEN}${LDAP_FILENAME}${BLUE} is generated.  Apply using \"${GREEN}oc apply -f ${LDAP_FILENAME}${BLUE}\"${CLEAR}\n\n"
@@ -309,7 +312,7 @@ metadata:
   namespace: ${AUTHREALM_OPENID_NS}
 spec:
   type: dex
-  routeSubDomain: ${ROUTE_SUBDOMAIN}
+  routeSubDomain: ${OPENID_ROUTE_SUBDOMAIN}
   placementRef:
     name: ${AUTHREALM_OPENID_NAME}-placement
   identityProviders:
@@ -322,24 +325,25 @@ spec:
           name: ${AUTHREALM_OPENID_NAME}-openid-client-secret
         claims:
           preferredUsername:
-            - username
+            - preferred_username
           name:
             - name
           email:
-            - mail
-        issuer: ${OPENID_HOST}
+            - email
+        issuer: ${OPENID_ISSUER}
 
 EOF
 
 printf "${BLUE}1) Ensure there is an entry in your OpenID provider.  For Keycloak, the client configuration${CLEAR}\n"
 printf "${BLUE}for Client ID ${GREEN}${OPENID_CLIENT_ID}${BLUE} which contains:${CLEAR}\n"
-printf "    - ${GREEN}Valid Redirect URI:${YELLOW} https://${ROUTE_SUBDOMAIN}.${APPS}/callback${CLEAR}\n"
+printf "    - ${GREEN}Valid Redirect URI:${YELLOW} https://${OPENID_ROUTE_SUBDOMAIN}.${APPS}/callback${CLEAR}\n"
 printf "${BLUE}prior to running the ${GREEN}oc apply${BLUE} command shown below.\n\n${CLEAR}"
 
 printf "${BLUE} Add the following labels to any managed cluster you want in the cluster set ${GREEN}${AUTHREALM_OPENID_NAME}-clusterset${BLUE}:${CLEAR}\n"
 printf "    ${GREEN}authdeployment=east${CLEAR}\n"
 printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${AUTHREALM_OPENID_NAME}-clusterset${CLEAR}\n"
 printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}<managed cluster name> <label>${BLUE}\"${CLEAR}\n\n"
+printf "${BLUE}NOTE: You may need to specify the \"${GREEN}--overwrite ${BLUE}\" parameter if the label is already set.${CLEAR}\n\n"
 
 
 printf "${BLUE}YAML file ${GREEN}${OPENID_FILENAME}${BLUE} is generated.  Apply using \"${GREEN}oc apply -f ${OPENID_FILENAME}${BLUE}\"${CLEAR}\n\n"
@@ -457,6 +461,7 @@ printf "${BLUE}2) Add the following labels to any managed cluster you want in th
 printf "    ${GREEN}authdeployment=east${CLEAR}\n"
 printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${AUTHREALM_NAME}-clusterset${CLEAR}\n"
 printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}<managed cluster name> <label>${BLUE}\"${CLEAR}\n\n"
+printf "${BLUE}NOTE: You may need to specify the \"${GREEN}--overwrite ${BLUE}\" parameter if the label is already set.${CLEAR}\n\n"
 
 printf "${BLUE}YAML file ${GREEN}${FILENAME_BOTH}${BLUE} is generated.  Apply using \"${GREEN}oc apply -f ${FILENAME_BOTH}${BLUE}\"${CLEAR}\n\n"
             break
