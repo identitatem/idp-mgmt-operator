@@ -253,7 +253,7 @@ echo "NOTE: Before running generate-cr.sh, export environment variables"
 echo "OPENID_CLIENT_ID and OPENID_CLIENT_SECRET using the values shown above."
 echo ""
 echo "NOTE: Also export environment variable OPENID_ISSUER using the value:"
-echo "$KEYCLOAK_URL/auth/realms/myrealm"
+echo "$KEYCLOAK_URL/realms/myrealm"
 
 echo ""
 echo "Done"
