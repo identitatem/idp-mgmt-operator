@@ -225,6 +225,9 @@ spec:
       realm: myrealm
   client:
     clientId: myclient
+    optionalClientScopes:
+    - email
+    - profile
     protocol: openid-connect
     redirectUris:
     - ${KEYCLOAK_REDIRECT_URI}
