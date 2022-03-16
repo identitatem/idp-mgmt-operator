@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	dexoperatorv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	giterrors "github.com/pkg/errors"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
@@ -24,14 +25,20 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 	decision clusterv1alpha1.ClusterDecision,
 	authRealm *identitatemv1alpha1.AuthRealm) (*corev1.Secret, error) {
 	r.Log.Info("create clientSecret for", "cluster", decision.ClusterName, "identityProvider", authRealm.Name)
+	authRealmObjectKey := client.ObjectKey{
+		Name:      authRealm.Name,
+		Namespace: authRealm.Namespace,
+	}
 	clientSecret := &corev1.Secret{}
-	if err := r.Get(context.TODO(), client.ObjectKey{Name: helpers.ClientSecretName(authRealm), Namespace: decision.ClusterName}, clientSecret); err != nil {
+	if err := r.Get(context.TODO(),
+		client.ObjectKey{Name: helpers.ClientSecretName(authRealmObjectKey), Namespace: decision.ClusterName},
+		clientSecret); err != nil {
 		if !errors.IsNotFound(err) {
 			return nil, giterrors.WithStack(err)
 		}
 		clientSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      helpers.ClientSecretName(authRealm),
+				Name:      helpers.ClientSecretName(authRealmObjectKey),
 				Namespace: decision.ClusterName,
 			},
 			Data: map[string][]byte{
@@ -47,24 +54,30 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 
 func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv1alpha1.AuthRealm,
 	decision clusterv1alpha1.ClusterDecision,
-	clientSecret *corev1.Secret) error {
+	dexClient *dexoperatorv1alpha1.DexClient) error {
 	r.Log.Info("create clusterOAuth for", "cluster", decision.ClusterName, "authRealm", authRealm.Name)
+	authRealmObjectKey := client.ObjectKey{
+		Name:      authRealm.Name,
+		Namespace: authRealm.Namespace,
+	}
 	clusterOAuthExists := true
 	clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ClusterOAuthName(authRealm), Namespace: decision.ClusterName}, clusterOAuth); err != nil {
+	if err := r.Client.Get(context.TODO(),
+		client.ObjectKey{Name: helpers.ClusterOAuthName(authRealmObjectKey), Namespace: decision.ClusterName},
+		clusterOAuth); err != nil {
 		if !errors.IsNotFound(err) {
 			return giterrors.WithStack(err)
 		}
 		clusterOAuthExists = false
 		clusterOAuth = &identitatemv1alpha1.ClusterOAuth{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      helpers.ClusterOAuthName(authRealm),
+				Name:      helpers.ClusterOAuthName(authRealmObjectKey),
 				Namespace: decision.ClusterName,
 			},
 			Spec: identitatemv1alpha1.ClusterOAuthSpec{
 				OAuth: &openshiftconfigv1.OAuth{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      helpers.ClusterOAuthName(authRealm),
+						Name:      helpers.ClusterOAuthName(authRealmObjectKey),
 						Namespace: decision.ClusterName,
 					},
 					Spec: openshiftconfigv1.OAuthSpec{
@@ -80,6 +93,16 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 		return err
 	}
 
+	clusterOAuth.Spec.AuthRealmReference = identitatemv1alpha1.RelatedObjectReference{
+		Kind:      "AuthRealm",
+		Name:      authRealm.Name,
+		Namespace: authRealm.Namespace,
+	}
+	clusterOAuth.Spec.DexClientReference = identitatemv1alpha1.RelatedObjectReference{
+		Kind:      "DexClient",
+		Name:      dexClient.Name,
+		Namespace: dexClient.Namespace,
+	}
 	clusterOAuth.Spec.OAuth.Spec.IdentityProviders[0] = openshiftconfigv1.IdentityProvider{
 		Name:          authRealm.Name,
 		MappingMethod: authRealm.Spec.IdentityProviders[0].MappingMethod,
@@ -102,9 +125,9 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 						"groups",
 					},
 				},
-				ClientID: helpers.DexClientName(authRealm, decision.ClusterName),
+				ClientID: helpers.DexClientName(authRealmObjectKey, decision.ClusterName),
 				ClientSecret: openshiftconfigv1.SecretNameReference{
-					Name: clientSecret.Name,
+					Name: dexClient.Spec.ClientSecretRef.Name,
 				},
 				// Was not working when tested
 				// ExtraAuthorizeParameters: map[string]string{
@@ -131,26 +154,35 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 	return nil
 }
 
-func (r *PlacementDecisionReconciler) GetStrategyFromPlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) (*identitatemv1alpha1.Strategy, error) {
+func (r *PlacementDecisionReconciler) GetStrategyFromPlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) (*identitatemv1alpha1.StrategyList, error) {
 	r.Log.Info("GetStrategyFromPlacementDecision placementDecision:", "name", placementDecision.Name, "namespace", placementDecision.Namespace)
 	if placementName, ok := placementDecision.GetLabels()[clusterv1alpha1.PlacementLabel]; ok {
-		return r.GetStrategyFromPlacement(placementName, placementDecision.Namespace)
+		placement := &clusterv1alpha1.Placement{}
+		if err := r.Get(context.TODO(), client.ObjectKey{Name: placementName, Namespace: placementDecision.Namespace}, placement); err != nil {
+			return nil, err
+		}
+		return r.GetStrategiesFromPlacement(placement)
 	}
 	return nil, giterrors.WithStack(fmt.Errorf("placementDecision %s has no label %s", placementDecision.Name, clusterv1alpha1.PlacementLabel))
 }
 
-func (r *PlacementDecisionReconciler) GetStrategyFromPlacement(placementName, placementNamespace string) (*identitatemv1alpha1.Strategy, error) {
-	r.Log.Info("GetStrategyFromPlacement", "placementName", placementName, "placementNamespace", placementNamespace)
+func (r *PlacementDecisionReconciler) GetStrategiesFromPlacement(placement *clusterv1alpha1.Placement) (*identitatemv1alpha1.StrategyList, error) {
+	r.Log.Info("GetStrategiesFromPlacement", "placementName", placement.Name, "placementNamespace", placement.Namespace)
 	strategies := &identitatemv1alpha1.StrategyList{}
-	if err := r.List(context.TODO(), strategies, &client.ListOptions{Namespace: placementNamespace}); err != nil {
+	if err := r.List(context.TODO(), strategies, &client.ListOptions{Namespace: placement.Namespace}); err != nil {
 		return nil, giterrors.WithStack(err)
 	}
+	foundStrategies := &identitatemv1alpha1.StrategyList{}
+	foundStrategies.Items = make([]identitatemv1alpha1.Strategy, 0)
 	for _, strategy := range strategies.Items {
-		if strategy.Spec.PlacementRef.Name == placementName {
-			return &strategy, nil
+		if strategy.Spec.PlacementRef.Name == placement.Name {
+			foundStrategies.Items = append(foundStrategies.Items, strategy)
 		}
 	}
-	return nil, giterrors.WithStack(errors.NewNotFound(identitatemv1alpha1.Resource("strategies"), placementName))
+	if len(foundStrategies.Items) == 0 {
+		return nil, giterrors.WithStack(errors.NewNotFound(identitatemv1alpha1.Resource("strategies"), placement.Name))
+	}
+	return foundStrategies, nil
 }
 
 func (r *PlacementDecisionReconciler) inPlacementDecision(clusterName string, placement *clusterv1alpha1.Placement) (bool, error) {
