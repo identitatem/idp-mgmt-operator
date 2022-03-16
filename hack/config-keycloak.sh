@@ -4,15 +4,31 @@ set -e
 
 # After using OpenShift OperatorHub to install KeyCloak community operator, this
 # script can be run to help config the KeyCloak instance that can then be used
-# for testing IDP OIDC auth against
-
+# for testing IDP OIDC auth against.
 #
-
+# This script also assumed that Keycloak and IDP will be installed on the same
+# OpenShift hub cluster.
 
 if [ -z $KEYCLOAK_NAMESPACE ]; then
   echo "KEYCLOAK_NAMESPACE for the Keycloak client was not specified"
   exit
 fi
+
+echo "Keycloak namespace is: ${KEYCLOAK_NAMESPACE}"
+
+# Need to build the Redirect URI needed by Keycloak client
+export OPENID_ROUTE_SUBDOMAIN=${OPENID_ROUTE_SUBDOMAIN:-"openid-subdomain"}
+
+echo "IDP OpenID route subdomain is: ${OPENID_ROUTE_SUBDOMAIN}"
+
+export APPS=$(oc get infrastructure cluster -ojsonpath='{.status.apiServerURL}' | cut -d':' -f2 | sed 's/\/\/api/apps/g')
+
+echo ""
+echo "NOTE: This script assumes you are installing Keycloak on the hub cluster where IDP is also installed."
+echo "      If this is not the case, you will have to manually patch the Keycloak client redirect URI with the correct value."
+echo ""
+
+KEYCLOAK_REDIRECT_URI="https://${OPENID_ROUTE_SUBDOMAIN}.${APPS}/callback"
 
 NS=$(kubectl get namespace $KEYCLOAK_NAMESPACE --ignore-not-found);
 if [[ "$NS" ]]; then
@@ -26,6 +42,8 @@ if [ -z $KEYCLOAK_REDIRECT_URI ]; then
   echo "KEYCLOAK_REDIRECT_URI for the Keycloak client was not specified"
   exit
 fi
+
+echo "Keycloak client redirect URI is: ${KEYCLOAK_REDIRECT_URI}"
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 BASE64="base64 -w 0"
@@ -144,6 +162,7 @@ echo ${KEYCLOAK_CREDS}
 KEYCLOAK_HOST=`oc get route keycloak -n ${KEYCLOAK_NAMESPACE} --template='{{ .spec.host }}'`
 KEYCLOAK_URL=https://${KEYCLOAK_HOST}/auth
 echo ""
+echo "Keycloak URLs:"
 echo "Keycloak:                 $KEYCLOAK_URL"
 echo "Keycloak Admin Console:   $KEYCLOAK_URL/admin"
 echo "Keycloak Account Console: $KEYCLOAK_URL/realms/myrealm/account"
@@ -186,12 +205,11 @@ wait_for_kubectl_true "${CMD}" "${CMDOPTS}"
 sleep 5
 
 USER_CREDS=`kubectl get secret credential-myrealm-myuser-${KEYCLOAK_NAMESPACE} -n ${KEYCLOAK_NAMESPACE} -o go-template='{{range $k,$v := .data}}{{printf "%s: " $k}}{{if not $v}}{{$v}}{{else}}{{$v | base64decode}}{{end}}{{"\n"}}{{end}}'`
-echo "User info: "
+echo "Keycloak User Info: "
 echo $USER_CREDS
 
 
 echo "Create Keycloak client for OpenID connect"
-
 
 cat << EOF > keycloak-client.yaml
 apiVersion: keycloak.org/v1alpha1
@@ -221,15 +239,20 @@ CMDOPTS="-n ${KEYCLOAK_NAMESPACE}"
 wait_for_kubectl_true "${CMD}" "${CMDOPTS}"
 
 #wait for client secret to be created
-sleep 5
+sleep 10
 
 KEYCLOAK_CLIENT_SECRET_NAME=`oc get keycloakclient -n ${KEYCLOAK_NAMESPACE} -o jsonpath='{.items[0].status.secondaryResources.Secret[0]}'`
 
 KEYCLOAK_CLIENT_CREDS=`kubectl get secret ${KEYCLOAK_CLIENT_SECRET_NAME} -n ${KEYCLOAK_NAMESPACE} -o go-template='{{range $k,$v := .data}}{{printf "%s: " $k}}{{if not $v}}{{$v}}{{else}}{{$v | base64decode}}{{end}}{{"\n"}}{{end}}'`
 echo "Keycloak client info: "
 echo $KEYCLOAK_CLIENT_CREDS
+echo "NOTE: Before running generate-cr.sh, export environment variables"
+echo "OPENID_CLIENT_ID and OPENID_CLIENT_SECRET using the values shown above."
+echo ""
+echo "NOTE: Also export environment variable OPENID_ISSUER using the value:"
+echo "$KEYCLOAK_URL/auth/realms/myrealm"
 
-
+echo ""
 echo "Done"
 exit 0
 
