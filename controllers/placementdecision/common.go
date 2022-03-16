@@ -111,8 +111,8 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 				// 	"include_granted_scopes": "true",
 				// },
 				ExtraScopes: []string{
-					//TEST	"email",
-					//TEST "profile",
+					"email",
+					"profile",
 					"groups",
 					"federated:id",
 					"offline_access",
