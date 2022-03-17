@@ -49,7 +49,7 @@ spec:
         - installer
         env:
         - name: RELATED_IMAGE_DEX_OPERATOR
-          value: "quay.io/identitatem/dex-operator:0.1-0926431039aacd88801991eb2a8c3f06403dc83e"
+          value: "quay.io/identitatem/dex-operator:0.3.1-20220317-12-30-05"
         - name: RELATED_IMAGE_DEX_SERVER
           value: ghcr.io/dexidp/dex:v2.30.2
         - name: POD_NAME
