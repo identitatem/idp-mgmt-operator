@@ -45,6 +45,17 @@ export LDAP_BIND_DN=${DEXSERVER_LDAP_BIND_DN:-"cn=Manager,dc=example,dc=com"}
 export LDAP_USERSEARCH_BASEDN=${DEXSERVER_LDAP_USERSEARCH_BASEDN:-"dc=example,dc=com"}
 export LDAP_FILENAME=/tmp/"demo-ldap-authrealm.yaml"
 
+export AUTHREALM_OPENID_NAME=${AUTHREALM_OPENID_NAME:-"authrealm-sample-openid"}
+export AUTHREALM_OPENID_NS=${AUTHREALM_OPENID_NS:-"authrealm-sample-openid-ns"}
+export OPENID_CLIENT_ID=${OPENID_CLIENT_ID:-"openclientid"}
+export OPENID_CLIENT_SECRET=${OPENID_CLIENT_SECRET:-"openidclientsecret"}
+export OPENID_ISSUER=${OPENID_ISSUER:-"openid issuer"}
+export OPENID_FILENAME=/tmp/"demo-openid-authrealm.yaml"
+export OPENID_ROUTE_SUBDOMAIN=${OPENID_ROUTE_SUBDOMAIN:-"openid-subdomain"}
+
+
+
+
 export AUTHREALM_NAME=${AUTHREALM_NAME:-"authrealm-sample"}
 export AUTHREALM_NS=${AUTHREALM_NS:-"authrealm-sample-ns"}
 export FILENAME_BOTH=/tmp/"demo-both-authrealm.yaml"
@@ -59,7 +70,7 @@ GITHUB_APP_CLIENT_SECRET_B64=`echo -n "$GITHUB_APP_CLIENT_SECRET" | $BASE64`
 
 PS3="Choose the AuthRealms to generate:"
 
-options=("Github" "LDAP" "Both" "Quit")
+options=("Github" "LDAP" "OpenID" "Github+LDAP" "Quit")
 select opt in "${options[@]}"
 do
     case $opt in
@@ -145,6 +156,7 @@ printf "${BLUE}2) Add the following labels to any managed cluster you want in th
 printf "    ${GREEN}authdeployment=east${CLEAR}\n"
 printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${AUTHREALM_GITHUB_NAME}-clusterset${CLEAR}\n"
 printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}<managed cluster name> <label>${BLUE}\"${CLEAR}\n\n"
+printf "${BLUE}NOTE: You may need to specify the \"${GREEN}--overwrite ${BLUE}\" parameter if the label is already set.${CLEAR}\n\n"
 
 printf "${BLUE}YAML file ${GREEN}${GITHUB_FILENAME}${BLUE} is generated.  Apply using \"${GREEN}oc apply -f ${GITHUB_FILENAME}${BLUE}\"${CLEAR}\n\n"
           break
@@ -236,13 +248,109 @@ printf "${BLUE} Add the following labels to any managed cluster you want in the 
 printf "    ${GREEN}authdeployment=east${CLEAR}\n"
 printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${AUTHREALM_LDAP_NAME}-clusterset${CLEAR}\n"
 printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}<managed cluster name> <label>${BLUE}\"${CLEAR}\n\n"
+printf "${BLUE}NOTE: You may need to specify the \"${GREEN}--overwrite ${BLUE}\" parameter if the label is already set.${CLEAR}\n\n"
 
 
 printf "${BLUE}YAML file ${GREEN}${LDAP_FILENAME}${BLUE} is generated.  Apply using \"${GREEN}oc apply -f ${LDAP_FILENAME}${BLUE}\"${CLEAR}\n\n"
             break
             ;;
-        "Both")
-            printf "\n${BLUE}Generating YAML for both...${CLEAR}\n"
+        "OpenID")
+            printf "\n${BLUE}Generating YAML for OpenID...${CLEAR}\n"
+
+            OPENID_CLIENT_SECRET_B64=`echo -n "$OPENID_CLIENT_SECRET" | $BASE64`
+
+
+cat > ${OPENID_FILENAME} <<EOF
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: ${AUTHREALM_OPENID_NS}
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: ManagedClusterSet
+metadata:
+  name: ${AUTHREALM_OPENID_NAME}-clusterset
+  namespace: ${AUTHREALM_OPENID_NS}
+---
+apiVersion: cluster.open-cluster-management.io/v1alpha1
+kind: Placement
+metadata:
+  name: ${AUTHREALM_OPENID_NAME}-placement
+  namespace: ${AUTHREALM_OPENID_NS}
+spec:
+  predicates:
+  - requiredClusterSelector:
+      labelSelector:
+        matchLabels:
+          authdeployment: east
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: ManagedClusterSetBinding
+metadata:
+  name: ${AUTHREALM_OPENID_NAME}-clusterset
+  namespace: ${AUTHREALM_OPENID_NS}
+spec:
+  clusterSet: ${AUTHREALM_OPENID_NAME}-clusterset
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${AUTHREALM_OPENID_NAME}-openid-client-secret
+  namespace: ${AUTHREALM_OPENID_NS}
+type: Opaque
+data:
+  clientSecret: ${OPENID_CLIENT_SECRET_B64}
+
+---
+apiVersion: identityconfig.identitatem.io/v1alpha1
+kind: AuthRealm
+metadata:
+  name: ${AUTHREALM_OPENID_NAME}
+  namespace: ${AUTHREALM_OPENID_NS}
+spec:
+  type: dex
+  routeSubDomain: ${OPENID_ROUTE_SUBDOMAIN}
+  placementRef:
+    name: ${AUTHREALM_OPENID_NAME}-placement
+  identityProviders:
+    - name: openid
+      type: OpenID
+      mappingMethod: add
+      openID:
+        clientID: ${OPENID_CLIENT_ID}
+        clientSecret:
+          name: ${AUTHREALM_OPENID_NAME}-openid-client-secret
+        claims:
+          preferredUsername:
+            - preferred_username
+          name:
+            - name
+          email:
+            - email
+        issuer: ${OPENID_ISSUER}
+
+EOF
+
+printf "${BLUE}1) Ensure there is an entry in your OpenID provider.  For Keycloak, the client configuration${CLEAR}\n"
+printf "${BLUE}for Client ID ${GREEN}${OPENID_CLIENT_ID}${BLUE} which contains:${CLEAR}\n"
+printf "    - ${GREEN}Valid Redirect URI:${YELLOW} https://${OPENID_ROUTE_SUBDOMAIN}.${APPS}/callback${CLEAR}\n"
+printf "${BLUE}prior to running the ${GREEN}oc apply${BLUE} command shown below.\n\n${CLEAR}"
+
+printf "${BLUE} Add the following labels to any managed cluster you want in the cluster set ${GREEN}${AUTHREALM_OPENID_NAME}-clusterset${BLUE}:${CLEAR}\n"
+printf "    ${GREEN}authdeployment=east${CLEAR}\n"
+printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${AUTHREALM_OPENID_NAME}-clusterset${CLEAR}\n"
+printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}<managed cluster name> <label>${BLUE}\"${CLEAR}\n\n"
+printf "${BLUE}NOTE: You may need to specify the \"${GREEN}--overwrite ${BLUE}\" parameter if the label is already set.${CLEAR}\n\n"
+
+
+printf "${BLUE}YAML file ${GREEN}${OPENID_FILENAME}${BLUE} is generated.  Apply using \"${GREEN}oc apply -f ${OPENID_FILENAME}${BLUE}\"${CLEAR}\n\n"
+            break
+            ;;
+        "Github+LDAP")
+            printf "\n${BLUE}Generating YAML for Github and LDAP...${CLEAR}\n"
 
 cat > ${FILENAME_BOTH} <<EOF
 ---
@@ -353,6 +461,7 @@ printf "${BLUE}2) Add the following labels to any managed cluster you want in th
 printf "    ${GREEN}authdeployment=east${CLEAR}\n"
 printf "    ${GREEN}cluster.open-cluster-management.io/clusterset=${AUTHREALM_NAME}-clusterset${CLEAR}\n"
 printf "${BLUE}by using the command \"${GREEN}oc label managedclusters ${YELLOW}<managed cluster name> <label>${BLUE}\"${CLEAR}\n\n"
+printf "${BLUE}NOTE: You may need to specify the \"${GREEN}--overwrite ${BLUE}\" parameter if the label is already set.${CLEAR}\n\n"
 
 printf "${BLUE}YAML file ${GREEN}${FILENAME_BOTH}${BLUE} is generated.  Apply using \"${GREEN}oc apply -f ${FILENAME_BOTH}${BLUE}\"${CLEAR}\n\n"
             break
