@@ -199,11 +199,11 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 			//DV move below
 			Spec: placement.Spec,
 		}
-		// Set owner reference for cleanup
-		err = controllerutil.SetControllerReference(strategy, placementStrategy, r.Scheme)
-		if err != nil {
-			return nil, false, err
-		}
+	}
+	// Set owner reference for cleanup
+	err := controllerutil.SetOwnerReference(strategy, placementStrategy, r.Scheme)
+	if err != nil {
+		return nil, placementStrategyExists, err
 	}
 	return placementStrategy, placementStrategyExists, nil
 }
@@ -220,17 +220,43 @@ func (r *StrategyReconciler) processStrategyDeletion(strategy *identitatemv1alph
 		pl)
 	switch {
 	case err == nil:
-		if err := r.Client.Delete(context.TODO(), pl); err != nil {
+		if isLastOwnerReference(pl, strategy) {
+			if err := r.Client.Delete(context.TODO(), pl); err != nil {
+				return ctrl.Result{}, giterrors.WithStack(err)
+			}
+			r.Log.Info("waiting strategy placement to be deleted",
+				"name", helpers.PlacementStrategyName(strategy, authRealm),
+				"namespace", strategy.Namespace)
+			return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Second}, nil
+		}
+		removeOwnerReference(pl, strategy)
+		if err := r.Client.Update(context.TODO(), pl); err != nil {
 			return ctrl.Result{}, giterrors.WithStack(err)
 		}
-		r.Log.Info("waiting strategy placement to be deleted",
-			"name", helpers.PlacementStrategyName(strategy, authRealm),
-			"namespace", strategy.Namespace)
-		return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Second}, nil
 	case errors.IsNotFound(err):
 		return ctrl.Result{}, nil
 	}
 	return ctrl.Result{}, err
+}
+
+func isLastOwnerReference(pl *clusterv1alpha1.Placement, strategy *identitatemv1alpha1.Strategy) bool {
+	refs := pl.GetOwnerReferences()
+	return len(refs) <= 1 && refs[0].UID == strategy.UID
+}
+
+func removeOwnerReference(pl *clusterv1alpha1.Placement, strategy *identitatemv1alpha1.Strategy) []metav1.OwnerReference {
+	refs := pl.GetOwnerReferences()
+	index := -1
+	for i, ref := range refs {
+		if ref.UID == strategy.UID {
+			index = i
+		}
+	}
+	if index != -1 {
+		refs[index] = refs[len(refs)-1]
+		return refs[:len(refs)-1]
+	}
+	return refs
 }
 
 // SetupWithManager sets up the controller with the Manager.
