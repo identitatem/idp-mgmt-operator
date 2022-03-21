@@ -1,4 +1,3 @@
-
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -222,16 +221,8 @@ rules:
   - authrealms
   verbs:
   - get
-  - update
-  - watch
-- apiGroups:
-  - identityconfig.identitatem.io
-  resources:
-  - authrealms
-  - strategies
-  verbs:
-  - get
   - list
+  - update
   - watch
 - apiGroups:
   - identityconfig.identitatem.io

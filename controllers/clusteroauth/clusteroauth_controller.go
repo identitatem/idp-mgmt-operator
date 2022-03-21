@@ -71,7 +71,8 @@ type ClusterOAuthReconciler struct {
 
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={clusteroauths},verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={clusteroauths/finalizers},verbs=create;delete;patch;update
-//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies},verbs=get;list;watch
+//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms},verbs=get;list;watch;update
+//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={strategies},verbs=get;list;watch
 
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources={manifestworks},verbs=get;list;watch;create;update;delete
 
@@ -146,6 +147,17 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	r.Log.Info("generateManifestWork for", "name", instance.Name, "namespace", instance.Namespace)
 	if err := r.generateManifestWork(instance); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	cond := metav1.Condition{
+		Type:    identitatemv1alpha1.ClusterOAuthApplied,
+		Status:  metav1.ConditionTrue,
+		Reason:  "ClusterOAuthAppliedSucceeded",
+		Message: "ClusterOAuth successfully applied",
+	}
+
+	if err := helpers.UpdateClusterOAuthStatusConditions(r.Client, instance, cond); err != nil {
 		return ctrl.Result{}, err
 	}
 

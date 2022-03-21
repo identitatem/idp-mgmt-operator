@@ -46,6 +46,7 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 }
 
 func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv1alpha1.AuthRealm,
+	placementDecision clusterv1alpha1.PlacementDecision,
 	decision clusterv1alpha1.ClusterDecision,
 	clientSecret *corev1.Secret) error {
 	r.Log.Info("create clusterOAuth for", "cluster", decision.ClusterName, "authRealm", authRealm.Name)
@@ -120,6 +121,17 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 				Issuer: fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Spec.RouteSubDomain, host),
 			},
 		},
+	}
+
+	clusterOAuth.Spec.AuthRealmReference = identitatemv1alpha1.RelatedObjectReference{
+		Kind:      "AuthRealm",
+		Name:      authRealm.Name,
+		Namespace: authRealm.Namespace,
+	}
+	clusterOAuth.Spec.StrategyReference = identitatemv1alpha1.RelatedObjectReference{
+		Kind:      "Strategy",
+		Name:      authRealm.Name,
+		Namespace: authRealm.Namespace,
 	}
 
 	switch clusterOAuthExists {

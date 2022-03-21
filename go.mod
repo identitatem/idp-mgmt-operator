@@ -157,3 +157,5 @@ replace (
 	k8s.io/client-go => k8s.io/client-go v0.23.3
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client => sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.27
 )
+
+replace github.com/identitatem/idp-client-api => /Users/dvernier/go/src/github.com/identitatem/idp-client-api

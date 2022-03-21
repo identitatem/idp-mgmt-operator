@@ -82,7 +82,7 @@ func (r *PlacementDecisionReconciler) createConfigs(authRealm *identitatemv1alph
 				return err
 			}
 			//Create ClusterOAuth
-			if err := r.createClusterOAuth(authRealm, decision, clientSecret); err != nil {
+			if err := r.createClusterOAuth(authRealm, placementDecision, decision, clientSecret); err != nil {
 				return err
 			}
 		}

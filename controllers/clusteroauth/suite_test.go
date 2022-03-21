@@ -72,12 +72,16 @@ var _ = BeforeSuite(func() {
 
 	readerIDP := idpconfig.GetScenarioResourcesReader()
 	clusterOAuthCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_clusteroauths.yaml")
+	authRealmCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
+	strategyCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_strategies.yaml")
 	Expect(err).Should(BeNil())
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		CRDs: []*apiextensionsv1.CustomResourceDefinition{
 			clusterOAuthCRD,
+			authRealmCRD,
+			strategyCRD,
 		},
 		CRDDirectoryPaths: []string{
 			//DV added this line and copyed the authrealms CRD
@@ -156,8 +160,9 @@ var _ = AfterSuite(func() {
 
 var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 	AuthRealmName := "my-authrealm"
+	AuthRealmNamespace := "my-authrealm-ns"
 	AuthRealmName2 := "my-authrealm" + "-2"
-	//StrategyName := AuthRealmName + "-backplane"
+	StrategyName := AuthRealmName + "-backplane"
 	//ClusterOAuthName1 := StrategyName + "-1"
 	//ClusterOAuthName2 := StrategyName + "-2"
 	ClusterName := "my-cluster"
@@ -166,6 +171,16 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 	// MyIDPName3 := "my-idp" + "-3"
 
 	It("process a ClusterOAuth CR", func() {
+		By(fmt.Sprintf("creation of authrealm namespace %s", ClusterName), func() {
+			ns := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: AuthRealmNamespace,
+				},
+			}
+			err := k8sClient.Create(context.TODO(), ns)
+			Expect(err).To(BeNil())
+		})
+
 		By(fmt.Sprintf("creation of cluster namespace %s", ClusterName), func() {
 			ns := &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -193,6 +208,26 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 
 		})
 
+		var authRealm *identitatemv1alpha1.AuthRealm
+		By(fmt.Sprintf("creation of AuthRealm in cluster namespace %s", ClusterName), func() {
+			authRealm = &identitatemv1alpha1.AuthRealm{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: corev1.SchemeGroupVersion.String(),
+					Kind:       "AuthRealm",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      AuthRealmName,
+					Namespace: AuthRealmNamespace,
+				},
+				Spec: identitatemv1alpha1.AuthRealmSpec{
+					RouteSubDomain: "myroute",
+				},
+			}
+			err := k8sClient.Create(context.TODO(), authRealm)
+			Expect(err).To(BeNil())
+
+		})
+
 		By(fmt.Sprintf("creation of ClusterOAuth for managed cluster %s", ClusterName), func() {
 			clusterOAuth := &identitatemv1alpha1.ClusterOAuth{
 				TypeMeta: metav1.TypeMeta{
@@ -204,6 +239,16 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 					Namespace: ClusterName,
 				},
 				Spec: identitatemv1alpha1.ClusterOAuthSpec{
+					AuthRealmReference: identitatemv1alpha1.RelatedObjectReference{
+						Kind:      "AuthRealm",
+						Name:      AuthRealmName,
+						Namespace: AuthRealmNamespace,
+					},
+					StrategyReference: identitatemv1alpha1.RelatedObjectReference{
+						Kind:      "Strategy",
+						Name:      StrategyName,
+						Namespace: AuthRealmNamespace,
+					},
 					OAuth: &openshiftconfigv1.OAuth{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: openshiftconfigv1.SchemeGroupVersion.String(),
@@ -295,6 +340,14 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 			Expect(err).To(BeNil())
 		})
 
+		By("Checking Authrealm status", func() {
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{
+				Name:      AuthRealmName,
+				Namespace: AuthRealmNamespace,
+			}, authRealm)
+			Expect(err).To(BeNil())
+			Expect(authRealm.Status.Strategies[0].Clusters[0].ClusterOAuth.Conditions).To(Equal(1))
+		})
 		By("Calling reconcile after status added", func() {
 			r := &ClusterOAuthReconciler{
 				Client:        k8sClient,
@@ -360,6 +413,16 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 					Namespace: ClusterName,
 				},
 				Spec: identitatemv1alpha1.ClusterOAuthSpec{
+					AuthRealmReference: identitatemv1alpha1.RelatedObjectReference{
+						Kind:      "AuthRealm",
+						Name:      AuthRealmName,
+						Namespace: AuthRealmNamespace,
+					},
+					StrategyReference: identitatemv1alpha1.RelatedObjectReference{
+						Kind:      "Strategy",
+						Name:      StrategyName,
+						Namespace: AuthRealmNamespace,
+					},
 					OAuth: &openshiftconfigv1.OAuth{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: openshiftconfigv1.SchemeGroupVersion.String(),

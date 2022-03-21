@@ -6,6 +6,7 @@ import (
 	"context"
 
 	giterrors "github.com/pkg/errors"
+	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -31,4 +32,79 @@ func mergeStatusConditions(conditions []metav1.Condition, newConditions ...metav
 func UpdateAuthRealmStatusConditions(c client.Client, authRealm *identitatemv1alpha1.AuthRealm, newConditions ...metav1.Condition) error {
 	authRealm.Status.Conditions = mergeStatusConditions(authRealm.Status.Conditions, newConditions...)
 	return giterrors.WithStack(c.Status().Update(context.TODO(), authRealm))
+}
+
+func UpdateClusterOAuthStatusConditions(
+	c client.Client,
+	clusterOAuth *identitatemv1alpha1.ClusterOAuth, newConditions ...metav1.Condition) error {
+	clusterOAuth.Status.Conditions = mergeStatusConditions(clusterOAuth.Status.Conditions, newConditions...)
+	if err := giterrors.WithStack(c.Status().Update(context.TODO(), clusterOAuth)); err != nil {
+		return err
+	}
+	authRealm := &identitatemv1alpha1.AuthRealm{}
+	if err := c.Get(context.TODO(),
+		client.ObjectKey{
+			Name:      clusterOAuth.Spec.AuthRealmReference.Name,
+			Namespace: clusterOAuth.Spec.AuthRealmReference.Namespace,
+		}, authRealm); err != nil {
+		return err
+	}
+	return UpdateAuthRealmStatusClusterOAuthConditions(c, authRealm, clusterOAuth)
+}
+
+func UpdateAuthRealmStatusClusterOAuthConditions(
+	c client.Client,
+	authRealm *identitatemv1alpha1.AuthRealm,
+	clusterOAuth *identitatemv1alpha1.ClusterOAuth) error {
+	authRealm, strategyIndex := getAuthRealmStatusStrategy(authRealm, clusterOAuth.Spec.StrategyReference.Name)
+	strategyStatus, clusterStatusIndex := getAuthRealmStatusCluster(&authRealm.Status.Strategies[strategyIndex], clusterOAuth)
+
+	if authRealm.Status.Conditions == nil {
+		authRealm.Status.Conditions = make([]metav1.Condition, 0)
+	}
+	strategyStatus.Clusters[clusterStatusIndex].ClusterOAuth.ClusterOAuthStatus.Conditions = mergeStatusConditions(
+		strategyStatus.Clusters[clusterStatusIndex].ClusterOAuth.ClusterOAuthStatus.Conditions,
+		clusterOAuth.Status.Conditions...)
+
+	return giterrors.WithStack(c.Status().Update(context.TODO(), authRealm))
+}
+
+func getAuthRealmStatusStrategy(
+	authRealm *identitatemv1alpha1.AuthRealm,
+	strategyName string) (*identitatemv1alpha1.AuthRealm, int) {
+	status := &authRealm.Status
+	strategyIndex := -1
+	for i, s := range status.Strategies {
+		if s.Name == strategyName {
+			strategyIndex = i
+			break
+		}
+	}
+	if strategyIndex == -1 {
+		strategyIndex = len(status.Strategies)
+		status.Strategies = append(status.Strategies, identitatemv1alpha1.AuthRealmStrategyStatus{
+			Name:       strategyName,
+			Placements: make([]clusterv1alpha1.PlacementStatus, 0),
+		})
+	}
+	return authRealm, strategyIndex
+}
+
+func getAuthRealmStatusCluster(
+	strategyStatus *identitatemv1alpha1.AuthRealmStrategyStatus,
+	clusterOAuth *identitatemv1alpha1.ClusterOAuth) (*identitatemv1alpha1.AuthRealmStrategyStatus, int) {
+	clusterStatusIndex := -1
+	for i, clusterStatus := range strategyStatus.Clusters {
+		if clusterStatus.Name == clusterOAuth.Name {
+			clusterStatusIndex = i
+			break
+		}
+	}
+	if clusterStatusIndex == -1 {
+		clusterStatusIndex = len(strategyStatus.Clusters)
+		strategyStatus.Clusters = append(strategyStatus.Clusters, identitatemv1alpha1.AuthRealmClusterStatus{
+			Name: clusterOAuth.Name,
+		})
+	}
+	return strategyStatus, clusterStatusIndex
 }
