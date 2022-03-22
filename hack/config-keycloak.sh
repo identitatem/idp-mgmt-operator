@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright Red Hat
 set -e
-set -x
+
 # After using OpenShift OperatorHub to install KeyCloak community operator, this
 # script can be run to help config the KeyCloak instance that can then be used
 # for testing IDP OIDC auth against.
