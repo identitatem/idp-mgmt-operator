@@ -533,6 +533,6 @@ func (r *IDPConfigReconciler) isMCE() (bool, error) {
 
 func (r *IDPConfigReconciler) getMCEConfigMapList() (*unstructured.UnstructuredList, error) {
 	dynamicClient := r.DynamicClient
-	gvr := schema.GroupVersionResource{Group: "multicluster.openshift.io", Version: "v1alpha1", Resource: "multiclusterengines"}
+	gvr := schema.GroupVersionResource{Group: "multicluster.openshift.io", Version: "v1", Resource: "multiclusterengines"}
 	return dynamicClient.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
 }
