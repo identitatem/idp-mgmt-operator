@@ -59,22 +59,22 @@ func DexServerNamespace(authRealm *identitatemv1alpha1.AuthRealm) string {
 }
 
 func DexClientName(
-	authRealm *identitatemv1alpha1.AuthRealm,
+	authRealmObjectKey client.ObjectKey,
 	clusterName string,
 ) string {
-	return fmt.Sprintf("%s-%s", clusterName, authRealm.Name)
+	return fmt.Sprintf("%s-%s", clusterName, authRealmObjectKey.Name)
 }
 
 func ClientSecretName(
-	authRealm *identitatemv1alpha1.AuthRealm,
+	authRealmObjectKey client.ObjectKey,
 ) string {
-	return ClusterOAuthName(authRealm)
+	return ClusterOAuthName(authRealmObjectKey)
 }
 
 func ClusterOAuthName(
-	authRealm *identitatemv1alpha1.AuthRealm,
+	authRealmObjectKey client.ObjectKey,
 ) string {
-	return fmt.Sprintf("%s-%s", authRealm.Name, authRealm.Namespace)
+	return fmt.Sprintf("%s-%s", authRealmObjectKey.Name, authRealmObjectKey.Namespace)
 }
 
 func DexClientObjectKey(
@@ -82,7 +82,7 @@ func DexClientObjectKey(
 	clusterName string,
 ) client.ObjectKey {
 	return client.ObjectKey{
-		Name:      DexClientName(authRealm, clusterName),
+		Name:      DexClientName(client.ObjectKey{Name: authRealm.Name, Namespace: authRealm.Namespace}, clusterName),
 		Namespace: DexServerNamespace(authRealm),
 	}
 }

@@ -101,7 +101,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	//if deletetimestamp then delete dex namespace
 	if instance.DeletionTimestamp != nil {
-		if err := r.processPlacementDecisionDeletion(instance); err != nil {
+		if err := r.processPlacementDecisionDeletion(instance, false); err != nil {
 			return reconcile.Result{}, err
 		}
 		r.Log.Info("remove finalizer", "Finalizer:", helpers.AuthrealmFinalizer, "name", instance.Name, "namespace", instance.Namespace)
@@ -128,20 +128,24 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, err
 	}
 
-	strategy, err := r.GetStrategyFromPlacement(instance.Name, instance.Namespace)
+	strategies, err := r.GetStrategiesFromPlacement(instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
-	if err != nil {
+	for _, strategy := range strategies.Items {
+		authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, &strategy)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		if err := r.processPlacementDecision(authRealm, instance); err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+	if err := r.processPlacementDecisionDeletion(instance, true); err != nil {
 		return reconcile.Result{}, err
 	}
-
-	if err := r.processPlacementDecision(authRealm, instance); err != nil {
-		return reconcile.Result{}, err
-	}
-
 	return ctrl.Result{}, nil
 }
 
@@ -157,7 +161,7 @@ func (r *PlacementDecisionReconciler) processPlacementDecision(
 }
 
 func (r *PlacementDecisionReconciler) isLinkedToStrategy(placement *clusterv1alpha1.Placement) (bool, error) {
-	_, err := r.GetStrategyFromPlacement(placement.Name, placement.Namespace)
+	_, err := r.GetStrategiesFromPlacement(placement)
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			return false, nil
@@ -169,10 +173,7 @@ func (r *PlacementDecisionReconciler) isLinkedToStrategy(placement *clusterv1alp
 	return true, giterrors.WithStack(err)
 }
 
-func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placement *clusterv1alpha1.Placement) error {
-	r.Log.Info("start deletion of Placement",
-		"namespace", placement.Namespace,
-		"name", placement.Name)
+func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placement *clusterv1alpha1.Placement, onlyIfAuthRealmDeleted bool) error {
 	ok, err := r.isLinkedToStrategy(placement)
 	if !ok {
 		return nil
@@ -181,15 +182,9 @@ func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placement
 		return err
 	}
 
-	strategy, err := r.GetStrategyFromPlacement(placement.Name, placement.Namespace)
-	if err != nil {
-		return err
-	}
-
-	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
-	if err != nil {
-		return err
-	}
+	r.Log.Info("start deletion of Placement",
+		"namespace", placement.Namespace,
+		"name", placement.Name)
 
 	r.Log.Info("search placementdecisions in ns and label",
 		"namespace", placement.Namespace,
@@ -202,21 +197,11 @@ func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placement
 	}
 	for _, placementDecision := range placementDecisions.Items {
 		for _, decision := range placementDecision.Status.Decisions {
-			if err := r.deleteConfig(authRealm, helpers.DexClientName(authRealm, decision.ClusterName), decision.ClusterName); err != nil {
+			if err := r.deleteConfig(decision.ClusterName, onlyIfAuthRealmDeleted); err != nil {
 				return err
 			}
 		}
 	}
-
-	//Remove the finalizers when there is no other placementDecisions for that placement.
-	// if len(placementDecisions.Items) == 1 {
-	// 	if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, strategy); err != nil {
-	// 		return err
-	// 	}
-	// 	if err := helpers.RemovePlacementDecisionFinalizer(r.Client, r.Log, strategy, authRealm); err != nil {
-	// 		return err
-	// 	}
-	// }
 	return nil
 }
 
@@ -260,57 +245,63 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&clusterv1alpha1.Placement{}).
-		Watches(&source.Kind{Type: &identitatemv1alpha1.AuthRealm{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
-			authrealm := o.(*identitatemv1alpha1.AuthRealm)
-			req := make([]reconcile.Request, 0)
-			// if authrealm.DeletionTimestamp != nil {
-			// 	r.Log.Info("authrealm changed but deletion timestamp set",
-			// 		"authrealm name", authrealm.Name,
-			// 		"authrealm namespace", authrealm.Namespace)
-			// 	return req
-			// }
-			strategies := &identitatemv1alpha1.StrategyList{}
-			if err := r.Client.List(context.TODO(), strategies, &client.ListOptions{Namespace: authrealm.Namespace}); err == nil {
-				for _, strategy := range strategies.Items {
-					placement := &clusterv1alpha1.Placement{}
-					if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: strategy.Spec.PlacementRef.Name, Namespace: authrealm.Namespace}, placement); err != nil {
-						continue
-					}
-					r.Log.Info("Reconcile placement because authrealm changed",
-						"placement name", strategy.Spec.PlacementRef.Name,
-						"placement namespace", authrealm.Namespace,
-						"authrealm name", authrealm.Name,
-						"authrealm namespace", authrealm.Namespace)
-					req = append(req, reconcile.Request{
-						NamespacedName: types.NamespacedName{
-							Name:      strategy.Spec.PlacementRef.Name,
-							Namespace: authrealm.Namespace,
-						},
-					})
-				}
-			}
-			return req
-		})).
-		Watches(&source.Kind{Type: &dexoperatorv1alpha1.DexClient{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
-			dexClient := o.(*dexoperatorv1alpha1.DexClient)
-			req := make([]reconcile.Request, 0)
-			for _, relatedObject := range dexClient.Status.RelatedObjects {
-				if relatedObject.Kind == "PlacementDecision" {
-					placementDecision := &clusterv1alpha1.PlacementDecision{}
-					if err := r.Client.Get(context.TODO(),
-						client.ObjectKey{Name: relatedObject.Name, Namespace: relatedObject.Namespace},
-						placementDecision); err == nil {
+		Watches(&source.Kind{Type: &identitatemv1alpha1.AuthRealm{}},
+			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+				authrealm := o.(*identitatemv1alpha1.AuthRealm)
+				req := make([]reconcile.Request, 0)
+				strategies := &identitatemv1alpha1.StrategyList{}
+				if err := r.Client.List(context.TODO(),
+					strategies,
+					&client.ListOptions{Namespace: authrealm.Namespace}); err == nil {
+					for _, strategy := range strategies.Items {
+						placement := &clusterv1alpha1.Placement{}
+						if err := r.Client.Get(context.TODO(),
+							client.ObjectKey{
+								Name:      strategy.Spec.PlacementRef.Name,
+								Namespace: authrealm.Namespace},
+							placement); err != nil {
+							continue
+						}
+						r.Log.Info(fmt.Sprintf("Reconcile placement %s/%s because authrealm %s/%s changed",
+							placement.Name,
+							placement.Namespace,
+							authrealm.Name,
+							authrealm.Namespace))
 						req = append(req, reconcile.Request{
 							NamespacedName: types.NamespacedName{
-								Name:      placementDecision.Name,
-								Namespace: placementDecision.Namespace,
+								Name:      placement.Name,
+								Namespace: authrealm.Namespace,
 							},
 						})
 					}
 				}
-			}
-			return req
-		})).
-		//TODO Watch clientSecret to regenerate dexclient/clusterOAuth
+				return req
+			})).
+		Watches(&source.Kind{Type: &dexoperatorv1alpha1.DexClient{}},
+			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+				dexClient := o.(*dexoperatorv1alpha1.DexClient)
+				req := make([]reconcile.Request, 0)
+				for _, relatedObject := range dexClient.Status.RelatedObjects {
+					if relatedObject.Kind == "PlacementDecision" {
+						placementDecision := &clusterv1alpha1.PlacementDecision{}
+						if err := r.Client.Get(context.TODO(),
+							client.ObjectKey{Name: relatedObject.Name, Namespace: relatedObject.Namespace},
+							placementDecision); err == nil {
+							r.Log.Info(fmt.Sprintf("Reconcile placement %s/%s because dexclient %s/%s changed",
+								placementDecision.GetLabels()["cluster.open-cluster-management.io/placement"],
+								placementDecision.Namespace,
+								dexClient.Name,
+								dexClient.Namespace))
+							req = append(req, reconcile.Request{
+								NamespacedName: types.NamespacedName{
+									Name:      placementDecision.GetLabels()["cluster.open-cluster-management.io/placement"],
+									Namespace: placementDecision.Namespace,
+								},
+							})
+						}
+					}
+				}
+				return req
+			})).
 		Complete(r)
 }
