@@ -97,14 +97,18 @@ wait_for_kubectl_true() {
 
 
 
-# Ensure keycloak operator is already installed and ready to use
-echo "Check to be sure keycloak operator is installed and ready to use..."
-# CMD="rollout status -w deploy/keycloak-operator -n ${KEYCLOAK_NAMESPACE}"
-# CMDOPTS=""
-# wait_for_kubectl_true "${CMD}" "${CMDOPTS}"
-
-kubectl wait --for=condition=available deploy/keycloak-operator --timeout 600s -n ${KEYCLOAK_NAMESPACE}
-
+# Ensure keycloak community operator OR Red Hat SSO keybloak is already installed and ready to use
+KEYCLOAK_DEPLOY=$(kubectl get deploy -n $KEYCLOAK_NAMESPACE --no-headers);
+if [[ "$KEYCLOAK_DEPLOY" == *"keycloak-operator"* ]]; then
+  echo "Check to be sure keycloak operator is installed and ready to use..."
+  kubectl wait --for=condition=available deploy/keycloak-operator --timeout 600s -n ${KEYCLOAK_NAMESPACE}
+elif [[ "$KEYCLOAK_DEPLOY" == *"rhsso-operator"* ]]; then
+  echo "Check to be sure RH SSO operator is installed and ready to use..."
+  kubectl wait --for=condition=available deploy/rhsso-operator --timeout 600s -n ${KEYCLOAK_NAMESPACE}
+else
+  echo "No Keycloak or Red Hat SSO found!"
+  exit 1
+fi
 
 echo "Create keycloak instance and wait for it to be ready (this will take several minutes)..."
 
