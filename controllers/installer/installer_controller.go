@@ -521,18 +521,32 @@ func (r *IDPConfigReconciler) getRHACMCRList() (*unstructured.UnstructuredList, 
 }
 
 func (r *IDPConfigReconciler) isMCE() (bool, error) {
-	cms, err := r.getMCEConfigMapList()
-	if err != nil {
-		return false, err
+	found := false
+
+	// Try MCE v2.0 first
+	cms_v1, err_v1 := r.getMCEConfigMapList("v1")
+	if (err_v1 == nil) && (len(cms_v1.Items) > 0) {
+		found = true
 	}
-	if len(cms.Items) == 0 {
+
+	if !found {
+		// Try MCE v1.0, if needed
+		cms_v1alpha1, err_v1alpha1 := r.getMCEConfigMapList("v1alpha1")
+		if (err_v1alpha1 == nil) && (len(cms_v1alpha1.Items) > 0) {
+			found = true
+		}
+	}
+
+	if found {
+		return true, nil
+	} else {
 		return false, fmt.Errorf("the product Multicluster Engine is not installed on this cluster")
 	}
-	return true, nil
+
 }
 
-func (r *IDPConfigReconciler) getMCEConfigMapList() (*unstructured.UnstructuredList, error) {
+func (r *IDPConfigReconciler) getMCEConfigMapList(version string) (*unstructured.UnstructuredList, error) {
 	dynamicClient := r.DynamicClient
-	gvr := schema.GroupVersionResource{Group: "multicluster.openshift.io", Version: "v1", Resource: "multiclusterengines"}
+	gvr := schema.GroupVersionResource{Group: "multicluster.openshift.io", Version: version, Resource: "multiclusterengines"}
 	return dynamicClient.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
 }
