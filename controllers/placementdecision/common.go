@@ -53,6 +53,8 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 }
 
 func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv1alpha1.AuthRealm,
+	strategy *identitatemv1alpha1.Strategy,
+	placementDecision clusterv1alpha1.PlacementDecision,
 	decision clusterv1alpha1.ClusterDecision,
 	dexClient *dexoperatorv1alpha1.DexClient) error {
 	r.Log.Info("create clusterOAuth for", "cluster", decision.ClusterName, "authRealm", authRealm.Name)
@@ -97,6 +99,11 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 		Kind:      "AuthRealm",
 		Name:      authRealm.Name,
 		Namespace: authRealm.Namespace,
+	}
+	clusterOAuth.Spec.StrategyReference = identitatemv1alpha1.RelatedObjectReference{
+		Kind:      "Strategy",
+		Name:      strategy.Name,
+		Namespace: strategy.Namespace,
 	}
 	clusterOAuth.Spec.DexClientReference = identitatemv1alpha1.RelatedObjectReference{
 		Kind:      "DexClient",

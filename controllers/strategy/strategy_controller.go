@@ -61,6 +61,7 @@ type StrategyReconciler struct {
 
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={strategies},verbs=get;list;watch;update
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={strategies/finalizers},verbs=create;delete;patch;update
+//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={strategies/status},verbs=patch
 
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={placements},verbs=get;list;watch;create;update;delete
 
@@ -96,6 +97,8 @@ func (r *StrategyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return reconcile.Result{}, err
 	}
 
+	r.Log.Info("Running Reconcile for Strategy.", "Name: ", instance.GetName(), " Namespace:", instance.GetNamespace())
+
 	if instance.DeletionTimestamp != nil {
 		if result, err := r.processStrategyDeletion(instance); err != nil || result.Requeue {
 			return result, err
@@ -107,26 +110,52 @@ func (r *StrategyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return reconcile.Result{}, nil
 	}
 
-	r.Log.Info("Instance", "instance", instance)
-	r.Log.Info("Running Reconcile for Strategy.", "Name: ", instance.GetName(), " Namespace:", instance.GetNamespace())
+	if err := r.processStrategyUpdate(instance); err != nil {
+		cond := metav1.Condition{
+			Type:    identitatemv1alpha1.StrategyApplied,
+			Status:  metav1.ConditionFalse,
+			Reason:  "StrategyAppliedFailed",
+			Message: fmt.Sprintf("Strategy apply failed: %s", err.Error()),
+		}
+		if err := r.UpdateStrategyStatusConditions(instance, cond); err != nil {
+			return ctrl.Result{}, err
+		}
 
-	controllerutil.AddFinalizer(instance, helpers.AuthrealmFinalizer)
-
-	r.Log.Info("Process", "Name", instance.GetName(), "Namespace", instance.GetNamespace())
-
-	if err := r.Client.Update(context.TODO(), instance); err != nil {
-		return ctrl.Result{}, giterrors.WithStack(err)
-	}
-	// Get the AuthRealm Placement bits we need to help create a new Placement
-
-	r.Log.Info("Searching for AuthRealm in ownerRefs", "strategy", instance.Name)
-	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, instance)
-	if err != nil {
 		return reconcile.Result{}, err
 	}
 
+	cond := metav1.Condition{
+		Type:    identitatemv1alpha1.StrategyApplied,
+		Status:  metav1.ConditionTrue,
+		Reason:  "StrategyAppliedSucceeded",
+		Message: "Strategy successfully applied",
+	}
+
+	if err := r.UpdateStrategyStatusConditions(instance, cond); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *StrategyReconciler) processStrategyUpdate(strategy *identitatemv1alpha1.Strategy) error {
+	controllerutil.AddFinalizer(strategy, helpers.AuthrealmFinalizer)
+
+	r.Log.Info("Process", "Name", strategy.GetName(), "Namespace", strategy.GetNamespace())
+
+	if err := r.Client.Update(context.TODO(), strategy); err != nil {
+		return giterrors.WithStack(err)
+	}
+	// Get the AuthRealm Placement bits we need to help create a new Placement
+
+	r.Log.Info("Searching for AuthRealm in ownerRefs", "strategy", strategy.Name)
+	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
+	if err != nil {
+		return err
+	}
+
 	if authRealm.DeletionTimestamp != nil {
-		return reconcile.Result{}, nil
+		return nil
 	}
 	// get placement info from AuthRealm ownerRef
 
@@ -136,49 +165,49 @@ func (r *StrategyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	//Check if there is a predicate to add, if not nothing to do
 
 	placement := &clusterv1alpha1.Placement{}
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: authRealm.Spec.PlacementRef.Name, Namespace: req.Namespace}, placement); err != nil {
-		return reconcile.Result{}, err
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: authRealm.Spec.PlacementRef.Name, Namespace: strategy.Namespace}, placement); err != nil {
+		return err
 	}
 
 	//Get placementStrategy
-	placementStrategy, placementStrategyExists, err := r.getStrategyPlacement(instance, authRealm, placement)
+	placementStrategy, placementStrategyExists, err := r.getStrategyPlacement(strategy, authRealm, placement)
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
 	//Enrich placementStrategy
-	switch instance.Spec.Type {
+	switch strategy.Spec.Type {
 	case identitatemv1alpha1.BackplaneStrategyType:
-		if err := r.backplanePlacementStrategy(instance, authRealm, placement, placementStrategy); err != nil {
-			return reconcile.Result{}, err
+		if err := r.backplanePlacementStrategy(strategy, authRealm, placement, placementStrategy); err != nil {
+			return err
 		}
 	// case identitatemv1alpha1.GrcStrategyType:
 	// 	if err := r.grcPlacementStrategy(instance, authRealm, placement, placementStrategy); err != nil {
 	// 		return reconcile.Result{}, err
 	// 	}
 	default:
-		return reconcile.Result{}, fmt.Errorf("strategy type %s not supported", instance.Spec.Type)
+		return fmt.Errorf("strategy type %s not supported", strategy.Spec.Type)
 	}
 
 	//Create or update placementStrategy
 	switch placementStrategyExists {
 	case true:
 		if err := r.Client.Update(context.TODO(), placementStrategy); err != nil {
-			return reconcile.Result{}, err
+			return err
 		}
 	case false:
 		if err := r.Client.Create(context.Background(), placementStrategy); err != nil {
-			return reconcile.Result{}, err
+			return err
 		}
 	}
 
 	// update the Placement ref
-	instance.Spec.PlacementRef.Name = placementStrategy.Name
-	if err := r.Client.Update(context.TODO(), instance); err != nil {
-		return ctrl.Result{}, err
+	strategy.Spec.PlacementRef.Name = placementStrategy.Name
+	if err := r.Client.Update(context.TODO(), strategy); err != nil {
+		return err
 	}
 
-	return ctrl.Result{}, nil
+	return nil
 }
 
 func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.Strategy,
