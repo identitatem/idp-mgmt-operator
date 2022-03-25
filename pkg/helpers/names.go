@@ -93,7 +93,13 @@ func StrategyName(authRealm *identitatemv1alpha1.AuthRealm, t identitatemv1alpha
 
 func PlacementStrategyName(strategy *identitatemv1alpha1.Strategy,
 	authRealm *identitatemv1alpha1.AuthRealm) string {
-	return fmt.Sprintf("%s-%s", authRealm.Spec.PlacementRef.Name, strategy.Spec.Type)
+	return PlacementStrategyNameFromPlacementRefName(string(strategy.Spec.Type), authRealm.Spec.PlacementRef.Name)
+}
+
+func PlacementStrategyNameFromPlacementRefName(strategyType string,
+	placementRefName string) string {
+	return fmt.Sprintf("%s-%s", placementRefName, strategyType)
+
 }
 
 func IDPConfigLabel() string {

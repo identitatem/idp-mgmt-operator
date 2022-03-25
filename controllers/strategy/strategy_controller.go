@@ -23,7 +23,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
@@ -333,5 +335,31 @@ func (r *StrategyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&identitatemv1alpha1.Strategy{}).
 		Owns(&clusterv1alpha1.Placement{}).
+		//Watch placement and reconcile the strategy link to the placement
+		Watches(&source.Kind{Type: &clusterv1alpha1.Placement{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+			pl := o.(*clusterv1alpha1.Placement)
+			req := make([]reconcile.Request, 0)
+			strategies := &identitatemv1alpha1.StrategyList{}
+			if err := r.List(context.TODO(), strategies, client.InNamespace(pl.Namespace)); err != nil {
+				r.Log.Error(err, "Error while getting list")
+			}
+			for _, strategy := range strategies.Items {
+				r.Log.Info("Check if need to be reconcile",
+					"placementRefName", strategy.Spec.PlacementRef.Name,
+					"helpers.PlacementStrategyNameFromPlacementRefName(string(strategy.Spec.Type), pl.Name)", helpers.PlacementStrategyNameFromPlacementRefName(string(strategy.Spec.Type), pl.Name))
+				if strategy.Spec.PlacementRef.Name == helpers.PlacementStrategyNameFromPlacementRefName(string(strategy.Spec.Type), pl.Name) {
+					r.Log.Info("Add strategy to reconcile",
+						"name", strategy.Name,
+						"namespace", strategy.Namespace)
+					req = append(req, reconcile.Request{
+						NamespacedName: types.NamespacedName{
+							Name:      strategy.Name,
+							Namespace: strategy.Namespace,
+						},
+					})
+				}
+			}
+			return req
+		})).
 		Complete(r)
 }

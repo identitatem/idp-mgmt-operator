@@ -85,7 +85,7 @@ be added for certificate verification during creation.
 
 ## Setup GitHub OAuth
 
-Use GitHub as the OAuth provider.
+If you are going to use GitHub as the OAuth provider.
 
 1. On github.com, go to Settings > Developer Settings > OAuth Apps
    (The shortcut is https://github.com/settings/developers)
@@ -101,6 +101,31 @@ Use GitHub as the OAuth provider.
 5. Click `Register Application`
 
 NOTE: You will need to return to the GitHub OAuth a little bit later to correct the `Authorization callback URL`, once the value is generated for you.
+
+## Setup OpenID Connect (OIDC) Keycloak OAuth
+
+If you are going to use OpenID Connect as the OAuth provider and want to use Keycloak.  
+
+1. Use Operator Hub to install the **Keycloak** community operator to the `keycloak` namespace.
+
+1. Configure the following environment variables to define required keycloak Information
+```
+export KEYCLOAK_NAMESPACE=keycloak
+export OPENID_ROUTE_SUBDOMAIN=openid-subdomain
+```
+
+1. Generate and apply Keycloak YAML to configure a realm, a client and a user on Keycloak. **Ensure you are `oc login` to the hub
+cluster before you run the script!** Use the script in
+the `hack` directory:
+```
+cd hack
+./config-keycloak.sh
+```
+1. Save the output of the script.  It will provide you with information needed for the following environment variables used by the `generate-cr.sh` script to create an AuthRealm for OpenID and Keycloak:
+  - OPENID_CLIENT_ID
+  - OPENID_CLIENT_SECRET
+  - OPENID_ISSUER     
+
 
 ## Install the operator using one of two methods
 

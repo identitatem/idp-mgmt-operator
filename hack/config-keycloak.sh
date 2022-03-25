@@ -51,6 +51,11 @@ if [ "${OS}" == "darwin" ]; then
     BASE64="base64"
 fi
 
+KEYCLOAK_DIR="/tmp/keycloak"
+if [ ! -d "${KEYCLOAK_DIR}" ]; then
+  mkdir "${KEYCLOAK_DIR}"
+fi
+echo "Writing YAML files to directory ${KEYCLOAK_DIR}"
 
 # This only works for kubectl output that returns true or false
 wait_for_kubectl_true() {
@@ -92,18 +97,22 @@ wait_for_kubectl_true() {
 
 
 
-# Ensure keycloak operator is already installed and ready to use
-echo "Check to be sure keycloak operator is installed and ready to use..."
-# CMD="rollout status -w deploy/keycloak-operator -n ${KEYCLOAK_NAMESPACE}"
-# CMDOPTS=""
-# wait_for_kubectl_true "${CMD}" "${CMDOPTS}"
-
-kubectl wait --for=condition=available deploy/keycloak-operator --timeout 600s -n ${KEYCLOAK_NAMESPACE}
-
+# Ensure keycloak community operator OR Red Hat SSO keybloak is already installed and ready to use
+KEYCLOAK_DEPLOY=$(kubectl get deploy -n $KEYCLOAK_NAMESPACE --no-headers);
+if [[ "$KEYCLOAK_DEPLOY" == *"keycloak-operator"* ]]; then
+  echo "Check to be sure keycloak operator is installed and ready to use..."
+  kubectl wait --for=condition=available deploy/keycloak-operator --timeout 600s -n ${KEYCLOAK_NAMESPACE}
+elif [[ "$KEYCLOAK_DEPLOY" == *"rhsso-operator"* ]]; then
+  echo "Check to be sure RH SSO operator is installed and ready to use..."
+  kubectl wait --for=condition=available deploy/rhsso-operator --timeout 600s -n ${KEYCLOAK_NAMESPACE}
+else
+  echo "No Keycloak or Red Hat SSO found!"
+  exit 1
+fi
 
 echo "Create keycloak instance and wait for it to be ready (this will take several minutes)..."
 
-cat << EOF > keycloak.yaml
+cat << EOF > ${KEYCLOAK_DIR}/keycloak.yaml
 apiVersion: keycloak.org/v1alpha1
 kind: Keycloak
 metadata:
@@ -118,7 +127,7 @@ spec:
 
 EOF
 
-kubectl create -f keycloak.yaml
+kubectl create -f ${KEYCLOAK_DIR}/keycloak.yaml
 
 CMD="get keycloak/mykeycloak -o jsonpath={.status.ready}"
 CMDOPTS="-n ${KEYCLOAK_NAMESPACE}"
@@ -127,7 +136,7 @@ wait_for_kubectl_true "${CMD}" "${CMDOPTS}"
 
 echo "Create keycloak realm"
 
-cat << EOF > keycloak-realm.yaml
+cat << EOF > ${KEYCLOAK_DIR}/keycloak-realm.yaml
 apiVersion: keycloak.org/v1alpha1
 kind: KeycloakRealm
 metadata:
@@ -146,7 +155,7 @@ spec:
 
 EOF
 
-kubectl create -f keycloak-realm.yaml
+kubectl create -f ${KEYCLOAK_DIR}/keycloak-realm.yaml
 
 CMD="get keycloakrealm/myrealm -o jsonpath={.status.ready}"
 CMDOPTS="-n ${KEYCLOAK_NAMESPACE}"
@@ -166,12 +175,13 @@ echo "Keycloak URLs:"
 echo "Keycloak:                 $KEYCLOAK_URL"
 echo "Keycloak Admin Console:   $KEYCLOAK_URL/admin"
 echo "Keycloak Account Console: $KEYCLOAK_URL/realms/myrealm/account"
+echo "Keycloak OpenID Configuration: $KEYCLOAK_URL/realms/myrealm/.well-known/openid-configuration"
 echo ""
 
 
 echo "Create a Keycloak user"
 
-cat << EOF > keycloak-user.yaml
+cat << EOF > ${KEYCLOAK_DIR}/keycloak-user.yaml
 apiVersion: keycloak.org/v1alpha1
 kind: KeycloakUser
 metadata:
@@ -195,7 +205,7 @@ spec:
 
 EOF
 
-kubectl create -f keycloak-user.yaml
+kubectl create -f ${KEYCLOAK_DIR}/keycloak-user.yaml
 
 CMD="get keycloakuser/myuser -o jsonpath={.spec.user.enabled}"
 CMDOPTS="-n ${KEYCLOAK_NAMESPACE}"
@@ -211,7 +221,7 @@ echo $USER_CREDS
 
 echo "Create Keycloak client for OpenID connect"
 
-cat << EOF > keycloak-client.yaml
+cat << EOF > ${KEYCLOAK_DIR}/keycloak-client.yaml
 apiVersion: keycloak.org/v1alpha1
 kind: KeycloakClient
 metadata:
@@ -235,7 +245,7 @@ spec:
 
 EOF
 
-kubectl create -f keycloak-client.yaml
+kubectl create -f ${KEYCLOAK_DIR}/keycloak-client.yaml
 
 CMD="get keycloakclient/myclient -o jsonpath={.status.ready}"
 CMDOPTS="-n ${KEYCLOAK_NAMESPACE}"
@@ -260,7 +270,7 @@ echo "Done"
 exit 0
 
 # To remove this keycloak configuration you can run:
-# oc delete -f ../keycloak-user.yaml
-# oc delete -f ../keycloak-client.yaml
-# oc delete -f ../keycloak-realm.yaml
-# oc delete -f ../keycloak.yaml
+# oc delete -f ${KEYCLOAK_DIR}/keycloak-user.yaml
+# oc delete -f ${KEYCLOAK_DIR}/keycloak-client.yaml
+# oc delete -f ${KEYCLOAK_DIR}/keycloak-realm.yaml
+# oc delete -f ${KEYCLOAK_DIR}/keycloak.yaml
