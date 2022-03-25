@@ -498,8 +498,8 @@ github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/identitatem/dex-operator v0.0.4-0.20220315143428-0926431039aa h1:PaRvSE0H4vvzbutIbtdInfL8h1IK17I/4t72mXCKOOQ=
 github.com/identitatem/dex-operator v0.0.4-0.20220315143428-0926431039aa/go.mod h1:uAcCS2K+XkfB2gJjC5LOPJBvnWAAQumRbtXJ2bpP8is=
-github.com/identitatem/idp-client-api v0.0.0-20220304183352-0981ca52c04b h1:/y8cfpkDa+b3kFLBG+l5qTtLPxKTbIpDsyKc4K4wvFU=
-github.com/identitatem/idp-client-api v0.0.0-20220304183352-0981ca52c04b/go.mod h1:hwgJ1ty9E3Z+Sm2+C4hAu/7IDl6rCoLVJgIDiU56Ej4=
+github.com/identitatem/idp-client-api v0.0.0-20220324192344-f5b70ad98072 h1:DBb9fE/iV2Kn9+5XuOSeZJvAdyL4gW2wvOjc5rpCN9M=
+github.com/identitatem/idp-client-api v0.0.0-20220324192344-f5b70ad98072/go.mod h1:SrcqtqObdkb4KYOhqTy786bCxJtBjKpJhjdDDz4veRU=
 github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
 github.com/imdario/mergo v0.3.7/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
 github.com/imdario/mergo v0.3.9/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=

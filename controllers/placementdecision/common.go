@@ -53,6 +53,7 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 }
 
 func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv1alpha1.AuthRealm,
+	strategy *identitatemv1alpha1.Strategy,
 	placementDecision clusterv1alpha1.PlacementDecision,
 	decision clusterv1alpha1.ClusterDecision,
 	dexClient *dexoperatorv1alpha1.DexClient) error {
@@ -99,6 +100,11 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 		Name:      authRealm.Name,
 		Namespace: authRealm.Namespace,
 	}
+	clusterOAuth.Spec.StrategyReference = identitatemv1alpha1.RelatedObjectReference{
+		Kind:      "Strategy",
+		Name:      strategy.Name,
+		Namespace: strategy.Namespace,
+	}
 	clusterOAuth.Spec.DexClientReference = identitatemv1alpha1.RelatedObjectReference{
 		Kind:      "DexClient",
 		Name:      dexClient.Name,
@@ -144,17 +150,6 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 				Issuer: fmt.Sprintf("%s://%s.%s", uScheme, authRealm.Spec.RouteSubDomain, host),
 			},
 		},
-	}
-
-	clusterOAuth.Spec.AuthRealmReference = identitatemv1alpha1.RelatedObjectReference{
-		Kind:      "AuthRealm",
-		Name:      authRealm.Name,
-		Namespace: authRealm.Namespace,
-	}
-	clusterOAuth.Spec.StrategyReference = identitatemv1alpha1.RelatedObjectReference{
-		Kind:      "Strategy",
-		Name:      authRealm.Name,
-		Namespace: authRealm.Namespace,
 	}
 
 	switch clusterOAuthExists {

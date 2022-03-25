@@ -235,7 +235,6 @@ var _ = Describe("Process Strategy backplane: ", func() {
 			placement, err = clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).
 				Create(context.TODO(), placement, metav1.CreateOptions{})
 			Expect(err).To(BeNil())
-
 		})
 		var authRealm *identitatemv1alpha1.AuthRealm
 		By("creating a AuthRealm CR", func() {
@@ -270,6 +269,14 @@ var _ = Describe("Process Strategy backplane: ", func() {
 			}
 			//DV reassign  to authRealm to get the extra info that kube set (ie:uuid as needed to set ownerref)
 			authRealm, err = clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+			patch := client.MergeFrom(authRealm.DeepCopy())
+			authRealm.Status.Strategies = []identitatemv1alpha1.AuthRealmStrategyStatus{
+				{
+					Name: "my-authrealm-backplane",
+				},
+			}
+			err = k8sClient.Status().Patch(context.TODO(), authRealm, patch)
 			Expect(err).To(BeNil())
 		})
 		By(fmt.Sprintf("creation of Dex server namespace %s", AuthRealmName), func() {
@@ -314,7 +321,17 @@ var _ = Describe("Process Strategy backplane: ", func() {
 			placementStrategy, err = clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).
 				Create(context.TODO(), placementStrategy, metav1.CreateOptions{})
 			Expect(err).To(BeNil())
-
+			placementStrategy.Status.Conditions = make([]metav1.Condition, 0)
+			placementStrategy.Status.Conditions = append(placementStrategy.Status.Conditions, metav1.Condition{
+				Message:            "All cluster decisions scheduled",
+				Reason:             "AllDecisionsScheduled",
+				Type:               "PlacementSatisfied",
+				Status:             metav1.ConditionTrue,
+				LastTransitionTime: metav1.Now(),
+			})
+			placementStrategy.Status.NumberOfSelectedClusters = 1
+			placementStrategy, err = clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).UpdateStatus(context.TODO(), placementStrategy, metav1.UpdateOptions{})
+			Expect(err).To(BeNil())
 		})
 		By("creation cluster namespace", func() {
 			ns := &corev1.Namespace{

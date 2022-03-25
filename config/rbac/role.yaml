@@ -227,6 +227,15 @@ rules:
 - apiGroups:
   - identityconfig.identitatem.io
   resources:
+  - authrealms
+  - strategies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - identityconfig.identitatem.io
+  resources:
   - authrealms/finalizers
   verbs:
   - create
@@ -238,6 +247,7 @@ rules:
   resources:
   - authrealms/status
   verbs:
+  - patch
   - update
 - apiGroups:
   - identityconfig.identitatem.io
@@ -258,6 +268,13 @@ rules:
   verbs:
   - create
   - delete
+  - patch
+  - update
+- apiGroups:
+  - identityconfig.identitatem.io
+  resources:
+  - clusteroauths/status
+  verbs:
   - patch
   - update
 - apiGroups:
@@ -291,6 +308,12 @@ rules:
   - delete
   - patch
   - update
+- apiGroups:
+  - identityconfig.identitatem.io
+  resources:
+  - strategies/status
+  verbs:
+  - patch
 - apiGroups:
   - multicluster.openshift.io
   resources:

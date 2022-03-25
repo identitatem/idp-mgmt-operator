@@ -31,10 +31,10 @@ const (
 	dexServerImageEnvName   string = "RELATED_IMAGE_DEX_SERVER"
 )
 
-func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthRealm) error {
+func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthRealm) (*metav1.Condition, error) {
 	r.Log.Info("syncDexCRs", "AuthRealm.Name", authRealm.Name, "AuthRealm.Namespace", authRealm.Namespace)
 	if len(authRealm.Spec.IdentityProviders) < 1 {
-		return giterrors.WithStack(
+		return nil, giterrors.WithStack(
 			fmt.Errorf("the identityproviders array of the authrealm %s can have one and only one element",
 				authRealm.Name))
 	}
@@ -45,16 +45,13 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 			"name", "dex-operator",
 			"namespace", helpers.DexOperatorNamespace(),
 			"error", err.Error())
-		cond := metav1.Condition{
+		cond := &metav1.Condition{
 			Type:    identitatemv1alpha1.AuthRealmApplied,
 			Status:  metav1.ConditionFalse,
 			Reason:  "AuthRealmAppliedFailed",
 			Message: fmt.Sprintf("failed to install installDexOperator error: %s", err.Error()),
 		}
-		if err := helpers.UpdateAuthRealmStatusConditions(r.Client, authRealm, cond); err != nil {
-			return err
-		}
-		return err
+		return cond, err
 	}
 	//Create DexServer CR
 	if err := r.createDexServer(authRealm); err != nil {
@@ -62,7 +59,7 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 			"name", helpers.DexServerName(),
 			"namespace", helpers.DexServerNamespace(authRealm),
 			"error", err.Error())
-		cond := metav1.Condition{
+		cond := &metav1.Condition{
 			Type:   identitatemv1alpha1.AuthRealmApplied,
 			Status: metav1.ConditionFalse,
 			Reason: "AuthRealmAppliedFailed",
@@ -71,12 +68,9 @@ func (r *AuthRealmReconciler) syncDexCRs(authRealm *identitatemv1alpha1.AuthReal
 				helpers.DexServerNamespace(authRealm),
 				err.Error()),
 		}
-		if err := helpers.UpdateAuthRealmStatusConditions(r.Client, authRealm, cond); err != nil {
-			return err
-		}
-		return err
+		return cond, err
 	}
-	return nil
+	return nil, nil
 }
 
 func (r *AuthRealmReconciler) installDexOperator(authRealm *identitatemv1alpha1.AuthRealm) error {

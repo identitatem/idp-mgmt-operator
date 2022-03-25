@@ -25,13 +25,14 @@ import (
 )
 
 func (r *PlacementDecisionReconciler) syncDexClients(authRealm *identitatemv1alpha1.AuthRealm,
+	strategy *identitatemv1alpha1.Strategy,
 	placement *clusterv1alpha1.Placement) error {
 
 	if err := r.deleteObsoleteConfigs(authRealm, placement); err != nil {
 		return err
 	}
 
-	if err := r.createConfigs(authRealm, placement); err != nil {
+	if err := r.createConfigs(authRealm, strategy, placement); err != nil {
 		return err
 	}
 
@@ -62,6 +63,7 @@ func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authRealm *identitat
 }
 
 func (r *PlacementDecisionReconciler) createConfigs(authRealm *identitatemv1alpha1.AuthRealm,
+	strategy *identitatemv1alpha1.Strategy,
 	placement *clusterv1alpha1.Placement) error {
 	placementDecisions := &clusterv1alpha1.PlacementDecisionList{}
 	if err := r.Client.List(context.TODO(), placementDecisions, client.MatchingLabels{
@@ -83,11 +85,7 @@ func (r *PlacementDecisionReconciler) createConfigs(authRealm *identitatemv1alph
 				return err
 			}
 			//Create ClusterOAuth
-<<<<<<< HEAD
-			if err := r.createClusterOAuth(authRealm, placementDecision, decision, clientSecret); err != nil {
-=======
-			if err = r.createClusterOAuth(authRealm, decision, dexClient); err != nil {
->>>>>>> d2545bf04bd25f04d30c53a121728d73ca399406
+			if err := r.createClusterOAuth(authRealm, strategy, placementDecision, decision, dexClient); err != nil {
 				return err
 			}
 		}

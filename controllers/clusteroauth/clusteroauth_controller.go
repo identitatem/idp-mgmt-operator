@@ -71,8 +71,9 @@ type ClusterOAuthReconciler struct {
 
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={clusteroauths},verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={clusteroauths/finalizers},verbs=create;delete;patch;update
-//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms},verbs=get;list;watch;update
-//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={strategies},verbs=get;list;watch
+//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={clusteroauths/status},verbs=update;patch
+//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms,strategies},verbs=get;list;watch
+//+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms/status},verbs=update;patch
 
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources={manifestworks},verbs=get;list;watch;create;update;delete
 
@@ -132,22 +133,18 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return reconcile.Result{}, nil
 	}
 
-	controllerutil.AddFinalizer(instance, helpers.AuthrealmFinalizer)
+	if result, err := r.processClusterOAuthUpdate(instance); err != nil {
+		cond := metav1.Condition{
+			Type:    identitatemv1alpha1.ClusterOAuthApplied,
+			Status:  metav1.ConditionFalse,
+			Reason:  "ClusterOAuthAppliedFailed",
+			Message: fmt.Sprintf("ClusterOAuth %s failed to save original OAuth for cluster %s Error:, %s", instance.Name, instance.Namespace, err.Error()),
+		}
 
-	r.Log.Info("Process", "Name", instance.GetName(), "Namespace", instance.GetNamespace())
-
-	if err := r.Client.Update(context.TODO(), instance); err != nil {
-		return ctrl.Result{}, giterrors.WithStack(err)
-	}
-
-	r.Log.Info("generateManagedClusterViewForOAuth for", "name", instance.Name, "namespace", instance.Namespace)
-	if result, err := r.generateManagedClusterViewForOAuth(instance); err != nil {
+		if err := r.updateClusterOAuthStatusConditions(instance, cond); err != nil {
+			return reconcile.Result{}, err
+		}
 		return result, err
-	}
-
-	r.Log.Info("generateManifestWork for", "name", instance.Name, "namespace", instance.Namespace)
-	if err := r.generateManifestWork(instance); err != nil {
-		return ctrl.Result{}, err
 	}
 
 	cond := metav1.Condition{
@@ -157,7 +154,30 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		Message: "ClusterOAuth successfully applied",
 	}
 
-	if err := helpers.UpdateClusterOAuthStatusConditions(r.Client, instance, cond); err != nil {
+	if err := r.updateClusterOAuthStatusConditions(instance, cond); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return reconcile.Result{}, nil
+}
+
+func (r *ClusterOAuthReconciler) processClusterOAuthUpdate(clusterOAuth *identitatemv1alpha1.ClusterOAuth) (reconcile.Result, error) {
+
+	controllerutil.AddFinalizer(clusterOAuth, helpers.AuthrealmFinalizer)
+
+	r.Log.Info("Process", "Name", clusterOAuth.GetName(), "Namespace", clusterOAuth.GetNamespace())
+
+	if err := r.Client.Update(context.TODO(), clusterOAuth); err != nil {
+		return reconcile.Result{}, giterrors.WithStack(err)
+	}
+
+	r.Log.Info("generateManagedClusterViewForOAuth for", "name", clusterOAuth.Name, "namespace", clusterOAuth.Namespace)
+	if result, err := r.generateManagedClusterViewForOAuth(clusterOAuth); err != nil {
+		return result, err
+	}
+
+	r.Log.Info("generateManifestWork for", "name", clusterOAuth.Name, "namespace", clusterOAuth.Namespace)
+	if err := r.generateManifestWork(clusterOAuth.Namespace); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -234,13 +254,13 @@ func (r *ClusterOAuthReconciler) saveManagedClusterViewForOAuthResult(clusterOAu
 	return ctrl.Result{}, nil
 }
 
-func (r *ClusterOAuthReconciler) generateManifestWork(clusterOAuth *identitatemv1alpha1.ClusterOAuth) (err error) {
+func (r *ClusterOAuthReconciler) generateManifestWork(clusterName string) (err error) {
 	// Create empty manifest work
-	r.Log.Info("prepare manifestwork", "name", helpers.ManifestWorkOAuthName(), "namespace", clusterOAuth.GetNamespace())
+	r.Log.Info("prepare manifestwork", "name", helpers.ManifestWorkOAuthName(), "namespace", clusterName)
 	manifestWorkOAuth := &manifestworkv1.ManifestWork{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      helpers.ManifestWorkOAuthName(),
-			Namespace: clusterOAuth.GetNamespace(),
+			Namespace: clusterName,
 			Annotations: map[string]string{
 				posthookAnnotation: "60",
 			},
@@ -288,8 +308,8 @@ func (r *ClusterOAuthReconciler) generateManifestWork(clusterOAuth *identitatemv
 		Spec: openshiftconfigv1.OAuthSpec{},
 	}
 
-	r.Log.Info("search the clusterOAuths in namepsace", "namespace", clusterOAuth.GetNamespace())
-	if err := r.List(context.TODO(), clusterOAuths, &client.ListOptions{Namespace: clusterOAuth.GetNamespace()}); err != nil {
+	r.Log.Info("search the clusterOAuths in namepsace", "namespace", clusterName)
+	if err := r.List(context.TODO(), clusterOAuths, &client.ListOptions{Namespace: clusterName}); err != nil {
 		// Error reading the object - requeue the request.
 		return giterrors.WithStack(err)
 	}
@@ -416,6 +436,9 @@ func (r *ClusterOAuthReconciler) CreateOrUpdateManifestWork(
 // unmanagedCluster deletes a manifestwork
 func (r *ClusterOAuthReconciler) unmanagedCluster(clusterOAuth *identitatemv1alpha1.ClusterOAuth) (result ctrl.Result, err error) {
 	r.Log.Info("deleteManifestWork", "clusterOAuth", clusterOAuth)
+	if err := r.deleteAuthRealmStatusClusterOAuthConditions(clusterOAuth); err != nil {
+		return ctrl.Result{}, err
+	}
 	clusterOAuths := &identitatemv1alpha1.ClusterOAuthList{}
 	if err := r.Client.List(context.TODO(), clusterOAuths, client.InNamespace(clusterOAuth.Namespace)); err != nil {
 		return ctrl.Result{}, err
@@ -440,7 +463,18 @@ func (r *ClusterOAuthReconciler) unmanagedCluster(clusterOAuth *identitatemv1alp
 		}
 		return ctrl.Result{}, nil
 	}
-	if err := r.generateManifestWork(clusterOAuth); err != nil {
+	if err := r.generateManifestWork(clusterOAuth.Namespace); err != nil {
+		cond := metav1.Condition{
+			Type:   identitatemv1alpha1.ClusterOAuthApplied,
+			Status: metav1.ConditionFalse,
+			Reason: "CreateManifestWorkFailed",
+			Message: fmt.Sprintf("ClusterOAuth %s failed to create ManifestWork for cluster %s Error:, %s",
+				clusterOAuth.Name, clusterOAuth.Namespace, err.Error()),
+		}
+
+		if err := r.updateClusterOAuthStatusConditions(clusterOAuth, cond); err != nil {
+			return ctrl.Result{}, err
+		}
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil

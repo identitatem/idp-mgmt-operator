@@ -12,15 +12,19 @@ import (
 	// corev1 "k8s.io/api/core/v1"
 
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -112,49 +116,61 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, nil
 	}
 
+	if err := r.processPlacementDecisionUpdate(instance); err != nil {
+		return reconcile.Result{}, err
+	}
+	return reconcile.Result{}, nil
+
+}
+
+func (r *PlacementDecisionReconciler) processPlacementDecisionUpdate(placement *clusterv1alpha1.Placement) error {
 	//Add finalizer
-	r.Log.Info("add finalizer", "Finalizer:", helpers.AuthrealmFinalizer, "name", instance.Name, "namespace", instance.Namespace)
-	controllerutil.AddFinalizer(instance, helpers.AuthrealmFinalizer)
-	if err := r.Client.Update(context.TODO(), instance); err != nil {
-		return reconcile.Result{}, giterrors.WithStack(err)
+	r.Log.Info("add finalizer", "Finalizer:", helpers.AuthrealmFinalizer, "name", placement.Name, "namespace", placement.Namespace)
+	controllerutil.AddFinalizer(placement, helpers.AuthrealmFinalizer)
+	if err := r.Client.Update(context.TODO(), placement); err != nil {
+		return giterrors.WithStack(err)
 	}
 
 	//Check if the placementDecision is linked to a strategy
-	ok, err := r.isLinkedToStrategy(instance)
+	ok, err := r.isLinkedToStrategy(placement)
 	if !ok {
-		return reconcile.Result{}, nil
+		return nil
 	}
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
-	strategies, err := r.GetStrategiesFromPlacement(instance)
+	strategies, err := r.GetStrategiesFromPlacement(placement)
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
-	for _, strategy := range strategies.Items {
-		authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, &strategy)
+	for i, strategy := range strategies.Items {
+		authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, &strategies.Items[i])
 		if err != nil {
-			return reconcile.Result{}, err
+			return err
 		}
 
-		if err := r.processPlacementDecision(authRealm, instance); err != nil {
-			return reconcile.Result{}, err
+		if err := r.processPlacementDecision(authRealm, &strategy, placement); err != nil {
+			return err
+		}
+		if err := r.updateAuthRealmStatusPlacementStatus(&strategies.Items[i], placement); err != nil {
+			return err
 		}
 	}
-	if err := r.processPlacementDecisionDeletion(instance, true); err != nil {
-		return reconcile.Result{}, err
+	if err := r.processPlacementDecisionDeletion(placement, true); err != nil {
+		return err
 	}
-	return ctrl.Result{}, nil
+	return nil
 }
 
 //processPlacementDecision generates resources for the Backplane strategy
 func (r *PlacementDecisionReconciler) processPlacementDecision(
 	authRealm *identitatemv1alpha1.AuthRealm,
+	strategy *identitatemv1alpha1.Strategy,
 	placement *clusterv1alpha1.Placement) error {
 	r.Log.Info("run backplane strategy")
-	if err := r.syncDexClients(authRealm, placement); err != nil {
+	if err := r.syncDexClients(authRealm, strategy, placement); err != nil {
 		return err
 	}
 	return nil
@@ -243,6 +259,21 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	authRealmPredicate := predicate.Predicate(predicate.Funcs{
+		GenericFunc: func(e event.GenericEvent) bool { return false },
+		DeleteFunc:  func(e event.DeleteEvent) bool { return true },
+		CreateFunc:  func(e event.CreateEvent) bool { return true },
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			authRealmOld := e.ObjectOld.(*identitatemv1alpha1.AuthRealm)
+			authRealmNew := e.ObjectNew.(*identitatemv1alpha1.AuthRealm)
+			// only handle the Finalizer and Spec changes
+			return !equality.Semantic.DeepEqual(e.ObjectOld.GetFinalizers(), e.ObjectNew.GetFinalizers()) ||
+				!equality.Semantic.DeepEqual(authRealmOld.Spec, authRealmNew.Spec) ||
+				authRealmOld.DeletionTimestamp != authRealmNew.DeletionTimestamp
+
+		},
+	})
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&clusterv1alpha1.Placement{}).
 		Watches(&source.Kind{Type: &identitatemv1alpha1.AuthRealm{}},
@@ -276,7 +307,8 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 					}
 				}
 				return req
-			})).
+			}),
+			builder.WithPredicates(authRealmPredicate)).
 		Watches(&source.Kind{Type: &dexoperatorv1alpha1.DexClient{}},
 			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
 				dexClient := o.(*dexoperatorv1alpha1.DexClient)

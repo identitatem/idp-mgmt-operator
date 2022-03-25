@@ -6,7 +6,7 @@ require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v1.2.0
 	github.com/identitatem/dex-operator v0.0.4-0.20220315143428-0926431039aa
-	github.com/identitatem/idp-client-api v0.0.0-20220304183352-0981ca52c04b
+	github.com/identitatem/idp-client-api v0.0.0-20220324192344-f5b70ad98072
 	github.com/onsi/ginkgo/v2 v2.1.1
 	github.com/onsi/gomega v1.18.0
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
@@ -157,5 +157,3 @@ replace (
 	k8s.io/client-go => k8s.io/client-go v0.23.3
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client => sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.27
 )
-
-replace github.com/identitatem/idp-client-api => /Users/dvernier/go/src/github.com/identitatem/idp-client-api

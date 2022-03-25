@@ -102,21 +102,48 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return reconcile.Result{}, nil
 	}
 
+	if cond, err := r.processAuthRealmUpdate(instance); err != nil {
+		if cond == nil {
+			cond = &metav1.Condition{
+				Type:    identitatemv1alpha1.AuthRealmApplied,
+				Status:  metav1.ConditionFalse,
+				Reason:  "AuthRealmAppliedFailed",
+				Message: err.Error(),
+			}
+		}
+		if err := r.updateAuthRealmStatusConditions(instance, *cond); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, err
+	}
+	cond := &metav1.Condition{
+		Type:    identitatemv1alpha1.AuthRealmApplied,
+		Status:  metav1.ConditionTrue,
+		Reason:  "AuthRealmAppliedSucceeded",
+		Message: "AuthRealm successfully applied",
+	}
+	if err := r.updateAuthRealmStatusConditions(instance, *cond); err != nil {
+		return reconcile.Result{}, err
+	}
+	return reconcile.Result{}, nil
+}
+
+func (r *AuthRealmReconciler) processAuthRealmUpdate(authRealm *identitatemv1alpha1.AuthRealm) (*metav1.Condition, error) {
 	//Add finalizer, it will be removed once the ns is deleted
-	controllerutil.AddFinalizer(instance, helpers.AuthrealmFinalizer)
+	controllerutil.AddFinalizer(authRealm, helpers.AuthrealmFinalizer)
 
-	r.Log.Info("Process", "Name", instance.GetName(), "Namespace", instance.GetNamespace())
+	r.Log.Info("Process", "Name", authRealm.GetName(), "Namespace", authRealm.GetNamespace())
 
-	if err := r.Client.Update(context.TODO(), instance); err != nil {
-		return ctrl.Result{}, giterrors.WithStack(err)
+	if err := r.Client.Update(context.TODO(), authRealm); err != nil {
+		return nil, giterrors.WithStack(err)
 	}
 
 	//Synchronize Dex CR
 	switch {
-	case instance.Spec.Type == identitatemv1alpha1.AuthProxyDex ||
-		instance.Spec.Type == "":
-		if err := r.syncDexCRs(instance); err != nil {
-			return ctrl.Result{}, err
+	case authRealm.Spec.Type == identitatemv1alpha1.AuthProxyDex ||
+		authRealm.Spec.Type == "":
+		if cond, err := r.syncDexCRs(authRealm); err != nil {
+			return cond, err
 		}
 		// case instance.Spec.Type == identitatemv1alpha1.AuthProxyRHSSO:
 		// 	if err := r.syncRHSSOCRs(instance); err != nil {
@@ -130,42 +157,30 @@ func (r *AuthRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// }
 
 	//Create Backplane strategy
-	if err := r.createStrategy(identitatemv1alpha1.BackplaneStrategyType, instance); err != nil {
+	if err := r.createStrategy(identitatemv1alpha1.BackplaneStrategyType, authRealm); err != nil {
 		r.Log.Info("Update status create strategy failure",
 			"type", identitatemv1alpha1.BackplaneStrategyType,
-			"name", helpers.StrategyName(instance, identitatemv1alpha1.BackplaneStrategyType),
-			"namespace", instance.Namespace,
+			"name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType),
+			"namespace", authRealm.Namespace,
 			"error", err.Error())
-		cond := metav1.Condition{
+		cond := &metav1.Condition{
 			Type:   identitatemv1alpha1.AuthRealmApplied,
 			Status: metav1.ConditionFalse,
 			Reason: "AuthRealmAppliedFailed",
 			Message: fmt.Sprintf("failed to create strategy type: %s name: %s namespace: %s error: %s",
 				identitatemv1alpha1.BackplaneStrategyType,
-				helpers.StrategyName(instance, identitatemv1alpha1.BackplaneStrategyType),
-				instance.Namespace,
+				helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType),
+				authRealm.Namespace,
 				err.Error()),
 		}
-		if err := helpers.UpdateAuthRealmStatusConditions(r.Client, instance, cond); err != nil {
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, err
+		return cond, err
 	}
 
 	r.Log.Info("Update status Authrealm applied Succeeded",
-		"name", instance.Name,
-		"namespace", instance.Namespace)
-	cond := metav1.Condition{
-		Type:    identitatemv1alpha1.AuthRealmApplied,
-		Status:  metav1.ConditionTrue,
-		Reason:  "AuthRealmAppliedSucceeded",
-		Message: "AuthRealm successfully applied",
-	}
-	if err := helpers.UpdateAuthRealmStatusConditions(r.Client, instance, cond); err != nil {
-		return ctrl.Result{}, err
-	}
+		"name", authRealm.Name,
+		"namespace", authRealm.Namespace)
 
-	return ctrl.Result{}, nil
+	return nil, nil
 }
 
 func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {

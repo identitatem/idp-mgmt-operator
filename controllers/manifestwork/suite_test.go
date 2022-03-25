@@ -1,10 +1,9 @@
 // Copyright Red Hat
 
-package clusteroauth
+package manifestwork
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -17,7 +16,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -35,7 +33,6 @@ import (
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	viewv1beta1 "github.com/stolostron/multicloud-operators-foundation/pkg/apis/view/v1beta1"
-	clientsetcluster "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	clientsetwork "open-cluster-management.io/api/client/work/clientset/versioned"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
@@ -48,8 +45,6 @@ import (
 
 var cfg *rest.Config
 var clientSetMgmt *idpclientset.Clientset
-var clientSetStrategy *idpclientset.Clientset
-var clientSetCluster *clientsetcluster.Clientset
 var clientSetWork *clientsetwork.Clientset
 var k8sClient client.Client
 var testEnv *envtest.Environment
@@ -75,15 +70,12 @@ var _ = BeforeSuite(func() {
 	Expect(err).Should(BeNil())
 	authRealmCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
 	Expect(err).Should(BeNil())
-	strategyCRD, err := getCRD(readerIDP, "crd/bases/identityconfig.identitatem.io_strategies.yaml")
-	Expect(err).Should(BeNil())
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		CRDs: []*apiextensionsv1.CustomResourceDefinition{
 			clusterOAuthCRD,
 			authRealmCRD,
-			strategyCRD,
 		},
 		CRDDirectoryPaths: []string{
 			//DV added this line and copyed the authrealms CRD
@@ -123,14 +115,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(clientSetMgmt).ToNot(BeNil())
 
-	clientSetStrategy, err = idpclientset.NewForConfig(cfg)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(clientSetStrategy).ToNot(BeNil())
-
-	clientSetCluster, err = clientsetcluster.NewForConfig(cfg)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(clientSetCluster).ToNot(BeNil())
-
 	clientSetWork, err = clientsetwork.NewForConfig(cfg)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(clientSetWork).ToNot(BeNil())
@@ -160,17 +144,11 @@ var _ = AfterSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 })
 
-var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
+var _ = Describe("Process manifestwork: ", func() {
 	AuthRealmName := "my-authrealm"
 	AuthRealmNamespace := "my-authrealm-ns"
-	AuthRealmName2 := "my-authrealm" + "-2"
 	StrategyName := AuthRealmName + "-backplane"
-	//ClusterOAuthName1 := StrategyName + "-1"
-	//ClusterOAuthName2 := StrategyName + "-2"
 	ClusterName := "my-cluster"
-	//MyIDPName1 := "my-idp" + "-1"
-	// MyIDPName2 := "my-idp" + "-2"
-	// MyIDPName3 := "my-idp" + "-3"
 
 	It("process a ClusterOAuth CR", func() {
 		By(fmt.Sprintf("creation of authrealm namespace %s", ClusterName), func() {
@@ -230,7 +208,12 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 			patch := client.MergeFrom(authRealm.DeepCopy())
 			authRealm.Status.Strategies = []identitatemv1alpha1.AuthRealmStrategyStatus{
 				{
-					Name: "my-authrealm-backplane",
+					Name: StrategyName,
+					Clusters: []identitatemv1alpha1.AuthRealmClusterStatus{
+						{
+							Name: ClusterName,
+						},
+					},
 				},
 			}
 			err = k8sClient.Status().Patch(context.TODO(), authRealm, patch)
@@ -288,183 +271,58 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 			Expect(err).To(BeNil())
 		})
 
-		By("Calling reconcile", func() {
-			r := &ClusterOAuthReconciler{
-				Client:        k8sClient,
-				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
-				DynamicClient: dynamic.NewForConfigOrDie(cfg),
-				Log:           logf.Log,
-				Scheme:        scheme.Scheme,
-			}
-			req := ctrl.Request{}
-			req.Name = AuthRealmName
-			req.Namespace = ClusterName
-
-			_, err := r.Reconcile(context.TODO(), req)
-			//Not nil because need to save OAuth
-			Expect(err).ToNot(BeNil())
-		})
-
-		mcv := &viewv1beta1.ManagedClusterView{}
-		By("Checking managedclusterview", func() {
-			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManagedClusterViewOAuthName(), Namespace: ClusterName}, mcv)
-			Expect(err).To(BeNil())
-		})
-
-		By("Calling reconcile after managedclusterview generated", func() {
-			r := &ClusterOAuthReconciler{
-				Client:        k8sClient,
-				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
-				DynamicClient: dynamic.NewForConfigOrDie(cfg),
-				Log:           logf.Log,
-				Scheme:        scheme.Scheme,
-			}
-			req := ctrl.Request{}
-			req.Name = AuthRealmName
-			req.Namespace = ClusterName
-			_, err := r.Reconcile(context.TODO(), req)
-			//Not nil because waiting for the managedclusterview status.result
-			Expect(err).ToNot(BeNil())
-		})
-
-		By("Adding a result in the managedclusterview", func() {
-			OAuth := openshiftconfigv1.OAuth{
+		By("Creating a manifestwork idp-oauth", func() {
+			mw := &workv1.ManifestWork{
 				TypeMeta: metav1.TypeMeta{
-					APIVersion: "config.openshift.io/v1",
-					Kind:       "OAuth",
+					APIVersion: workv1.SchemeGroupVersion.String(),
+					Kind:       "ManifestWork",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "cluster",
+					Name:      helpers.ManifestWorkOAuthName(),
 					Namespace: ClusterName,
 				},
+				Spec: workv1.ManifestWorkSpec{},
 			}
-			data, err := json.Marshal(OAuth)
+			_, err := clientSetWork.WorkV1().ManifestWorks(ClusterName).Create(context.TODO(), mw, metav1.CreateOptions{})
 			Expect(err).To(BeNil())
-			mcv.Status = viewv1beta1.ViewStatus{
-				Result: runtime.RawExtension{
-					Raw: data,
+			patch := client.MergeFrom(mw.DeepCopy())
+			mw.Status.Conditions = []metav1.Condition{
+				{
+					LastTransitionTime: metav1.Now(),
+					Type:               "test-type-manifestwork",
+					Status:             metav1.ConditionTrue,
+					Reason:             "TestReasonManifestwork",
+					Message:            "test-message-manifestwork",
 				},
 			}
-			err = k8sClient.Status().Update(context.TODO(), mcv)
-			Expect(err).To(BeNil())
-		})
-
-		By("Calling reconcile after status added", func() {
-			r := &ClusterOAuthReconciler{
-				Client:        k8sClient,
-				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
-				DynamicClient: dynamic.NewForConfigOrDie(cfg),
-				Log:           logf.Log,
-				Scheme:        scheme.Scheme,
-			}
-			req := ctrl.Request{}
-			req.Name = AuthRealmName
-			req.Namespace = ClusterName
-			_, err := r.Reconcile(context.TODO(), req)
-			Expect(err).To(BeNil())
-		})
-
-		By("Checking manifestwork", func() {
-			mw := &workv1.ManifestWork{}
-			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManifestWorkOAuthName(), Namespace: ClusterName}, mw)
-			Expect(err).To(BeNil())
-			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(3))
-		})
-
-		By("Calling reconcile 2nd time", func() {
-			r := &ClusterOAuthReconciler{
-				Client:        k8sClient,
-				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
-				DynamicClient: dynamic.NewForConfigOrDie(cfg),
-				Log:           logf.Log,
-				Scheme:        scheme.Scheme,
-			}
-			req := ctrl.Request{}
-			req.Name = AuthRealmName
-			req.Namespace = ClusterName
-			_, err := r.Reconcile(context.TODO(), req)
-			Expect(err).To(BeNil())
-		})
-
-		By("Checking Authrealm status", func() {
-			err := k8sClient.Get(context.TODO(), client.ObjectKey{
-				Name:      AuthRealmName,
-				Namespace: AuthRealmNamespace,
-			}, authRealm)
-			Expect(err).To(BeNil())
-			Expect(len(authRealm.Status.Strategies[0].Clusters[0].ClusterOAuth.Conditions)).To(Equal(1))
-		})
-
-		var secret2 *corev1.Secret
-		By(fmt.Sprintf("creation of IDP secret 2 in cluster namespace %s", ClusterName), func() {
-			secret2 = &corev1.Secret{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: corev1.SchemeGroupVersion.String(),
-					Kind:       "Secret",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      AuthRealmName2,
-					Namespace: ClusterName,
-				},
-			}
-			err := k8sClient.Create(context.TODO(), secret2)
-			Expect(err).To(BeNil())
-
-		})
-
-		By(fmt.Sprintf("creation of ClusterOAuth 2 for mangaed cluster %s", ClusterName), func() {
-			clusterOAuth := &identitatemv1alpha1.ClusterOAuth{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: identitatemv1alpha1.SchemeGroupVersion.String(),
-					Kind:       "ClusterOAuth",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      AuthRealmName2,
-					Namespace: ClusterName,
-				},
-				Spec: identitatemv1alpha1.ClusterOAuthSpec{
-					AuthRealmReference: identitatemv1alpha1.RelatedObjectReference{
-						Kind:      "AuthRealm",
-						Name:      AuthRealmName,
-						Namespace: AuthRealmNamespace,
+			mw.Status.ResourceStatus.Manifests = []workv1.ManifestCondition{
+				{
+					ResourceMeta: workv1.ManifestResourceMeta{
+						Group:     "",
+						Kind:      "Secret",
+						Name:      "authrealm-github-ldap-authrealm-github-ldap-ns",
+						Namespace: "openshift-config",
+						Ordinal:   1,
+						Resource:  "secrets",
+						Version:   "v1",
 					},
-					StrategyReference: identitatemv1alpha1.RelatedObjectReference{
-						Kind:      "Strategy",
-						Name:      StrategyName,
-						Namespace: AuthRealmNamespace,
-					},
-					OAuth: &openshiftconfigv1.OAuth{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: openshiftconfigv1.SchemeGroupVersion.String(),
-							Kind:       "OAuth",
-						},
-
-						Spec: openshiftconfigv1.OAuthSpec{
-							IdentityProviders: []openshiftconfigv1.IdentityProvider{
-								{
-									Name:          secret2.Name,
-									MappingMethod: openshiftconfigv1.MappingMethodClaim,
-									IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
-										Type: openshiftconfigv1.IdentityProviderTypeGitHub,
-										OpenID: &openshiftconfigv1.OpenIDIdentityProvider{
-											ClientID: secret2.Name,
-											ClientSecret: openshiftconfigv1.SecretNameReference{
-												Name: secret2.Name,
-											},
-										},
-									},
-								},
-							},
+					Conditions: []metav1.Condition{
+						{
+							LastTransitionTime: metav1.Now(),
+							Type:               "test-type-manifest",
+							Status:             metav1.ConditionTrue,
+							Reason:             "TestReasonManifest",
+							Message:            "test-message-manifest",
 						},
 					},
 				},
 			}
-			err := k8sClient.Create(context.TODO(), clusterOAuth)
+			err = k8sClient.Status().Patch(context.TODO(), mw, patch)
 			Expect(err).To(BeNil())
-		})
 
+		})
 		By("Calling reconcile", func() {
-			r := &ClusterOAuthReconciler{
+			r := &ManifestWorkReconciler{
 				Client:        k8sClient,
 				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
 				DynamicClient: dynamic.NewForConfigOrDie(cfg),
@@ -472,23 +330,30 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 				Scheme:        scheme.Scheme,
 			}
 			req := ctrl.Request{}
-			req.Name = AuthRealmName2
+			req.Name = helpers.ManifestWorkOAuthName()
 			req.Namespace = ClusterName
+
 			_, err := r.Reconcile(context.TODO(), req)
 			Expect(err).To(BeNil())
 		})
 
-		By("Checking manifestwork", func() {
-			mw := &workv1.ManifestWork{}
-			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManifestWorkOAuthName(), Namespace: ClusterName}, mw)
-			//var mw *workv1.ManifestWork
-			//mw, err := clientSetWork.WorkV1().ManifestWorks(ClusterName).Get(context.TODO(), "idp-backplane", metav1.GetOptions{})
+		By("Checking authreRealm", func() {
+			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: AuthRealmName, Namespace: AuthRealmNamespace}, authRealm)
 			Expect(err).To(BeNil())
-
-			// should find manifest for OAuth 1 and manifest for Secret 1
-			// AND
-			// should find manifest for OAuth 2 and manifest for Secret 2 and Secret 3 and an aggregated role
-			Expect(len(mw.Spec.Workload.Manifests)).To(Equal(4))
+			Expect(len(authRealm.Status.Strategies)).To(Equal(1))
+			strategyStatus := authRealm.Status.Strategies[0]
+			Expect(len(strategyStatus.Clusters)).To(Equal(1))
+			clusterStatus := strategyStatus.Clusters[0]
+			Expect(len(clusterStatus.ManifestWork.Conditions)).To(Equal(1))
+			manifestWorkCondition := clusterStatus.ManifestWork.Conditions[0]
+			Expect(manifestWorkCondition.Type).To(Equal("test-type-manifestwork"))
+			resourceStatus := clusterStatus.ManifestWork.ResourceStatus
+			Expect(len(resourceStatus.Manifests)).To(Equal(1))
+			manifestStatus := resourceStatus.Manifests[0]
+			Expect(manifestStatus.ResourceMeta.Kind).To(Equal("Secret"))
+			Expect(len(manifestStatus.Conditions)).To(Equal(1))
+			manifestCondition := manifestStatus.Conditions[0]
+			Expect(manifestCondition.Type).To(Equal("test-type-manifest"))
 		})
 
 	})
