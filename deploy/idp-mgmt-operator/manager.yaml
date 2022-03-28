@@ -18,6 +18,8 @@ spec:
         control-plane: idp-mgmt-operator-manager
         idp-antiaffinity-selector: idp-mgmt-operator-controller
     spec:
+      securityContext:
+        runAsNonRoot: true
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

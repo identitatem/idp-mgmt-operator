@@ -23,6 +23,8 @@ spec:
         control-plane: controller-manager
         idp-antiaffinity-selector: idp-mgmt-installer-controller
     spec:
+      securityContext:
+        runAsNonRoot: true
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
