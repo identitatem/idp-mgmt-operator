@@ -110,7 +110,7 @@ func (r *ManifestWorkReconciler) processManifestWorkhUpdate(manifestwork *manife
 	if err := r.Client.List(context.TODO(), clusterOAuths, client.InNamespace(manifestwork.Namespace)); err != nil {
 		return ctrl.Result{}, err
 	}
-	for _, clusterOAuth := range clusterOAuths.Items {
+	for i, clusterOAuth := range clusterOAuths.Items {
 		r.Log.Info("process manifestwork", "manifestworkName", manifestwork.Name, "clusterOAuthName", clusterOAuth.Name)
 		authRealm := &identitatemv1alpha1.AuthRealm{}
 		if err := r.Client.Get(context.TODO(),
@@ -122,7 +122,7 @@ func (r *ManifestWorkReconciler) processManifestWorkhUpdate(manifestwork *manife
 		}
 		if err := r.updateAuthRealmStatusManifestWorkConditions(
 			authRealm,
-			&clusterOAuth,
+			&clusterOAuths.Items[i],
 			manifestwork,
 			delete); err != nil {
 			return ctrl.Result{}, err

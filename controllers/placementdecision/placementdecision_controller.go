@@ -145,13 +145,13 @@ func (r *PlacementDecisionReconciler) processPlacementDecisionUpdate(placement *
 		return err
 	}
 
-	for i, strategy := range strategies.Items {
+	for i := range strategies.Items {
 		authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, &strategies.Items[i])
 		if err != nil {
 			return err
 		}
 
-		if err := r.processPlacementDecision(authRealm, &strategy, placement); err != nil {
+		if err := r.processPlacementDecision(authRealm, &strategies.Items[i], placement); err != nil {
 			return err
 		}
 		if err := r.updateAuthRealmStatusPlacementStatus(&strategies.Items[i], placement); err != nil {
