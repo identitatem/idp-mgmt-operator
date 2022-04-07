@@ -43,6 +43,7 @@ echo "--- Check that the installer pod is running"
 oc wait --for=condition=ready pods --all --timeout=5m -n idp-mgmt-config || {
   echo "ERROR - No IDP pods running!"
   oc get pods -n idp-mgmt-config
+  oc get deployment -n idp-mgmt-config idp-mgmt-installer-controller-manager -o yaml
   exit 1
 }
 oc get pods -n idp-mgmt-config

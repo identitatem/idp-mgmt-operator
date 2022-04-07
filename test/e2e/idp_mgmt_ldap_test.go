@@ -1,5 +1,6 @@
 // Copyright Red Hat
 
+//go:build e2e
 // +build e2e
 
 package e2e
@@ -21,7 +22,7 @@ import (
 var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 	It("Hub: AuthRealm is successfully created", func() {
 		By("Reading the AuthRealm related resources from test data file")
-		// The following file includes the yamls for resources needed to create the AuthRealm 
+		// The following file includes the yamls for resources needed to create the AuthRealm
 		// such as namespace, managedclusterset, placement, managedclustersetbinding and secret
 		pathToAuthRealmTestData := "testdata/ldap-authrealm.yaml"
 		yamlB, err := ioutil.ReadFile(pathToAuthRealmTestData)
@@ -38,22 +39,22 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() error {
 			_, err := TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-			Namespace("my-ldap-authrealm").
-			Get(context.TODO(), "authrealm-ldap", metav1.GetOptions{})
+				Namespace("my-ldap-authrealm").
+				Get(context.TODO(), "authrealm-ldap", metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading AuthRealm", "Error", err)
 				return err
 			}
 			return nil
-		}, 300, 1).Should(BeNil())				
+		}, 300, 1).Should(BeNil())
 	})
 	It("Hub: Strategy resource is created", func() {
 		gvr, err := utils.GetGVRForResource("Strategy")
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() error {
 			_, err := TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-			Namespace("my-ldap-authrealm").
-			Get(context.TODO(), "authrealm-ldap-backplane", metav1.GetOptions{})
+				Namespace("my-ldap-authrealm").
+				Get(context.TODO(), "authrealm-ldap-backplane", metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading Strategy", "Error", err)
 				return err
@@ -66,32 +67,32 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() error {
 			_, err := TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-			Namespace("idp-mgmt-ldaptestdomain").
-			Get(context.TODO(), "dex-server", metav1.GetOptions{})
+				Namespace("idp-mgmt-ldaptestdomain").
+				Get(context.TODO(), "dex-server", metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading DexServer", "Error", err)
 				return err
 			}
 			return nil
-		}, 300, 1).Should(BeNil())		
+		}, 300, 1).Should(BeNil())
 	})
 	It("Hub: There is no DexClient as yet", func() {
 		gvr, err := utils.GetGVRForResource("DexClient")
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() int {
 			list, err := TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-			Namespace("idp-mgmt-ldaptestdomain").
-			List(context.TODO(), metav1.ListOptions{})
+				Namespace("idp-mgmt-ldaptestdomain").
+				List(context.TODO(), metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			return len(list.Items) 
-		}, 300, 1).Should(Equal(0))		
+			return len(list.Items)
+		}, 300, 1).Should(Equal(0))
 	})
 	It("Managed Cluster: Verify that the OAuth does not contain IDP config", func() {
 		gvr, err := utils.GetGVRForResource("OAuth")
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() error {
 			oauth, err := TestOptions.ManagedClusters[0].KubeClientDynamic.Resource(gvr).
-			Get(context.TODO(), "cluster", metav1.GetOptions{})
+				Get(context.TODO(), "cluster", metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading OAuth in managed cluster", "Error", err)
 				return err
@@ -100,7 +101,7 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(found).To(BeFalse())
 			return nil
-		}, 300, 1).Should(BeNil())		
+		}, 300, 1).Should(BeNil())
 	})
 	It("Hub: PlacementDecision is created", func() {
 		By("Applying labels associated with the placement to the managed cluster")
@@ -111,26 +112,27 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() error {
 			managedCluster, err = TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-			Get(context.TODO(), mcName, metav1.GetOptions{})
+				Get(context.TODO(), mcName, metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading ManagedCluster", "Error", err)
 				return err
 			}
 			return nil
 		}, 300, 1).Should(BeNil())
-		// Check that labels don't already exist		
+		// Check that labels don't already exist
 		labels := managedCluster.GetLabels()
 		_, authDepLabelFound := labels["authdeployment"]
-		_, clusterSetLabelFound := labels["cluster.open-cluster-management.io/clusterset"]
-		Expect(authDepLabelFound).ToNot(BeTrue())	
-		Expect(clusterSetLabelFound).ToNot(BeTrue())
+		//Starting with ACM 2.5, this is set to "default" and is no longer null, so ignore the test
+		//_, clusterSetLabelFound := labels["cluster.open-cluster-management.io/clusterset"]
+		Expect(authDepLabelFound).ToNot(BeTrue())
+		//Expect(clusterSetLabelFound).ToNot(BeTrue())
 		// Add labels to include managed cluster in the placement for the IDP config
 		labels["authdeployment"] = "east"
 		labels["cluster.open-cluster-management.io/clusterset"] = "clusterset-sample"
 		managedCluster.SetLabels(labels)
 		Eventually(func() error {
 			_, err = TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-			Update(context.TODO(), managedCluster, metav1.UpdateOptions{})
+				Update(context.TODO(), managedCluster, metav1.UpdateOptions{})
 			if err != nil {
 				logf.Log.Info("Error while updating ManagedCluster", "Error", err)
 				return err
@@ -142,28 +144,28 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() int {
 			list, err := TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-			Namespace("my-ldap-authrealm").
-			List(context.TODO(), metav1.ListOptions{})
+				Namespace("my-ldap-authrealm").
+				List(context.TODO(), metav1.ListOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading PlacementDecisions in hub cluster", "Error", err)
 				return 0
 			}
-			return len(list.Items) 
-		}, 300, 1).Should(BeNumerically(">", 0))			
+			return len(list.Items)
+		}, 300, 1).Should(BeNumerically(">", 0))
 	})
 	It("Hub: Dexclient is created for the managed cluster", func() {
 		gvr, err := utils.GetGVRForResource("DexClient")
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() int {
 			list, err := TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-			Namespace("idp-mgmt-ldaptestdomain").
-			List(context.TODO(), metav1.ListOptions{})
+				Namespace("idp-mgmt-ldaptestdomain").
+				List(context.TODO(), metav1.ListOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading Dexclient in hub cluster", "Error", err)
 				return 0
 			}
-			return len(list.Items) 
-		}, 300, 1).Should(BeNumerically(">", 0))			
+			return len(list.Items)
+		}, 300, 1).Should(BeNumerically(">", 0))
 	})
 	It("Hub: ClusterOauth is created in the managed cluster ns", func() {
 		gvr, err := utils.GetGVRForResource("ClusterOAuth")
@@ -178,8 +180,8 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 				return err
 			}
 			return nil
-		}, 300, 1).Should(BeNil())				
-	})	
+		}, 300, 1).Should(BeNil())
+	})
 	It("Hub: ManifestWork is created", func() {
 		gvr, err := utils.GetGVRForResource("ManifestWork")
 		Expect(err).NotTo(HaveOccurred())
@@ -193,7 +195,7 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 				return err
 			}
 			return nil
-		}, 300, 1).Should(BeNil())			
+		}, 300, 1).Should(BeNil())
 	})
 	It("Managed Cluster: Verify that the OAuth is updated with the IDP", func() {
 		gvr, err := utils.GetGVRForResource("OAuth")
@@ -201,7 +203,7 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 		var idps []interface{}
 		Eventually(func() bool {
 			oauth, err := TestOptions.ManagedClusters[0].KubeClientDynamic.Resource(gvr).
-			Get(context.TODO(), "cluster", metav1.GetOptions{})
+				Get(context.TODO(), "cluster", metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading OAuth in managed cluster", "Error", err)
 				return false
@@ -216,7 +218,7 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 		}, 600, 1).Should(BeTrue())
 		Expect(len(idps)).To(BeNumerically(">", 0))
 		idp0 := idps[0].(map[string]interface{})
-		Expect(idp0["name"]).To(Equal("authrealm-ldap"))		
+		Expect(idp0["name"]).To(Equal("authrealm-ldap"))
 	})
 	It("Hub: Deleting the AuthRealm should delete the DexClient, ClusterOauth and ManifestWork", func() {
 		By("Deleting the AuthRealm")
@@ -224,8 +226,8 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() error {
 			err := TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-			Namespace("my-ldap-authrealm").
-			Delete(context.TODO(), "authrealm-ldap", metav1.DeleteOptions{})
+				Namespace("my-ldap-authrealm").
+				Delete(context.TODO(), "authrealm-ldap", metav1.DeleteOptions{})
 			if err != nil {
 				logf.Log.Info("Error while deleting AuthRealm", "Error", err)
 				return err
@@ -237,10 +239,10 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() int {
 			list, err := TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-			Namespace("idp-mgmt-ldaptestdomain").
-			List(context.TODO(), metav1.ListOptions{})
+				Namespace("idp-mgmt-ldaptestdomain").
+				List(context.TODO(), metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			return len(list.Items) 
+			return len(list.Items)
 		}, 300, 1).Should(Equal(0))
 		By("Checking that the ClusterOAuth is deleted")
 		gvr, err = utils.GetGVRForResource("ClusterOAuth")
@@ -248,10 +250,10 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() int {
 			list, err := TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-			Namespace(mcName).
-			List(context.TODO(), metav1.ListOptions{})
+				Namespace(mcName).
+				List(context.TODO(), metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			return len(list.Items) 
+			return len(list.Items)
 		}, 300, 1).Should(Equal(0))
 		By("Checking that the ManifestWork is deleted")
 		gvr, err = utils.GetGVRForResource("ManifestWork")
@@ -274,10 +276,10 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 				Get(context.TODO(), dexOperatorNamespace.Name, metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error retrieving idp-mgmt-dex namespace in hub cluster", "Error", err)
-				return err					
+				return err
 			}
-			return nil				
-		}, 300, 1).Should(HaveOccurred())			
+			return nil
+		}, 300, 1).Should(HaveOccurred())
 	})
 	It("Managed Cluster: Once AuthRealm is deleted on the hub, managed cluster Oauth should be restored to its original value", func() {
 		gvr, err := utils.GetGVRForResource("OAuth")
@@ -286,7 +288,7 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 		var oauth *unstructured.Unstructured
 		Eventually(func() bool {
 			oauth, err = TestOptions.ManagedClusters[0].KubeClientDynamic.Resource(gvr).
-			Get(context.TODO(), "cluster", metav1.GetOptions{})
+				Get(context.TODO(), "cluster", metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading OAuth in managed cluster", "Error", err)
 				return true
@@ -295,7 +297,7 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 			if err != nil {
 				logf.Log.Info("Error while reading IDPs from OAuth in managed cluster", "Error", err)
 				return true
-			}			
+			}
 			return found
 		}, 300, 1).Should(BeFalse())
 
@@ -307,7 +309,7 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() error {
 			managedCluster, err = TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-			Get(context.TODO(), mcName, metav1.GetOptions{})
+				Get(context.TODO(), mcName, metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading ManagedCluster", "Error", err)
 				return err
@@ -317,11 +319,11 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 
 		labels := managedCluster.GetLabels()
 		_, authDepLabelFound := labels["authdeployment"]
-		if (authDepLabelFound) {
+		if authDepLabelFound {
 			delete(labels, "authdeployment")
 		}
 		_, clusterSetLabelFound := labels["cluster.open-cluster-management.io/clusterset"]
-		if (clusterSetLabelFound) {
+		if clusterSetLabelFound {
 			delete(labels, "cluster.open-cluster-management.io/clusterset")
 		}
 
@@ -329,13 +331,13 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 		managedCluster.SetLabels(labels)
 		Eventually(func() error {
 			_, err = TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-			Update(context.TODO(), managedCluster, metav1.UpdateOptions{})
+				Update(context.TODO(), managedCluster, metav1.UpdateOptions{})
 			if err != nil {
 				logf.Log.Info("Error while updating ManagedCluster", "Error", err)
 				return err
 			}
 			return nil
-		 }, 120, 1).Should(BeNil())
+		}, 120, 1).Should(BeNil())
 		By("Wait for the idp-mgmt-dex namespace to be deleted")
 		Eventually(func() error {
 			_, err := TestOptions.HubCluster.KubeClient.CoreV1().
@@ -343,9 +345,9 @@ var _ = Describe("AuthRealm is configured for LDAP IDP", func() {
 				Get(context.TODO(), "idp-mgmt-dex", metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error retrieving idp-mgmt-dex namespace in hub cluster", "Error", err)
-				return err					
+				return err
 			}
-			return nil				
-		}, 300, 1).Should(HaveOccurred())			 
+			return nil
+		}, 300, 1).Should(HaveOccurred())
 	})
-})	
+})
