@@ -253,6 +253,7 @@ spec:
           - authrealms
           verbs:
           - get
+          - list
           - update
           - watch
         - apiGroups:
@@ -278,6 +279,7 @@ spec:
           resources:
           - authrealms/status
           verbs:
+          - patch
           - update
         - apiGroups:
           - identityconfig.identitatem.io
@@ -298,6 +300,13 @@ spec:
           verbs:
           - create
           - delete
+          - patch
+          - update
+        - apiGroups:
+          - identityconfig.identitatem.io
+          resources:
+          - clusteroauths/status
+          verbs:
           - patch
           - update
         - apiGroups:
@@ -331,6 +340,12 @@ spec:
           - delete
           - patch
           - update
+        - apiGroups:
+          - identityconfig.identitatem.io
+          resources:
+          - strategies/status
+          verbs:
+          - patch
         - apiGroups:
           - multicluster.openshift.io
           resources:
@@ -441,8 +456,6 @@ spec:
                 control-plane: controller-manager
                 idp-antiaffinity-selector: idp-mgmt-installer-controller
             spec:
-              securityContext:
-                runAsNonRoot: true
               affinity:
                 podAntiAffinity:
                   preferredDuringSchedulingIgnoredDuringExecution:
@@ -469,7 +482,7 @@ spec:
                 - installer
                 env:
                 - name: RELATED_IMAGE_DEX_OPERATOR
-                  value: quay.io/identitatem/dex-operator:0.3.1-20220317-12-30-05
+                  value: quay.io/identitatem/dex-operator:0.3.2-20220407-17-39-10
                 - name: RELATED_IMAGE_DEX_SERVER
                   value: ghcr.io/dexidp/dex:v2.30.2
                 - name: POD_NAME
@@ -504,6 +517,8 @@ spec:
                   requests:
                     cpu: 50m
                     memory: 150Mi
+              securityContext:
+                runAsNonRoot: true
               serviceAccountName: idp-mgmt-installer-controller-manager
               terminationGracePeriodSeconds: 10
               tolerations:
