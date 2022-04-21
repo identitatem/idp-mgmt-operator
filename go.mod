@@ -154,6 +154,7 @@ require (
 replace (
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20220124143425-d74727069f6f
 	github.com/openshift/hive/apis => github.com/openshift/hive/apis v0.0.0-20220128154613-1575b9557e00
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 	k8s.io/client-go => k8s.io/client-go v0.23.3
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client => sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.27
 )
