@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v1.2.0
-	github.com/identitatem/dex-operator v0.0.4-0.20220407172256-b9977f98b58b
+	github.com/identitatem/dex-operator v0.0.4-0.20220421002902-9813a4f360a6
 	github.com/identitatem/idp-client-api v0.0.0-20220324192344-f5b70ad98072
 	github.com/onsi/ginkgo/v2 v2.1.1
 	github.com/onsi/gomega v1.18.0
@@ -154,6 +154,7 @@ require (
 replace (
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20220124143425-d74727069f6f
 	github.com/openshift/hive/apis => github.com/openshift/hive/apis v0.0.0-20220128154613-1575b9557e00
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 	k8s.io/client-go => k8s.io/client-go v0.23.3
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client => sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.27
 )
