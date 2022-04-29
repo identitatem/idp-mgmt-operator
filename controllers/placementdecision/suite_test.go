@@ -32,6 +32,7 @@ import (
 	idpconfig "github.com/identitatem/idp-client-api/config"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
+	hypershiftv1alpha1 "github.com/openshift/hypershift/api/v1alpha1"
 	clientsetcluster "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	clientsetwork "open-cluster-management.io/api/client/work/clientset/versioned"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
@@ -118,6 +119,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = openshiftconfigv1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = hypershiftv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	cfg, err = testEnv.Start()
@@ -207,7 +211,15 @@ var _ = Describe("Process Strategy backplane: ", func() {
 					},
 				},
 			}
-			_, err := clientSetCluster.ClusterV1().ManagedClusters().Create(context.TODO(), mc, metav1.CreateOptions{})
+			mc, err := clientSetCluster.ClusterV1().ManagedClusters().Create(context.TODO(), mc, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+			// patch := client.MergeFrom(mc.DeepCopy())
+			mc.Status.ClusterClaims = append(mc.Status.ClusterClaims, clusterv1.ManagedClusterClaim{
+				Name:  helpers.ConsoleURLClusterClaim,
+				Value: "https://console-openshift-console.apps.example.com",
+			})
+			mc.Status.Conditions = make([]metav1.Condition, 0)
+			err = k8sClient.Status().Update(context.TODO(), mc)
 			Expect(err).To(BeNil())
 		})
 		var placement *clusterv1alpha1.Placement

@@ -305,7 +305,7 @@ manager: fmt vet
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: fmt vet manifests
-	go run ./main.go
+	go run ./main.go manager
 
 
 run-coverage: fmt vet manifests

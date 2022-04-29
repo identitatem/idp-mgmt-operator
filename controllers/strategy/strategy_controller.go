@@ -178,9 +178,9 @@ func (r *StrategyReconciler) processStrategyUpdate(strategy *identitatemv1alpha1
 	//Enrich placementStrategy
 	switch strategy.Spec.Type {
 	case identitatemv1alpha1.BackplaneStrategyType:
-		if err := r.backplanePlacementStrategy(strategy, authRealm, placement, placementStrategy); err != nil {
-			return err
-		}
+		r.backplanePlacementStrategy(strategy, authRealm, placement, placementStrategy)
+	case identitatemv1alpha1.HypershiftStrategyType:
+		r.hypershiftPlacementStrategy(strategy, authRealm, placement, placementStrategy)
 	// case identitatemv1alpha1.GrcStrategyType:
 	// 	if err := r.grcPlacementStrategy(instance, authRealm, placement, placementStrategy); err != nil {
 	// 		return reconcile.Result{}, err
@@ -189,6 +189,7 @@ func (r *StrategyReconciler) processStrategyUpdate(strategy *identitatemv1alpha1
 		return fmt.Errorf("strategy type %s not supported", strategy.Spec.Type)
 	}
 
+	r.Log.Info("placementstrategy after update", "placementStrategy", placementStrategy)
 	//Create or update placementStrategy
 	switch placementStrategyExists {
 	case true:
@@ -227,7 +228,6 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 				Namespace: strategy.Namespace,
 				Name:      placementStrategyName,
 			},
-			//DV move below
 			Spec: placement.Spec,
 		}
 	}
@@ -241,6 +241,7 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 
 func (r *StrategyReconciler) processStrategyDeletion(strategy *identitatemv1alpha1.Strategy) (ctrl.Result, error) {
 	//Delete strategyPlacement
+	r.Log.Info("process strategy deletion:", "name", strategy.Name, "namespace", strategy.Namespace)
 	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
 	if err != nil {
 		return ctrl.Result{}, giterrors.WithStack(err)
@@ -265,6 +266,7 @@ func (r *StrategyReconciler) processStrategyDeletion(strategy *identitatemv1alph
 			return ctrl.Result{}, giterrors.WithStack(err)
 		}
 	case errors.IsNotFound(err):
+		r.Log.Info("nothing to do as placement is already deleted", "name", helpers.PlacementStrategyName(strategy, authRealm), "namespace", strategy.Namespace)
 		return ctrl.Result{}, nil
 	}
 	return ctrl.Result{}, err

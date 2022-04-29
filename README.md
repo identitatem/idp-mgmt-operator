@@ -148,7 +148,9 @@ oc cluster-info
 4. From the cloned idp-mgmt-operator directory:
 
 ```bash
-export IMG=quay.io/<your_user>/idp-mgmt-operator:<tag_you_want_to_use>
+export QUAY_USER=<your_user>
+export IMG_TAG=<tag_you_want_to_use>
+export IMG=quay.io/${QUAY_USER}/idp-mgmt-operator:${IMG_TAG}
 make docker-build docker-push deploy
 ```
 
