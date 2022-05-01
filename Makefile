@@ -277,7 +277,9 @@ deploy-catalog:
 		kubectl apply -f .tmp_catalog.yaml; \
 		rm -f .tmp_catalog.yaml
 
-
+.PHONY: bundle-check
+bundle-check:
+	@build/bundle-check.sh
 
 #### BUILD, TEST, AND DEPLOY ####
 
