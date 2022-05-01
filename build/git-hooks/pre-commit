@@ -1,3 +1,5 @@
 #!/bin/bash -e
 
-./build/bundle-check.sh
+#./build/bundle-check.sh
+
+make test
