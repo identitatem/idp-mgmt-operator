@@ -231,10 +231,6 @@ bundle: manifests kustomize yq/install operatorsdk
 	$(KUSTOMIZE) build config/manifests | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
 	mv config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml.bak config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml
 
-.PHONY: bundle-check
-bundle-check:
-	@build/bundle-check.sh
-
 ## Patch up the bundle manifest wtih correct image, version and replaces
 .PHONY: patch-bundle-version
 patch-bundle-version: yq/install
