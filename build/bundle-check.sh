@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright Red H
+# Copyright Red Hat
 
 set -e
 
