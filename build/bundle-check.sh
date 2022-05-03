@@ -6,10 +6,12 @@ set -e
 
 echo "Running bundle check..."
 
-STATUS=$( git status --porcelain bundle )
+export IMG=quay.io/identitatem/idp-mgmt-operator:latest
+export PREV_BUNDLE_INDEX_IMG=$(cat ./CATALOG_IMAGE_VERSION )
+make bundle
 
-if [ ! -z "$STATUS" ]; then
-    echo "FAILED: 'make bundle' ran and modified bundle files in bundle folder. Please remove modified bundle files from git and do not run 'make bundle'.  "
+if [[ `git diff bundle config` ]]; then
+    echo "FAILED: Please git add modified files "
     exit 1
 fi
 echo "##### bundle check #### Success"
