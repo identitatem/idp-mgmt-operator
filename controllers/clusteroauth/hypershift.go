@@ -116,6 +116,9 @@ func (mgr *HypershiftMgr) Push() (err error) {
 	}
 
 	for _, clusterOAuth := range clusterOAuths.Items {
+		if clusterOAuth.DeletionTimestamp != nil {
+			continue
+		}
 		mgr.Reconciler.Log.Info(" build clusterOAuth", "name: ", clusterOAuth.GetName(), " namespace:", clusterOAuth.GetNamespace(), "identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
 		found := false
 		for _, r := range hd.Spec.HostedClusterSpec.Configuration.SecretRefs {

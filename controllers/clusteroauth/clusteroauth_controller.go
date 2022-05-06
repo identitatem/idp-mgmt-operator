@@ -123,7 +123,7 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	if instance.DeletionTimestamp != nil {
 		r.Log.Info("delete clusterOAuth", "name", instance.Name, "namespace", instance.Namespace)
 
-		if result, err := r.deleteClusterOAuth(instance); err != nil {
+		if result, err := r.deleteClusterOAuth(instance); err != nil || result.Requeue {
 			return result, err
 		}
 		r.Log.Info("remove finalizer", "Finalizer:", helpers.AuthrealmFinalizer, "name", instance.Name, "namespace", instance.Namespace)
@@ -135,7 +135,7 @@ func (r *ClusterOAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	r.Log.Info("update clusterOAuth", "name", instance.Name, "namespace", instance.Namespace)
-	if result, err := r.processClusterOAuth(instance); err != nil {
+	if result, err := r.processClusterOAuth(instance); err != nil || result.Requeue {
 		cond := metav1.Condition{
 			Type:    identitatemv1alpha1.ClusterOAuthApplied,
 			Status:  metav1.ConditionFalse,
@@ -190,11 +190,11 @@ func (r *ClusterOAuthReconciler) processClusterOAuth(clusterOAuth *identitatemv1
 		return ctrl.Result{}, giterrors.WithStack(fmt.Errorf("unsupported strategy %s for cluster %s", strategy.Spec.Type, clusterOAuth.Namespace))
 	}
 
-	r.Log.Info("saveHypershiftOAUth for", "name", clusterOAuth.Name, "namespace", clusterOAuth.Namespace)
-	if result, err := mgr.Save(); err != nil {
+	r.Log.Info("save oauth for", "name", clusterOAuth.Name, "namespace", clusterOAuth.Namespace)
+	if result, err := mgr.Save(); err != nil || result.Requeue {
 		return result, err
 	}
-	r.Log.Info("pushHypershiftOAuth for", "name", clusterOAuth.Name, "namespace", clusterOAuth.Namespace)
+	r.Log.Info("push oauth for", "name", clusterOAuth.Name, "namespace", clusterOAuth.Namespace)
 	if err := mgr.Push(); err != nil {
 		return ctrl.Result{}, err
 	}

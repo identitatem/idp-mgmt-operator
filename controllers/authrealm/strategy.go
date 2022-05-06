@@ -52,10 +52,10 @@ func (r *AuthRealmReconciler) createStrategy(authRealm *identitatemv1alpha1.Auth
 }
 
 func (r *AuthRealmReconciler) deleteStrategies(authRealm *identitatemv1alpha1.AuthRealm) (ctrl.Result, error) {
-	if result, err := r.deleteStrategy(authRealm, identitatemv1alpha1.BackplaneStrategyType); err != nil {
+	if result, err := r.deleteStrategy(authRealm, identitatemv1alpha1.BackplaneStrategyType); err != nil || result.Requeue {
 		return result, err
 	}
-	if result, err := r.deleteStrategy(authRealm, identitatemv1alpha1.HypershiftStrategyType); err != nil {
+	if result, err := r.deleteStrategy(authRealm, identitatemv1alpha1.HypershiftStrategyType); err != nil || result.Requeue {
 		return result, err
 	}
 	return ctrl.Result{}, nil

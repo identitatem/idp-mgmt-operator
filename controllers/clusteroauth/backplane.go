@@ -82,7 +82,6 @@ func (mgr *BackplaneMgr) saveManagedClusterViewForOAuthResult() (mgresult ctrl.R
 	if len(mcvOAuth.Status.Result.Raw) == 0 {
 		mgr.Reconciler.Log.Info("waiting for original oauth", "cluster", mgr.ClusterOAuth.Namespace)
 		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
-		// return ctrl.Result{RequeueAfter: 10 * time.Second}, fmt.Errorf("waiting for cluster %s oauth", mgr.ClusterOAuth.Namespace)
 	}
 
 	mgr.Reconciler.Log.Info("create configmap containing the OAuth", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", mgr.ClusterOAuth.Namespace)
@@ -274,7 +273,7 @@ func (mgr *BackplaneMgr) Unmanage() (mgresult ctrl.Result, err error) {
 		if err := mgr.deleteManifestWork(helpers.ManifestWorkOAuthName(), mgr.ClusterOAuth.Namespace); err != nil {
 			return ctrl.Result{}, err
 		}
-		result, err := mgr.restoreOriginalOAuth()
+		err := mgr.restoreOriginalOAuth()
 		switch {
 		case err == nil:
 			if err := mgr.checkManifestWorkOriginalOAuthApplied(mgr.ClusterOAuth.Namespace); err != nil {
@@ -285,7 +284,7 @@ func (mgr *BackplaneMgr) Unmanage() (mgresult ctrl.Result, err error) {
 			}
 		case errors.IsNotFound(err):
 		default:
-			return result, err
+			return ctrl.Result{}, err
 		}
 		if err := mgr.deleteManifestWork(helpers.ManifestWorkOriginalOAuthName(), mgr.ClusterOAuth.Namespace); err != nil {
 			return ctrl.Result{}, err
@@ -309,20 +308,20 @@ func (mgr *BackplaneMgr) Unmanage() (mgresult ctrl.Result, err error) {
 	return ctrl.Result{}, nil
 }
 
-func (mgr *BackplaneMgr) restoreOriginalOAuth() (mgresult ctrl.Result, err error) {
+func (mgr *BackplaneMgr) restoreOriginalOAuth() (err error) {
 	originalOAuth, err := mgr.Reconciler.getOriginalOAuth(mgr.ClusterOAuth)
 	switch {
 	case err == nil:
 	case errors.IsNotFound(err):
 		mgr.Reconciler.Log.Info("WARNING: original oauth not found, can not restore", "name", mgr.ClusterOAuth.Name, "namespace", mgr.ClusterOAuth.Namespace)
-		return ctrl.Result{}, err
+		return err
 	default:
-		return ctrl.Result{}, err
+		return err
 	}
 
 	jsonData, err := yaml.YAMLToJSON([]byte(originalOAuth.Data["json"]))
 	if err != nil {
-		return ctrl.Result{}, err
+		return err
 	}
 	mw := &manifestworkv1.ManifestWork{
 		ObjectMeta: metav1.ObjectMeta{
@@ -348,12 +347,12 @@ func (mgr *BackplaneMgr) restoreOriginalOAuth() (mgresult ctrl.Result, err error
 	mgr.Reconciler.Log.Info("add aggregated role")
 	aggregatedRoleYaml, err := idpmgmtconfig.GetScenarioResourcesReader().Asset("rbac/role-aggregated-clusterrole.yaml")
 	if err != nil {
-		return ctrl.Result{}, err
+		return err
 	}
 
 	aggregatedRoleJson, err := yaml.YAMLToJSON(aggregatedRoleYaml)
 	if err != nil {
-		return ctrl.Result{}, err
+		return err
 	}
 
 	manifestAggregated := manifestworkv1.Manifest{
@@ -363,14 +362,14 @@ func (mgr *BackplaneMgr) restoreOriginalOAuth() (mgresult ctrl.Result, err error
 	mw.Spec.Workload.Manifests = append(mw.Spec.Workload.Manifests, manifestAggregated)
 
 	if err := mgr.CreateOrUpdateManifestWork(mw); err != nil {
-		return ctrl.Result{}, err
+		return err
 	}
 
 	//TODO wait manifestwork applied
 
 	//TODO delete manifestwork
 
-	return ctrl.Result{}, nil
+	return nil
 }
 
 func (mgr *BackplaneMgr) checkManifestWorkOriginalOAuthApplied(ns string) error {

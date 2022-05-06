@@ -83,6 +83,9 @@ func (r *ClusterOAuthReconciler) aggregateClusterOAuths(clusterOAuths *identitat
 	}
 
 	for _, clusterOAuth := range clusterOAuths.Items {
+		if clusterOAuth.DeletionTimestamp != nil {
+			continue
+		}
 		//build OAuth and add to manifest work
 		r.Log.Info(" build clusterOAuth", "name: ", clusterOAuth.GetName(), " namespace:", clusterOAuth.GetNamespace(), "identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
 

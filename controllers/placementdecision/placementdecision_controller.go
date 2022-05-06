@@ -106,7 +106,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	//if deletetimestamp then delete dex namespace
 	if instance.DeletionTimestamp != nil {
-		if result, err := r.processPlacementDecisionDeletion(instance, false); err != nil {
+		if result, err := r.processPlacementDecisionDeletion(instance, false); err != nil || result.Requeue {
 			return result, err
 		}
 		r.Log.Info("remove finalizer", "Finalizer:", helpers.AuthrealmFinalizer, "name", instance.Name, "namespace", instance.Namespace)
@@ -117,7 +117,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
-	if result, err := r.processPlacementDecisionUpdate(instance); err != nil {
+	if result, err := r.processPlacementDecisionUpdate(instance); err != nil || result.Requeue {
 		return result, err
 	}
 	return ctrl.Result{}, nil
@@ -152,7 +152,7 @@ func (r *PlacementDecisionReconciler) processPlacementDecisionUpdate(placement *
 		return ctrl.Result{}, err
 	}
 
-	if result, err := r.processPlacementDecision(authRealm, strategy, placement); err != nil {
+	if result, err := r.processPlacementDecision(authRealm, strategy, placement); err != nil || result.Requeue {
 		return result, err
 	}
 	if err := r.updateAuthRealmStatusPlacementStatus(strategy, placement); err != nil {
@@ -171,7 +171,7 @@ func (r *PlacementDecisionReconciler) processPlacementDecision(
 	strategy *identitatemv1alpha1.Strategy,
 	placement *clusterv1alpha1.Placement) (ctrl.Result, error) {
 	r.Log.Info("run", "strategy", strategy.Spec.Type)
-	if result, err := r.syncDexClients(authRealm, strategy, placement); err != nil {
+	if result, err := r.syncDexClients(authRealm, strategy, placement); err != nil || result.Requeue {
 		return result, err
 	}
 	return ctrl.Result{}, nil
@@ -211,7 +211,7 @@ func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placement
 	}
 	for _, placementDecision := range placementDecisions.Items {
 		for _, decision := range placementDecision.Status.Decisions {
-			if result, err := r.deleteConfig(decision.ClusterName, onlyIfAuthRealmDeleted); err != nil {
+			if result, err := r.deleteConfig(decision.ClusterName, onlyIfAuthRealmDeleted); err != nil || result.Requeue {
 				return result, err
 			}
 		}

@@ -30,7 +30,7 @@ func (r *PlacementDecisionReconciler) syncDexClients(authRealm *identitatemv1alp
 	strategy *identitatemv1alpha1.Strategy,
 	placement *clusterv1alpha1.Placement) (ctrl.Result, error) {
 
-	if result, err := r.deleteObsoleteConfigs(authRealm, strategy, placement); err != nil {
+	if result, err := r.deleteObsoleteConfigs(authRealm, strategy, placement); err != nil || result.Requeue {
 		return result, err
 	}
 
@@ -64,7 +64,7 @@ func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authRealm *identitat
 		r.Log.Info("inPlacementDecision", "result", ok, "placement name", placement.Name)
 		if !ok {
 			dexClientsToBeDeleted = append(dexClientsToBeDeleted, dexClient)
-			if result, err := r.deleteConfig(dexClient.GetLabels()[helpers.ClusterNameLabel], false); err != nil {
+			if result, err := r.deleteConfig(dexClient.GetLabels()[helpers.ClusterNameLabel], false); err != nil || result.Requeue {
 				return result, err
 			}
 		}
@@ -191,7 +191,8 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 		// 	return dexClient, giterrors.WithStack(fmt.Errorf("OAuthURL not available for hd %s", hd.Name))
 		// }
 		//redirectURI = fmt.Sprintf("%s://oauth-openshift.%s/oauth2callback/%s", u.Scheme, host, authRealm.Name)
-		redirectURI = "https://oauth-itdove-hyp-spoke-itdove-hyp-spoke-hd.apps.aws-4-10-5-sno-2x-9pcp8.mgdsvcs.red-chesterfield.com:443/oauth2callback/authrealm-github-ldap"
+		oAuthURI := "https://oauth-itdove-hyp-spoke-itdove-hyp-spoke-hd.apps.aws-4-10-5-sno-2x-d544v.mgdsvcs.red-chesterfield.com"
+		redirectURI = fmt.Sprintf(":443/oauth2callback/%s/%s", oAuthURI, authRealm.Name)
 	case false:
 		if len(mc.Spec.ManagedClusterClientConfigs) == 0 ||
 			mc.Spec.ManagedClusterClientConfigs[0].URL == "" {

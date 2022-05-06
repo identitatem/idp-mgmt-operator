@@ -88,13 +88,13 @@ func (r *HypershiftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl
 
 	//TODO add test if managedclsuter exists for that ns/cluster
 	if instance.DeletionTimestamp != nil {
-		if result, err := r.processHypershiftDeployment(instance, true); err != nil {
+		if result, err := r.processHypershiftDeployment(instance, true); err != nil || result.Requeue {
 			return result, err
 		}
 		return reconcile.Result{}, nil
 	}
 
-	if result, err := r.processHypershiftDeployment(instance, false); err != nil {
+	if result, err := r.processHypershiftDeployment(instance, false); err != nil || result.Requeue {
 		return result, err
 	}
 
@@ -107,6 +107,9 @@ func (r *HypershiftDeploymentReconciler) processHypershiftDeployment(hd *hypersh
 		return ctrl.Result{}, err
 	}
 	for i, clusterOAuth := range clusterOAuths.Items {
+		if clusterOAuth.DeletionTimestamp != nil {
+			continue
+		}
 		r.Log.Info("process hypershiftDeployment", "hypershiftDeploymentName", hd.Name, "clusterOAuthName", clusterOAuth.Name)
 		authRealm := &identitatemv1alpha1.AuthRealm{}
 		if err := r.Client.Get(context.TODO(),
@@ -123,12 +126,12 @@ func (r *HypershiftDeploymentReconciler) processHypershiftDeployment(hd *hypersh
 		}
 		if helpers.IsHostedCluster(mc) {
 			r.Log.Info("Update AuthRealm hypershift status")
-			if err := r.updateAuthRealmStatusHypershiftDeploymentConditions(
+			if result, err := r.updateAuthRealmStatusHypershiftDeploymentConditions(
 				authRealm,
 				&clusterOAuths.Items[i],
 				hd,
-				delete); err != nil {
-				return ctrl.Result{}, err
+				delete); err != nil || result.Requeue {
+				return result, err
 			}
 		}
 	}

@@ -167,10 +167,10 @@ func (r *AuthRealmReconciler) processAuthRealmUpdate(authRealm *identitatemv1alp
 }
 
 func (r *AuthRealmReconciler) processAuthRealmDeletion(authRealm *identitatemv1alpha1.AuthRealm) (ctrl.Result, error) {
-	if r, err := r.processDexServerDeletion(authRealm); err != nil || r.Requeue {
-		return r, err
+	if result, err := r.processDexServerDeletion(authRealm); err != nil || result.Requeue {
+		return result, err
 	}
-	if result, err := r.deleteStrategies(authRealm); err != nil {
+	if result, err := r.deleteStrategies(authRealm); err != nil || result.Requeue {
 		return result, err
 	}
 	r.Log.Info("delete DexOperator")

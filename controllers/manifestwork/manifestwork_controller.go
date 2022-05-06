@@ -88,13 +88,13 @@ func (r *ManifestWorkReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	//TODO add test if managedclsuter exists for that ns/cluster
 	if instance.DeletionTimestamp != nil {
-		if result, err := r.processManifestWorkhUpdate(instance, true); err != nil {
+		if result, err := r.processManifestWorkhUpdate(instance, true); err != nil || result.Requeue {
 			return result, err
 		}
 		return reconcile.Result{}, nil
 	}
 
-	if result, err := r.processManifestWorkhUpdate(instance, false); err != nil {
+	if result, err := r.processManifestWorkhUpdate(instance, false); err != nil || result.Requeue {
 		return result, err
 	}
 
@@ -107,6 +107,9 @@ func (r *ManifestWorkReconciler) processManifestWorkhUpdate(manifestwork *manife
 		return ctrl.Result{}, err
 	}
 	for i, clusterOAuth := range clusterOAuths.Items {
+		if clusterOAuth.DeletionTimestamp != nil {
+			continue
+		}
 		r.Log.Info("process manifestwork", "manifestworkName", manifestwork.Name, "clusterOAuthName", clusterOAuth.Name)
 		authRealm := &identitatemv1alpha1.AuthRealm{}
 		if err := r.Client.Get(context.TODO(),

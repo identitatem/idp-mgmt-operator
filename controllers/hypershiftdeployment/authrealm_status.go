@@ -5,12 +5,14 @@ package hypershiftdeployment
 import (
 	"context"
 	"fmt"
+	"time"
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	giterrors "github.com/pkg/errors"
 	hypershiftdeploymentv1alpha1 "github.com/stolostron/hypershift-deployment-controller/api/v1alpha1"
 	manifestworkv1 "open-cluster-management.io/api/work/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -18,17 +20,17 @@ func (r *HypershiftDeploymentReconciler) updateAuthRealmStatusHypershiftDeployme
 	authRealm *identitatemv1alpha1.AuthRealm,
 	clusterOAuth *identitatemv1alpha1.ClusterOAuth,
 	hd *hypershiftdeploymentv1alpha1.HypershiftDeployment,
-	delete bool) error {
+	delete bool) (ctrl.Result, error) {
 	patch := client.MergeFrom(authRealm.DeepCopy())
 	strategyIndex := helpers.GetStrategyStatusIndex(r.Log, authRealm, clusterOAuth.Spec.StrategyReference.Name)
 	if strategyIndex == -1 {
-		return fmt.Errorf("strategy %s not found", clusterOAuth.Spec.StrategyReference.Name)
+		return ctrl.Result{Requeue: true, RequeueAfter: 2 * time.Second}, fmt.Errorf("strategy %s not found", clusterOAuth.Spec.StrategyReference.Name)
 	}
 
 	clusterStatusIndex := helpers.GetClusterStatusIndex(r.Log, &authRealm.Status.Strategies[strategyIndex], clusterOAuth.Namespace)
 	r.Log.Info("updateAuthRealmStatusHypershiftDeploymentConditions/getClusterStatusIndex", "clusterName", clusterOAuth.Namespace, "clusterStatusIndex", clusterStatusIndex)
 	if clusterStatusIndex == -1 {
-		return fmt.Errorf("cluster %s not found", clusterOAuth.Namespace)
+		return ctrl.Result{Requeue: true, RequeueAfter: 2 * time.Second}, fmt.Errorf("cluster %s not found", clusterOAuth.Namespace)
 	}
 
 	clusterStatus := authRealm.Status.Strategies[strategyIndex].Clusters[clusterStatusIndex]
@@ -45,7 +47,7 @@ func (r *HypershiftDeploymentReconciler) updateAuthRealmStatusHypershiftDeployme
 			Namespace: hd.Namespace,
 		}, mw)
 		if err != nil {
-			return err
+			return ctrl.Result{Requeue: true, RequeueAfter: 2 * time.Second}, err
 		}
 		clusterStatus.ManifestWork.Name = mw.Name
 		clusterStatus.ManifestWork.ManifestWorkStatus.Conditions = mw.Status.Conditions
@@ -57,5 +59,5 @@ func (r *HypershiftDeploymentReconciler) updateAuthRealmStatusHypershiftDeployme
 		"authrealm-hypershiftDeployment", clusterStatus.HypershiftDeployment,
 		"authrealm-manifestwork", clusterStatus.ManifestWork,
 		"strategy-index", strategyIndex)
-	return giterrors.WithStack(r.Client.Status().Patch(context.TODO(), authRealm, patch))
+	return ctrl.Result{Requeue: true, RequeueAfter: 2 * time.Second}, giterrors.WithStack(r.Client.Status().Patch(context.TODO(), authRealm, patch))
 }
