@@ -179,21 +179,28 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 	}
 
 	var redirectURI string
-	switch helpers.IsHostedCluster(mc) {
-	case true:
-		hd, err := helpers.GetHypershiftDeployment(r.Client, mc.Name)
-		if err != nil {
-			return dexClient, err
+	//Search oauthredirecturis in clusterclaims
+	for _, cc := range mc.Status.ClusterClaims {
+		if cc.Name == helpers.OAuthRedirectURIsClusterClaimName {
+			redirectURI = cc.Value
+			break
 		}
-		r.Log.Info("found hd %s", "name", hd.Name)
-		//TODO once OAuthURL status available
-		// if hd.Status.OAuthURL == "" {
-		// 	return dexClient, giterrors.WithStack(fmt.Errorf("OAuthURL not available for hd %s", hd.Name))
-		// }
-		//redirectURI = fmt.Sprintf("%s://oauth-openshift.%s/oauth2callback/%s", u.Scheme, host, authRealm.Name)
-		oAuthURI := "https://oauth-itdove-hyp-spoke-itdove-hyp-spoke-hd.apps.aws-4-10-5-sno-2x-d544v.mgdsvcs.red-chesterfield.com"
-		redirectURI = fmt.Sprintf(":443/oauth2callback/%s/%s", oAuthURI, authRealm.Name)
-	case false:
+	}
+	//If found build the redirectURI
+	if redirectURI != "" {
+		redirectURIs := strings.Split(redirectURI, ",")
+		u, err := url.Parse(redirectURIs[0])
+		if err != nil {
+			return dexClient, giterrors.WithStack(err)
+		}
+
+		redirectURI = fmt.Sprintf("%s://%s/oauth2callback/%s", u.Scheme, u.Host, authRealm.Name)
+	} else {
+		// if not found and hosted cluster then raise an error as we can not find the redirectURI
+		if helpers.IsHostedCluster(mc) {
+			return dexClient, fmt.Errorf("unable to find the redirectURI for hypershift cluster %s", mc.Name)
+		}
+		// Keep the old way to build the redirectURI as the above method is available only for >= 2.5
 		if len(mc.Spec.ManagedClusterClientConfigs) == 0 ||
 			mc.Spec.ManagedClusterClientConfigs[0].URL == "" {
 			return dexClient, giterrors.WithStack(fmt.Errorf("api url not found for cluster %s", decision.ClusterName))
@@ -212,7 +219,6 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 
 		redirectURI = fmt.Sprintf("%s://oauth-openshift.%s/oauth2callback/%s", u.Scheme, host, authRealm.Name)
 	}
-
 	dexClient.Spec.RedirectURIs = []string{redirectURI}
 
 	switch dexClientExists {

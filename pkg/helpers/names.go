@@ -33,6 +33,10 @@ const (
 	HostingClusterAnnotation                string = "import.open-cluster-management.io/hosting-cluster-name"
 )
 
+const (
+	OAuthRedirectURIsClusterClaimName string = "oauthredirecturis.openshift.io"
+)
+
 func ManifestWorkOAuthName() string {
 	return manifestWorkOAuthName
 }

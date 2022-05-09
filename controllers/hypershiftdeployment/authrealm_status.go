@@ -59,5 +59,5 @@ func (r *HypershiftDeploymentReconciler) updateAuthRealmStatusHypershiftDeployme
 		"authrealm-hypershiftDeployment", clusterStatus.HypershiftDeployment,
 		"authrealm-manifestwork", clusterStatus.ManifestWork,
 		"strategy-index", strategyIndex)
-	return ctrl.Result{Requeue: true, RequeueAfter: 2 * time.Second}, giterrors.WithStack(r.Client.Status().Patch(context.TODO(), authRealm, patch))
+	return ctrl.Result{}, giterrors.WithStack(r.Client.Status().Patch(context.TODO(), authRealm, patch))
 }
