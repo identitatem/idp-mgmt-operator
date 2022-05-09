@@ -49,7 +49,7 @@ BROWSER ?= chrome
 
 #### UTILITIES #####
 
-
+BEFORE_SCRIPT := $(shell build/before-make.sh)
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -231,7 +231,6 @@ bundle: manifests kustomize yq/install operatorsdk
 	$(KUSTOMIZE) build config/manifests | ${OPERATOR_SDK} generate bundle -q --overwrite --version $(VERSION)
 	mv config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml.bak config/manifests/bases/idp-mgmt-operator.clusterserviceversion.yaml
 
-
 ## Patch up the bundle manifest wtih correct image, version and replaces
 .PHONY: patch-bundle-version
 patch-bundle-version: yq/install
@@ -276,7 +275,6 @@ deploy-catalog:
 		| sed -e "s;__CATALOG_DEPLOY_NAMESPACE__;${CATALOG_DEPLOY_NAMESPACE};g" -e "s;__CATALOG_IMG__;${CATALOG_IMG};g" > .tmp_catalog.yaml; \
 		kubectl apply -f .tmp_catalog.yaml; \
 		rm -f .tmp_catalog.yaml
-
 
 
 #### BUILD, TEST, AND DEPLOY ####

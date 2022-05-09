@@ -217,7 +217,7 @@ spec:
   name: idp-mgmt-operator
   source: idp-mgmt-config-catalog
   sourceNamespace: idp-mgmt-config
-  startingCSV: idp-mgmt-operator.v0.3.1
+  startingCSV: idp-mgmt-operator.v0.3.2
 ```
 5. Create an idpconfig
 
