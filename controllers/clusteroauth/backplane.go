@@ -44,14 +44,20 @@ func (mgr *BackplaneMgr) Save() (mgresult ctrl.Result, err error) {
 	cm := &corev1.ConfigMap{}
 
 	//If already exist, do nothing
-	mgr.Reconciler.Log.Info("check if configMap already exists", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", mgr.ClusterOAuth.Namespace)
+	mgr.Reconciler.Log.Info("check if configMap already exists",
+		"name", helpers.ConfigMapOriginalOAuthName(),
+		"namespace", mgr.ClusterOAuth.Namespace)
 	if err := mgr.Reconciler.Get(context.TODO(), client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: mgr.ClusterOAuth.Namespace}, cm); err == nil {
 		return ctrl.Result{}, nil
 	}
 
-	mgr.Reconciler.Log.Info("create managedclusterview", "name", helpers.ManagedClusterViewOAuthName(), "namespace", mgr.ClusterOAuth.Namespace)
+	mgr.Reconciler.Log.Info("create managedclusterview",
+		"name", helpers.ManagedClusterViewOAuthName(),
+		"namespace", mgr.ClusterOAuth.Namespace)
 	applierBuilder := &clusteradmapply.ApplierBuilder{}
-	applier := applierBuilder.WithClient(mgr.Reconciler.KubeClient, mgr.Reconciler.APIExtensionClient, mgr.Reconciler.DynamicClient).Build()
+	applier := applierBuilder.WithClient(mgr.Reconciler.KubeClient,
+		mgr.Reconciler.APIExtensionClient,
+		mgr.Reconciler.DynamicClient).Build()
 
 	readerResources := resources.GetScenarioResourcesReader()
 
@@ -67,24 +73,34 @@ func (mgr *BackplaneMgr) Save() (mgresult ctrl.Result, err error) {
 	if _, err := applier.ApplyCustomResources(readerResources, values, false, "", file); err != nil {
 		return ctrl.Result{}, err
 	}
-	mgr.Reconciler.Log.Info("saveManagedClusterViewForOAuthResult for", "name", mgr.ClusterOAuth.Name, "namespace", mgr.ClusterOAuth.Namespace)
+	mgr.Reconciler.Log.Info("saveManagedClusterViewForOAuthResult for",
+		"name", mgr.ClusterOAuth.Name,
+		"namespace", mgr.ClusterOAuth.Namespace)
 	return mgr.saveManagedClusterViewForOAuthResult()
 }
 
 func (mgr *BackplaneMgr) saveManagedClusterViewForOAuthResult() (mgresult ctrl.Result, err error) {
 	mcvOAuth := &viewv1beta1.ManagedClusterView{}
-	mgr.Reconciler.Log.Info("check if managedclusterview exists", "name", helpers.ManagedClusterViewOAuthName(), "namespace", mgr.ClusterOAuth.Namespace)
-	if err := mgr.Reconciler.Get(context.TODO(), client.ObjectKey{Name: helpers.ManagedClusterViewOAuthName(), Namespace: mgr.ClusterOAuth.Namespace}, mcvOAuth); err != nil {
+	mgr.Reconciler.Log.Info("check if managedclusterview exists",
+		"name", helpers.ManagedClusterViewOAuthName(),
+		"namespace", mgr.ClusterOAuth.Namespace)
+	if err := mgr.Reconciler.Get(context.TODO(),
+		client.ObjectKey{Name: helpers.ManagedClusterViewOAuthName(), Namespace: mgr.ClusterOAuth.Namespace},
+		mcvOAuth); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	mgr.Reconciler.Log.Info("check if managedclusterview has results", "name", helpers.ManagedClusterViewOAuthName(), "namespace", mgr.ClusterOAuth.Namespace)
+	mgr.Reconciler.Log.Info("check if managedclusterview has results",
+		"name", helpers.ManagedClusterViewOAuthName(),
+		"namespace", mgr.ClusterOAuth.Namespace)
 	if len(mcvOAuth.Status.Result.Raw) == 0 {
 		mgr.Reconciler.Log.Info("waiting for original oauth", "cluster", mgr.ClusterOAuth.Namespace)
 		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
-	mgr.Reconciler.Log.Info("create configmap containing the OAuth", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", mgr.ClusterOAuth.Namespace)
+	mgr.Reconciler.Log.Info("create configmap containing the OAuth",
+		"name", helpers.ConfigMapOriginalOAuthName(),
+		"namespace", mgr.ClusterOAuth.Namespace)
 	b, err := yaml.JSONToYAML(mcvOAuth.Status.Result.Raw)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -104,7 +120,9 @@ func (mgr *BackplaneMgr) saveManagedClusterViewForOAuthResult() (mgresult ctrl.R
 		return ctrl.Result{}, err
 	}
 
-	mgr.Reconciler.Log.Info("delete managedclusterview", "name", helpers.ManagedClusterViewOAuthName(), "namespace", mgr.ClusterOAuth.Namespace)
+	mgr.Reconciler.Log.Info("delete managedclusterview",
+		"name", helpers.ManagedClusterViewOAuthName(),
+		"namespace", mgr.ClusterOAuth.Namespace)
 	if err := mgr.Reconciler.Delete(context.TODO(), mcvOAuth); err != nil && !errors.IsNotFound(err) {
 		return ctrl.Result{}, err
 	}
@@ -113,7 +131,9 @@ func (mgr *BackplaneMgr) saveManagedClusterViewForOAuthResult() (mgresult ctrl.R
 
 func (mgr *BackplaneMgr) Push() (err error) {
 	// Create empty manifest work
-	mgr.Reconciler.Log.Info("prepare manifestwork", "name", helpers.ManifestWorkOAuthName(), "namespace", mgr.ClusterOAuth.Namespace)
+	mgr.Reconciler.Log.Info("prepare manifestwork",
+		"name", helpers.ManifestWorkOAuthName(),
+		"namespace", mgr.ClusterOAuth.Namespace)
 	manifestWorkOAuth := &manifestworkv1.ManifestWork{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      helpers.ManifestWorkOAuthName(),

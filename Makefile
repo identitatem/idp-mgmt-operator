@@ -394,7 +394,7 @@ functional-test-full-clean:
 
 functional-test:
 	@echo running functional tests
-	ginkgo -tags functional -v --slowSpecThreshold=30 test/functional -- -v=5
+	ginkgo -tags functional -v --slow-spec-threshold=30s test/functional -- -v=5
 
 .PHONY: build-e2e-test-image
 build-e2e-test-image:

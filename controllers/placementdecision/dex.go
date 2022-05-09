@@ -64,7 +64,8 @@ func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authRealm *identitat
 		r.Log.Info("inPlacementDecision", "result", ok, "placement name", placement.Name)
 		if !ok {
 			dexClientsToBeDeleted = append(dexClientsToBeDeleted, dexClient)
-			if result, err := r.deleteConfig(dexClient.GetLabels()[helpers.ClusterNameLabel], false); err != nil || result.Requeue {
+			if result, err := r.deleteConfig(dexClient.GetLabels()[helpers.ClusterNameLabel],
+				false); err != nil || result.Requeue {
 				return result, err
 			}
 		}

@@ -11,7 +11,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetHypershiftDeployment(c client.Client, clusterName string) (*hypershiftdeploymentv1alpha1.HypershiftDeployment, error) {
+func GetHypershiftDeployment(c client.Client,
+	clusterName string) (*hypershiftdeploymentv1alpha1.HypershiftDeployment, error) {
 	hypershiftDeployments := &hypershiftdeploymentv1alpha1.HypershiftDeploymentList{}
 	if err := c.List(context.TODO(), hypershiftDeployments, client.MatchingLabels{
 		HypershiftDeploymentInfraIDLabel: clusterName,

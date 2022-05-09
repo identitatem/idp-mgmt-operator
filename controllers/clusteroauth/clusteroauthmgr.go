@@ -54,7 +54,9 @@ func (r *ClusterOAuthReconciler) getOriginalOAuth(clusterOAuth *identitatemv1alp
 func (r *ClusterOAuthReconciler) deleteOriginalOAuth(ns string) error {
 	cm := &corev1.ConfigMap{}
 	r.Log.Info("check if configmap already exists", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", ns)
-	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: ns}, cm); err != nil {
+	if err := r.Client.Get(context.TODO(),
+		client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: ns},
+		cm); err != nil {
 		if !errors.IsNotFound(err) {
 			return giterrors.WithStack(err)
 		}
