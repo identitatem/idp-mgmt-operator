@@ -187,7 +187,9 @@ func (r *ClusterOAuthReconciler) processClusterOAuth(clusterOAuth *identitatemv1
 	case identitatemv1alpha1.BackplaneStrategyType:
 		mgr = &BackplaneMgr{r, clusterOAuth}
 	default:
-		return ctrl.Result{}, giterrors.WithStack(fmt.Errorf("unsupported strategy %s for cluster %s", strategy.Spec.Type, clusterOAuth.Namespace))
+		return ctrl.Result{}, giterrors.WithStack(
+			fmt.Errorf("unsupported strategy %s for cluster %s",
+				strategy.Spec.Type, clusterOAuth.Namespace))
 	}
 
 	r.Log.Info("save oauth for", "name", clusterOAuth.Name, "namespace", clusterOAuth.Namespace)

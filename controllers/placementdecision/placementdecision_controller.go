@@ -187,7 +187,8 @@ func (r *PlacementDecisionReconciler) isLinkedToStrategy(placement *clusterv1alp
 	return true, giterrors.WithStack(err)
 }
 
-func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placement *clusterv1alpha1.Placement, onlyIfAuthRealmDeleted bool) (ctrl.Result, error) {
+func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placement *clusterv1alpha1.Placement,
+	onlyIfAuthRealmDeleted bool) (ctrl.Result, error) {
 	ok, err := r.isLinkedToStrategy(placement)
 	if !ok {
 		return ctrl.Result{}, nil

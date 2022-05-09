@@ -45,7 +45,9 @@ var _ HypershiftMgr
 
 func (r *ClusterOAuthReconciler) getOriginalOAuth(clusterOAuth *identitatemv1alpha1.ClusterOAuth) (*corev1.ConfigMap, error) {
 	originalOAuth := &corev1.ConfigMap{}
-	err := r.Get(context.TODO(), client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: clusterOAuth.Namespace}, originalOAuth)
+	err := r.Get(context.TODO(),
+		client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: clusterOAuth.Namespace},
+		originalOAuth)
 	return originalOAuth, err
 }
 
@@ -67,7 +69,8 @@ func (r *ClusterOAuthReconciler) deleteOriginalOAuth(ns string) error {
 	return nil
 }
 
-func (r *ClusterOAuthReconciler) aggregateClusterOAuths(clusterOAuths *identitatemv1alpha1.ClusterOAuthList, namespace string) *openshiftconfigv1.OAuth {
+func (r *ClusterOAuthReconciler) aggregateClusterOAuths(clusterOAuths *identitatemv1alpha1.ClusterOAuthList,
+	namespace string) *openshiftconfigv1.OAuth {
 	//	singleOAuth := &openshiftconfigv1.OAuth{}
 	singleOAuth := &openshiftconfigv1.OAuth{
 		TypeMeta: metav1.TypeMeta{
@@ -87,7 +90,10 @@ func (r *ClusterOAuthReconciler) aggregateClusterOAuths(clusterOAuths *identitat
 			continue
 		}
 		//build OAuth and add to manifest work
-		r.Log.Info(" build clusterOAuth", "name: ", clusterOAuth.GetName(), " namespace:", clusterOAuth.GetNamespace(), "identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
+		r.Log.Info(" build clusterOAuth",
+			"name: ", clusterOAuth.GetName(),
+			" namespace:", clusterOAuth.GetNamespace(),
+			"identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
 
 		for j, idp := range clusterOAuth.Spec.OAuth.Spec.IdentityProviders {
 

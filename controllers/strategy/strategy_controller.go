@@ -266,7 +266,9 @@ func (r *StrategyReconciler) processStrategyDeletion(strategy *identitatemv1alph
 			return ctrl.Result{}, giterrors.WithStack(err)
 		}
 	case errors.IsNotFound(err):
-		r.Log.Info("nothing to do as placement is already deleted", "name", helpers.PlacementStrategyName(strategy, authRealm), "namespace", strategy.Namespace)
+		r.Log.Info("nothing to do as placement is already deleted",
+			"name", helpers.PlacementStrategyName(strategy, authRealm),
+			"namespace", strategy.Namespace)
 		return ctrl.Result{}, nil
 	}
 	return ctrl.Result{}, err

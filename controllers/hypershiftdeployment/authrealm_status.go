@@ -24,13 +24,16 @@ func (r *HypershiftDeploymentReconciler) updateAuthRealmStatusHypershiftDeployme
 	patch := client.MergeFrom(authRealm.DeepCopy())
 	strategyIndex := helpers.GetStrategyStatusIndex(r.Log, authRealm, clusterOAuth.Spec.StrategyReference.Name)
 	if strategyIndex == -1 {
-		return ctrl.Result{Requeue: true, RequeueAfter: 2 * time.Second}, fmt.Errorf("strategy %s not found", clusterOAuth.Spec.StrategyReference.Name)
+		return ctrl.Result{Requeue: true, RequeueAfter: 2 * time.Second},
+			fmt.Errorf("strategy %s not found", clusterOAuth.Spec.StrategyReference.Name)
 	}
 
-	clusterStatusIndex := helpers.GetClusterStatusIndex(r.Log, &authRealm.Status.Strategies[strategyIndex], clusterOAuth.Namespace)
-	r.Log.Info("updateAuthRealmStatusHypershiftDeploymentConditions/getClusterStatusIndex", "clusterName", clusterOAuth.Namespace, "clusterStatusIndex", clusterStatusIndex)
+	clusterStatusIndex := helpers.GetClusterStatusIndex(r.Log,
+		&authRealm.Status.Strategies[strategyIndex],
+		clusterOAuth.Namespace)
 	if clusterStatusIndex == -1 {
-		return ctrl.Result{Requeue: true, RequeueAfter: 2 * time.Second}, fmt.Errorf("cluster %s not found", clusterOAuth.Namespace)
+		return ctrl.Result{Requeue: true, RequeueAfter: 2 * time.Second},
+			fmt.Errorf("cluster %s not found", clusterOAuth.Namespace)
 	}
 
 	clusterStatus := authRealm.Status.Strategies[strategyIndex].Clusters[clusterStatusIndex]

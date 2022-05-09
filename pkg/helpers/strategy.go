@@ -13,7 +13,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func CreateStrategy(c client.Client, scheme *runtime.Scheme, t identitatemv1alpha1.StrategyType, authRealm *identitatemv1alpha1.AuthRealm) error {
+func CreateStrategy(c client.Client,
+	scheme *runtime.Scheme,
+	t identitatemv1alpha1.StrategyType,
+	authRealm *identitatemv1alpha1.AuthRealm) error {
 	strategy := &identitatemv1alpha1.Strategy{}
 	name := StrategyName(authRealm, t)
 	if err := c.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: authRealm.Namespace}, strategy); err != nil {

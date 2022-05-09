@@ -46,8 +46,12 @@ func (mgr *HypershiftMgr) Save() (ctrl.Result, error) {
 	}
 
 	//If already exist, do nothing
-	mgr.Reconciler.Log.Info("check if configMap already exists", "name", helpers.ConfigMapOriginalOAuthName(), "namespace", mgr.ClusterOAuth.Namespace)
-	if err := mgr.Reconciler.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: mgr.ClusterOAuth.Namespace}, cm); err == nil {
+	mgr.Reconciler.Log.Info("check if configMap already exists",
+		"name", helpers.ConfigMapOriginalOAuthName(),
+		"namespace", mgr.ClusterOAuth.Namespace)
+	if err := mgr.Reconciler.Client.Get(context.TODO(),
+		client.ObjectKey{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: mgr.ClusterOAuth.Namespace},
+		cm); err == nil {
 		return ctrl.Result{}, nil
 	}
 
@@ -86,7 +90,9 @@ func (mgr *HypershiftMgr) Push() (err error) {
 	// Aggregate All ClusterOAuth singleOAuth
 	clusterOAuths := &identitatemv1alpha1.ClusterOAuthList{}
 	mgr.Reconciler.Log.Info("search the clusterOAuths in namepsace", "namespace", mgr.ClusterOAuth.GetNamespace())
-	if err := mgr.Reconciler.List(context.TODO(), clusterOAuths, &client.ListOptions{Namespace: mgr.ClusterOAuth.GetNamespace()}); err != nil {
+	if err := mgr.Reconciler.List(context.TODO(),
+		clusterOAuths,
+		&client.ListOptions{Namespace: mgr.ClusterOAuth.GetNamespace()}); err != nil {
 		// Error reading the object - requeue the request.
 		return giterrors.WithStack(err)
 	}
@@ -106,7 +112,9 @@ func (mgr *HypershiftMgr) Push() (err error) {
 
 	index := mgr.searchConfiguration(hd, "OAuth", "cluster")
 	if index == -1 {
-		hd.Spec.HostedClusterSpec.Configuration.Items = append(hd.Spec.HostedClusterSpec.Configuration.Items, runtime.RawExtension{Raw: data})
+		hd.Spec.HostedClusterSpec.Configuration.Items =
+			append(hd.Spec.HostedClusterSpec.Configuration.Items,
+				runtime.RawExtension{Raw: data})
 	} else {
 		hd.Spec.HostedClusterSpec.Configuration.Items[index] = runtime.RawExtension{Raw: data}
 	}
@@ -119,7 +127,10 @@ func (mgr *HypershiftMgr) Push() (err error) {
 		if clusterOAuth.DeletionTimestamp != nil {
 			continue
 		}
-		mgr.Reconciler.Log.Info(" build clusterOAuth", "name: ", clusterOAuth.GetName(), " namespace:", clusterOAuth.GetNamespace(), "identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
+		mgr.Reconciler.Log.Info(" build clusterOAuth",
+			"name: ", clusterOAuth.GetName(),
+			"namespace:", clusterOAuth.GetNamespace(),
+			"identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
 		found := false
 		for _, r := range hd.Spec.HostedClusterSpec.Configuration.SecretRefs {
 			if r.Name == clusterOAuth.GetNamespace()+"-"+clusterOAuth.Name {
@@ -134,12 +145,13 @@ func (mgr *HypershiftMgr) Push() (err error) {
 			secret := &corev1.Secret{}
 
 			mgr.Reconciler.Log.Info("retrieving client secret", "name", clusterOAuth.Name, "namespace", clusterOAuth.Namespace)
-			if err := mgr.Reconciler.Client.Get(context.TODO(), types.NamespacedName{Namespace: clusterOAuth.Namespace, Name: clusterOAuth.Name}, secret); err != nil {
+			if err := mgr.Reconciler.Client.Get(context.TODO(),
+				types.NamespacedName{Namespace: clusterOAuth.Namespace, Name: clusterOAuth.Name},
+				secret); err != nil {
 				return giterrors.WithStack(err)
 			}
 			//add secret to manifest
 
-			//TODO TEMP PATCH
 			newSecret := &corev1.Secret{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: corev1.SchemeGroupVersion.String(),
@@ -165,13 +177,16 @@ func (mgr *HypershiftMgr) Push() (err error) {
 				}
 			}
 			if !found {
-				hd.Spec.HostedClusterSpec.Configuration.SecretRefs = append(hd.Spec.HostedClusterSpec.Configuration.SecretRefs, corev1.LocalObjectReference{Name: newSecret.Name})
+				hd.Spec.HostedClusterSpec.Configuration.SecretRefs =
+					append(hd.Spec.HostedClusterSpec.Configuration.SecretRefs,
+						corev1.LocalObjectReference{Name: newSecret.Name})
 			}
 		}
 	}
 
 	mgr.Reconciler.Log.Info("Update hd for", "cluster", mgr.ClusterOAuth.GetNamespace())
-	hd.GetLabels()[helpers.HypershiftDeploymentForceReconcileLabel] = strings.ReplaceAll(metav1.Now().Format(time.RFC3339), ":", "-")
+	hd.GetLabels()[helpers.HypershiftDeploymentForceReconcileLabel] =
+		strings.ReplaceAll(metav1.Now().Format(time.RFC3339), ":", "-")
 	if err := mgr.Reconciler.Client.Update(context.TODO(), hd, &client.UpdateOptions{}); err != nil {
 		mgr.Reconciler.Log.Error(err, "Failed to update hc for component")
 		return giterrors.WithStack(err)
@@ -186,7 +201,9 @@ func (mgr *HypershiftMgr) getHypershiftDeployment(clusterName string) (*hypershi
 // unmanagedHypershiftCluster deletes a manifestwork
 func (mgr *HypershiftMgr) Unmanage() (ctrl.Result, error) {
 	clusterOAuths := &identitatemv1alpha1.ClusterOAuthList{}
-	if err := mgr.Reconciler.Client.List(context.TODO(), clusterOAuths, client.InNamespace(mgr.ClusterOAuth.Namespace)); err != nil {
+	if err := mgr.Reconciler.Client.List(context.TODO(),
+		clusterOAuths,
+		client.InNamespace(mgr.ClusterOAuth.Namespace)); err != nil {
 		return ctrl.Result{}, giterrors.WithStack(err)
 	}
 
@@ -221,7 +238,9 @@ func (mgr *HypershiftMgr) Unmanage() (ctrl.Result, error) {
 				return ctrl.Result{}, err
 			}
 		case errors.IsNotFound(err):
-			mgr.Reconciler.Log.Info("WARNING: original oauth not found, can not restore", "name", mgr.ClusterOAuth.Name, "namespace", mgr.ClusterOAuth.Namespace)
+			mgr.Reconciler.Log.Info("WARNING: original oauth not found, can not restore",
+				"name", mgr.ClusterOAuth.Name,
+				"namespace", mgr.ClusterOAuth.Namespace)
 			return ctrl.Result{}, nil
 		default:
 			return ctrl.Result{}, giterrors.WithStack(err)

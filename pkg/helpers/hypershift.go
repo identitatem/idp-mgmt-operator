@@ -20,10 +20,12 @@ func GetHypershiftDeployment(c client.Client, clusterName string) (*hypershiftde
 	}
 	switch len(hypershiftDeployments.Items) {
 	case 0:
-		return nil, giterrors.WithStack(fmt.Errorf("no hypershiftdeployment found with the infraID equal to %s", clusterName))
+		return nil, giterrors.WithStack(
+			fmt.Errorf("no hypershiftdeployment found with the infraID equal to %s", clusterName))
 	case 1:
 		return &hypershiftDeployments.Items[0], nil
 	default:
-		return nil, giterrors.WithStack(fmt.Errorf("more than one hypershiftdeployment have the infraID equal to %s", clusterName))
+		return nil, giterrors.WithStack(
+			fmt.Errorf("more than one hypershiftdeployment have the infraID equal to %s", clusterName))
 	}
 }

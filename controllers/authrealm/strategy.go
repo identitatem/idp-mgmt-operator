@@ -29,7 +29,8 @@ func (r *AuthRealmReconciler) createStrategies(authRealm *identitatemv1alpha1.Au
 
 }
 
-func (r *AuthRealmReconciler) createStrategy(authRealm *identitatemv1alpha1.AuthRealm, t identitatemv1alpha1.StrategyType) (*metav1.Condition, error) {
+func (r *AuthRealmReconciler) createStrategy(authRealm *identitatemv1alpha1.AuthRealm,
+	t identitatemv1alpha1.StrategyType) (*metav1.Condition, error) {
 	if err := helpers.CreateStrategy(r.Client, r.Scheme, t, authRealm); err != nil {
 		r.Log.Info("Update status create strategy failure",
 			"type", t,
@@ -52,16 +53,19 @@ func (r *AuthRealmReconciler) createStrategy(authRealm *identitatemv1alpha1.Auth
 }
 
 func (r *AuthRealmReconciler) deleteStrategies(authRealm *identitatemv1alpha1.AuthRealm) (ctrl.Result, error) {
-	if result, err := r.deleteStrategy(authRealm, identitatemv1alpha1.BackplaneStrategyType); err != nil || result.Requeue {
+	if result, err := r.deleteStrategy(authRealm,
+		identitatemv1alpha1.BackplaneStrategyType); err != nil || result.Requeue {
 		return result, err
 	}
-	if result, err := r.deleteStrategy(authRealm, identitatemv1alpha1.HypershiftStrategyType); err != nil || result.Requeue {
+	if result, err := r.deleteStrategy(authRealm,
+		identitatemv1alpha1.HypershiftStrategyType); err != nil || result.Requeue {
 		return result, err
 	}
 	return ctrl.Result{}, nil
 }
 
-func (r *AuthRealmReconciler) deleteStrategy(authRealm *identitatemv1alpha1.AuthRealm, t identitatemv1alpha1.StrategyType) (ctrl.Result, error) {
+func (r *AuthRealmReconciler) deleteStrategy(authRealm *identitatemv1alpha1.AuthRealm,
+	t identitatemv1alpha1.StrategyType) (ctrl.Result, error) {
 	r.Log.Info("delete Strategy", "name", helpers.StrategyName(authRealm, t))
 	st := &identitatemv1alpha1.Strategy{}
 	err := r.Client.Get(context.TODO(),

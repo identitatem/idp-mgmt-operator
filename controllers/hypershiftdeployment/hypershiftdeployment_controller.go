@@ -26,8 +26,6 @@ import (
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 
-	// clusterv1 "open-cluster-management.io/api/cluster/v1"
-	// clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	hypershiftdeploymentv1alpha1 "github.com/stolostron/hypershift-deployment-controller/api/v1alpha1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -84,9 +82,10 @@ func (r *HypershiftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl
 		return reconcile.Result{}, err
 	}
 
-	r.Log.Info("Running Reconcile for HypershiftDeployment.", "Name: ", instance.GetName(), " Namespace:", instance.GetNamespace())
+	r.Log.Info("Running Reconcile for HypershiftDeployment.",
+		"name", instance.GetName(),
+		"namespace", instance.GetNamespace())
 
-	//TODO add test if managedclsuter exists for that ns/cluster
 	if instance.DeletionTimestamp != nil {
 		if result, err := r.processHypershiftDeployment(instance, true); err != nil || result.Requeue {
 			return result, err
@@ -101,7 +100,8 @@ func (r *HypershiftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl
 	return reconcile.Result{}, nil
 }
 
-func (r *HypershiftDeploymentReconciler) processHypershiftDeployment(hd *hypershiftdeploymentv1alpha1.HypershiftDeployment, delete bool) (reconcile.Result, error) {
+func (r *HypershiftDeploymentReconciler) processHypershiftDeployment(hd *hypershiftdeploymentv1alpha1.HypershiftDeployment,
+	delete bool) (reconcile.Result, error) {
 	clusterOAuths := &identitatemv1alpha1.ClusterOAuthList{}
 	if err := r.Client.List(context.TODO(), clusterOAuths, client.InNamespace(hd.Spec.InfraID)); err != nil {
 		return ctrl.Result{}, err

@@ -174,7 +174,9 @@ func (r *PlacementDecisionReconciler) GetStrategyFromPlacementDecision(placement
 }
 
 func (r *PlacementDecisionReconciler) GetStrategyFromPlacement(placement *clusterv1alpha1.Placement) (*identitatemv1alpha1.Strategy, error) {
-	r.Log.Info("GetStrategiesFromPlacement", "placementName", placement.Name, "placementNamespace", placement.Namespace)
+	r.Log.Info("GetStrategiesFromPlacement",
+		"placementName", placement.Name,
+		"placementNamespace", placement.Namespace)
 	strategies := &identitatemv1alpha1.StrategyList{}
 	if err := r.List(context.TODO(), strategies, &client.ListOptions{Namespace: placement.Namespace}); err != nil {
 		return nil, giterrors.WithStack(err)

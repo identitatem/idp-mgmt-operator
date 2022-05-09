@@ -277,7 +277,9 @@ func (r *PlacementDecisionReconciler) deleteConfig(
 		//Delete ClientSecret
 		r.Log.Info("delete clientSecret", "namespace", clusterName, "name", authRealmObjectKey.Name)
 		clientSecret := &corev1.Secret{}
-		err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.ClientSecretName(authRealmObjectKey), Namespace: clusterName}, clientSecret)
+		err := r.Client.Get(context.TODO(),
+			client.ObjectKey{Name: helpers.ClientSecretName(authRealmObjectKey), Namespace: clusterName},
+			clientSecret)
 		switch {
 		case err == nil:
 			if err = r.Delete(context.TODO(), clientSecret); err != nil {
@@ -290,7 +292,9 @@ func (r *PlacementDecisionReconciler) deleteConfig(
 
 	for _, clusterOAuthToBeDeleted := range clusterOAuthsToBeDeleted {
 		//Delete clusterOAuth
-		r.Log.Info("delete clusterOAuth", "Namespace", clusterOAuthToBeDeleted.Namespace, "Name", clusterOAuthToBeDeleted.Name)
+		r.Log.Info("delete clusterOAuth",
+			"namespace", clusterOAuthToBeDeleted.Namespace,
+			"name", clusterOAuthToBeDeleted.Name)
 		clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
 		err := r.Client.Get(context.TODO(),
 			client.ObjectKey{Name: clusterOAuthToBeDeleted.Name,
@@ -312,11 +316,15 @@ func (r *PlacementDecisionReconciler) deleteConfig(
 			Namespace: clusterOAuthToBeDeleted.Spec.AuthRealmReference.Namespace,
 		}
 		clusterOAuth := &identitatemv1alpha1.ClusterOAuth{}
-		r.Log.Info("check clusterOauth deletion", "namespace", clusterOAuthToBeDeleted.Namespace, "name", clusterOAuthToBeDeleted.Name)
+		r.Log.Info("check clusterOauth deletion",
+			"namespace", clusterOAuthToBeDeleted.Namespace,
+			"name", clusterOAuthToBeDeleted.Name)
 		if err := r.Client.Get(context.TODO(),
 			client.ObjectKey{Name: helpers.ClusterOAuthName(authRealmObjectKey),
 				Namespace: clusterName}, clusterOAuth); err == nil {
-			r.Log.Info("waiting clusterOauth deletion", "namespace", clusterOAuthToBeDeleted.Namespace, "name", clusterOAuthToBeDeleted.Name)
+			r.Log.Info("waiting clusterOauth deletion",
+				"namespace", clusterOAuthToBeDeleted.Namespace,
+				"name", clusterOAuthToBeDeleted.Name)
 			return ctrl.Result{Requeue: true,
 				RequeueAfter: 1 * time.Second}, nil
 		}

@@ -139,7 +139,9 @@ func (mgr *BackplaneMgr) Push() (err error) {
 	// Aggregate All ClusterOAuth singleOAuth
 	clusterOAuths := &identitatemv1alpha1.ClusterOAuthList{}
 	mgr.Reconciler.Log.Info("search the clusterOAuths in namepsace", "namespace", mgr.ClusterOAuth.GetNamespace())
-	if err := mgr.Reconciler.List(context.TODO(), clusterOAuths, &client.ListOptions{Namespace: mgr.ClusterOAuth.GetNamespace()}); err != nil {
+	if err := mgr.Reconciler.List(context.TODO(),
+		clusterOAuths,
+		&client.ListOptions{Namespace: mgr.ClusterOAuth.GetNamespace()}); err != nil {
 		// Error reading the object - requeue the request.
 		return giterrors.WithStack(err)
 	}
@@ -150,7 +152,10 @@ func (mgr *BackplaneMgr) Push() (err error) {
 		if clusterOAuth.DeletionTimestamp != nil {
 			continue
 		}
-		mgr.Reconciler.Log.Info(" build clusterOAuth", "name: ", clusterOAuth.GetName(), " namespace:", clusterOAuth.GetNamespace(), "identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
+		mgr.Reconciler.Log.Info(" build clusterOAuth",
+			"name: ", clusterOAuth.GetName(),
+			"namespace:", clusterOAuth.GetNamespace(),
+			"identityProviders:", len(clusterOAuth.Spec.OAuth.Spec.IdentityProviders))
 
 		for _, idp := range clusterOAuth.Spec.OAuth.Spec.IdentityProviders {
 
@@ -158,12 +163,13 @@ func (mgr *BackplaneMgr) Push() (err error) {
 			secret := &corev1.Secret{}
 
 			mgr.Reconciler.Log.Info("retrieving client secret", "name", clusterOAuth.Name, "namespace", clusterOAuth.Namespace)
-			if err := mgr.Reconciler.Client.Get(context.TODO(), types.NamespacedName{Namespace: clusterOAuth.Namespace, Name: clusterOAuth.Name}, secret); err != nil {
+			if err := mgr.Reconciler.Client.Get(context.TODO(),
+				types.NamespacedName{Namespace: clusterOAuth.Namespace, Name: clusterOAuth.Name},
+				secret); err != nil {
 				return giterrors.WithStack(err)
 			}
 			//add secret to manifest
 
-			//TODO TEMP PATCH
 			newSecret := &corev1.Secret{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: corev1.SchemeGroupVersion.String(),
@@ -264,12 +270,16 @@ func (mgr *BackplaneMgr) CreateOrUpdateManifestWork(manifestwork *manifestworkv1
 // unmanagedBackplaneCluster deletes a manifestwork
 func (mgr *BackplaneMgr) Unmanage() (mgresult ctrl.Result, err error) {
 	clusterOAuths := &identitatemv1alpha1.ClusterOAuthList{}
-	if err := mgr.Reconciler.List(context.TODO(), clusterOAuths, client.InNamespace(mgr.ClusterOAuth.Namespace)); err != nil {
+	if err := mgr.Reconciler.List(context.TODO(),
+		clusterOAuths,
+		client.InNamespace(mgr.ClusterOAuth.Namespace)); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	if len(clusterOAuths.Items) == 1 {
-		mgr.Reconciler.Log.Info("delete for manifestwork", "name", helpers.ManifestWorkOAuthName(), "namespace", mgr.ClusterOAuth.Namespace)
+		mgr.Reconciler.Log.Info("delete for manifestwork",
+			"name", helpers.ManifestWorkOAuthName(),
+			"namespace", mgr.ClusterOAuth.Namespace)
 		if err := mgr.deleteManifestWork(helpers.ManifestWorkOAuthName(), mgr.ClusterOAuth.Namespace); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -313,7 +323,8 @@ func (mgr *BackplaneMgr) restoreOriginalOAuth() (err error) {
 	switch {
 	case err == nil:
 	case errors.IsNotFound(err):
-		mgr.Reconciler.Log.Info("WARNING: original oauth not found, can not restore", "name", mgr.ClusterOAuth.Name, "namespace", mgr.ClusterOAuth.Namespace)
+		mgr.Reconciler.Log.Info("WARNING: original oauth not found, can not restore",
+			"name", mgr.ClusterOAuth.Name, "namespace", mgr.ClusterOAuth.Namespace)
 		return err
 	default:
 		return err
@@ -364,10 +375,6 @@ func (mgr *BackplaneMgr) restoreOriginalOAuth() (err error) {
 	if err := mgr.CreateOrUpdateManifestWork(mw); err != nil {
 		return err
 	}
-
-	//TODO wait manifestwork applied
-
-	//TODO delete manifestwork
 
 	return nil
 }
