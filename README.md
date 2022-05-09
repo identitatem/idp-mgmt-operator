@@ -390,9 +390,9 @@ We have a GitHub action defined to generate a tagged bundle and catalog image wh
 
 1. Run the following command to generate the value we will use as part of the release and tag for non-shipped releases
 ```bash
-date -u "+0.3.2-%Y%m%d-%H-%M-%S"
+date -u "+0.3.3-%Y%m%d-%H-%M-%S"
 ```
-  If you are building a release candidate, the format should be **0.3.2-rc#**.  (Where **#** is the release candidate number. Do not use UPPERCASE characters!)  If you are building the final release, the format should be **0.3.2**.
+  If you are building a release candidate, the format should be **0.3.3-rc#**.  (Where **#** is the release candidate number. Do not use UPPERCASE characters!)  If you are building the final release, the format should be **0.3.3**.
 
 1. Go to dex-operator github page and select **Releases** (https://github.com/identitatem/dex-operator/releases)
 1. Select **Draft a new release**
@@ -417,9 +417,9 @@ export IMG=quay.io/identitatem/idp-mgmt-operator:latest
 1. Commit the PR changes and get them reviewed and merged.
 1. Run the following command to generate the value we will use as part of the release and tag (OR possibly use the same tag dex-operator used)
 ```bash
-date -u "+0.3.2-%Y%m%d-%H-%M-%S"
+date -u "+0.3.3-%Y%m%d-%H-%M-%S"
 ```
- If you are building a release candidate, the format should be **0.3.2-rc#**.  (Where **#** is the release candidate number. Do not use UPPERCASE characters!)  If you are building the final release, the format should be **0.3.2**.
+ If you are building a release candidate, the format should be **0.3.3-rc#**.  (Where **#** is the release candidate number. Do not use UPPERCASE characters!)  If you are building the final release, the format should be **0.3.3**.
 
 1. Go to idp-mgmt-operator github page and select **Releases** (https://github.com/identitatem/idp-mgmt-operator/releases)
 1. Select **Draft a new release**
