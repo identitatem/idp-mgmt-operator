@@ -404,7 +404,7 @@ date -u "+0.3.3-%Y%m%d-%H-%M-%S"
    This will cause a github action to start.  Once the github action is complete, the new dex-operator quay image will be available at https://quay.io/repository/identitatem/dex-operator?tab=tags.  Now we need to pull this new dex-operator image
    into the idp-mgmt-operator.
 1. In your fork of the https://github.com/identitatem/idp-mgmt-operator repo, create a new branch
-1. Update `go.mod` entry `github.com/identitatem/dex-operator` to reference the new tag, for example `github.com/identitatem/dex-operator 0.3.2-20220317-12-30-05`  
+1. Update `go.mod` entry `github.com/identitatem/dex-operator` to reference the new tag, for example `github.com/identitatem/dex-operator 0.3.3-20220509-18-32-00`  
 1. Run `go mod tidy -compat=1.17`.  The `go.mod` entry will be updated to the correct value and the end of the new value will have the dex-operator git tag commit id.  
 1. Update https://github.com/identitatem/idp-mgmt-operator/blob/main/config/installer/installer.yaml
 so RELATED_IMAGE_DEX_OPERATOR points to the new dex-operator image in quay.
