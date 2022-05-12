@@ -7,7 +7,7 @@ set -e
 echo "Running bundle check..."
 
 export IMG=quay.io/identitatem/idp-mgmt-operator:latest
-export PREV_BUNDLE_INDEX_IMG=$(cat ./CATALOG_IMAGE_VERSION )
+export PREV_BUNDLE_INDEX_IMG=$(cat ./PREV_BUNDLE_INDEX_IMG )
 make bundle
 
 if [[ `git diff bundle config` ]]; then
