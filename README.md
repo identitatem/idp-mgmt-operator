@@ -90,7 +90,7 @@ If you are going to use GitHub as the OAuth provider.
 1. On github.com, go to Settings > Developer Settings > OAuth Apps
    (The shortcut is https://github.com/settings/developers)
 
-2. Add a `New OAuth App`. Copy the `Client ID` and `Client Secret` values. You will need them later on.
+2. Add a `New OAuth App`. 
 
 3. Fill in the `Application name` with something to help identify the owner and hub it will be used for.
    NOTE: If you have more than one hub, each one will need it's own entry.
@@ -99,6 +99,8 @@ If you are going to use GitHub as the OAuth provider.
    (NOTE: A little bit later we will correct the `Authorization callback URL` value once we have the generated value.)
 
 5. Click `Register Application`
+
+6. Copy the `Client ID` and `Client Secret` values. You will need them later on.
 
 NOTE: You will need to return to the GitHub OAuth a little bit later to correct the `Authorization callback URL`, once the value is generated for you.
 
