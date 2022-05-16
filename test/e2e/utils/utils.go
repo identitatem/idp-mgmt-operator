@@ -240,8 +240,12 @@ func replaceEnvVariablesInYamlString(yamlsString string) string {
 	yamlsString = strings.Replace(yamlsString, "$LDAP_AZURE_BIND_PASSWORD", os.Getenv("LDAP_AZURE_BIND_PASSWORD"), -1)
 	yamlsString = strings.Replace(yamlsString, "$LDAP_AZURE_BASE_DN", os.Getenv("LDAP_AZURE_BASE_DN"), -1)
 	yamlsString = strings.Replace(yamlsString, "$LDAP_AZURE_SERVER_CERT", os.Getenv("LDAP_AZURE_SERVER_CERT"), -1)
-	
-	return yamlsString	
+
+  // Replace value of OpenID
+	yamlsString = strings.Replace(yamlsString, "$OPENID_CLIENT_SECRET", os.Getenv("OPENID_CLIENT_SECRET"), -1)
+	yamlsString = strings.Replace(yamlsString, "$OPENID_ISSUER", os.Getenv("OPENID_ISSUER"), -1)
+
+	return yamlsString
 }
 
 // Apply a multi resources file to the cluster described by the provided kube client.

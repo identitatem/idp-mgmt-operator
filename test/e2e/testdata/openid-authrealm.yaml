@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: my-openid-authrealm-ns
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: ManagedClusterSet
+metadata:
+  name: openid-clusterset-sample
+    name: my-openid-authrealm-ns
+---
+apiVersion: cluster.open-cluster-management.io/v1alpha1
+kind: Placement
+metadata:
+  name: openid-placement-sample
+  namespace: my-openid-authrealm-ns
+spec:
+  predicates:
+  - requiredClusterSelector:
+      labelSelector:
+        matchLabels:
+          authdeployment: east
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: ManagedClusterSetBinding
+metadata:
+  name: openid-clusterset-sample
+  namespace: my-openid-authrealm-ns
+spec:
+  clusterSet: openid-clusterset-sample
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: authrealm-openid-client-secret
+  namespace: my-openid-authrealm-ns
+stringData:
+  clientSecret: $OPENID_CLIENT_SECRET
+type: Opaque
+---
+apiVersion: identityconfig.identitatem.io/v1alpha1
+kind: AuthRealm
+metadata:
+  name: authrealm-openid
+  namespace: my-openid-authrealm-ns
+spec:
+  type: dex
+  routeSubDomain: openid-subdomain
+  placementRef:
+    name: openid-placement-sample
+  identityProviders:
+    - name: openid
+      type: OpenID
+      mappingMethod: add
+      openID:
+        clientID: myclient
+        clientSecret:
+          name: authrealm-openid-client-secret
+        claims:
+          preferredUsername:
+            - preferred_username
+          name:
+            - name
+          email:
+            - email
+        issuer: ${OPENID_ISSUER}

@@ -36,7 +36,7 @@ var _ = BeforeSuite(func() {
 	TestOptions.HubCluster.KubeConfig = kubeConfig
 	TestOptions.HubCluster.KubeClient = utils.NewKubeClient(
 		TestOptions.HubCluster.ClusterServerURL,
-		TestOptions.HubCluster.KubeConfig, "")	
+		TestOptions.HubCluster.KubeConfig, "")
 	TestOptions.HubCluster.KubeClientDynamic = utils.NewKubeClientDynamic(
 		TestOptions.HubCluster.ClusterServerURL,
 		TestOptions.HubCluster.KubeConfig, "")
@@ -53,11 +53,11 @@ var _ = BeforeSuite(func() {
 			KubeConfig: os.Getenv("MANAGED_CLUSTER_KUBECONFIG"),
 			KubeContext: os.Getenv("MANAGED_CLUSTER_KUBECONTEXT"),
 		},
-	}	
+	}
 	managedClusters[0].KubeClient = utils.NewKubeClient(
 		managedClusters[0].ClusterServerURL,
 		managedClusters[0].KubeConfig,
-		managedClusters[0].KubeContext)	
+		managedClusters[0].KubeContext)
 	managedClusters[0].KubeClientDynamic = utils.NewKubeClientDynamic(
 		managedClusters[0].ClusterServerURL,
 		managedClusters[0].KubeConfig,
@@ -65,7 +65,7 @@ var _ = BeforeSuite(func() {
 	managedClusters[0].ApiExtensionsClient = utils.NewKubeClientAPIExtension(
 		managedClusters[0].ClusterServerURL,
 		managedClusters[0].KubeConfig,
-		managedClusters[0].KubeContext)	
+		managedClusters[0].KubeContext)
 	TestOptions.ManagedClusters = managedClusters
 
 	By("Checking that the managed cluster is imported and the ManagedCluster resource has a url", func() {
@@ -93,10 +93,10 @@ var _ = BeforeSuite(func() {
 			}
 			if (!specifiedManagedClusterExists) {
 				logf.Log.Info("Managed cluster was not found", "Error", err)
-				return err				
-			}			
+				return err
+			}
 			return nil
-		}, 120, 1).Should(BeNil())	
+		}, 120, 1).Should(BeNil())
 	})
 
 	// Verify installation of idp-mgmt-operator based on pods in the namespace idp-mgmt-config
@@ -106,8 +106,8 @@ var _ = BeforeSuite(func() {
 			if err != nil {
 				return err
 			}
-			// 1 pod for installer and 1 for operator
-			if len(l.Items) < 2 {
+			// 1 pod for installer, 1 for operator and 1 for webhook
+			if len(l.Items) < 3 {
 				logf.Log.Info("operator pod not created yet", "name", "idp-mgmt-config")
 				return fmt.Errorf("operator pod not created yet")
 			}
@@ -122,10 +122,10 @@ var _ = BeforeSuite(func() {
 				logf.Log.Info("some pods are not ready yet", "name", "idp-mgmt-config")
 				return fmt.Errorf("some pods are not ready yet")
 			}
-			
+
 			return nil
 		}, 30, 1).Should(BeNil())
-	})	
+	})
 })
 
 var _ = AfterSuite(func() {
@@ -145,5 +145,5 @@ func TestIdpMgmtOperatorE2E(t *testing.T) {
 	reporterConfig.FullTrace = true
 	RunSpecs(t,
 		"IDP Management E2E Suite",
-		reporterConfig)		
+		reporterConfig)
 }
