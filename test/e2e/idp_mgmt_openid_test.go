@@ -53,7 +53,7 @@ var _ = Describe("AuthRealm is configured for OpenID (keycloak) IDP", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() error {
 			_, err := TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-				Namespace("").
+				Namespace("my-openid-authrealm-ns").
 				Get(context.TODO(), "authrealm-openid-backplane", metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading Strategy", "Error", err)
@@ -67,7 +67,7 @@ var _ = Describe("AuthRealm is configured for OpenID (keycloak) IDP", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() error {
 			_, err := TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-				Namespace("idp-mgmt-openidtestdomain").
+				Namespace("idp-mgmt-openid-subdomain").
 				Get(context.TODO(), "dex-server", metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading DexServer", "Error", err)
@@ -81,7 +81,7 @@ var _ = Describe("AuthRealm is configured for OpenID (keycloak) IDP", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() int {
 			list, err := TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-				Namespace("idp-mgmt-openidtestdomain").
+				Namespace("idp-mgmt-openid-subdomain").
 				List(context.TODO(), metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			return len(list.Items)
