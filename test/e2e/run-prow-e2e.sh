@@ -170,6 +170,7 @@ echo "--- Install identity configuration management service for Kubernetes ..."
 echo "--- Install keycloak for OpenID tests ..."
 ./install-keycloak.sh
 
+# export variable saved from keycloak install/config 
 export OPENID_ISSUER=$(cat "/tmp/openid/openid_issuer")
 echo "OPENID_ISSUER is ${OPENID_ISSUER}"
 

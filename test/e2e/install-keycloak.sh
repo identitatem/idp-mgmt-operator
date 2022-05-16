@@ -151,10 +151,13 @@ export KEYCLOAK_URL=https://${KEYCLOAK_HOST}/auth
 export OPENID_ISSUER="${KEYCLOAK_URL}/realms/myrealm"
 
 # Save OPENID_ISSUER so parent script can use it
-mkdir /tmp/openid/
+if [ ! -d "/tmp/openid" ]; then
+   mkdir /tmp/openid
+fi
 echo ${OPENID_ISSUER} > /tmp/openid/openid_issuer
 
 echo "Keycloak host is ${KEYCLOAK_HOST}"
+echo "OpenID Issuer is ${OPENID_ISSUER}"
 
 echo "Create a Keycloak user"
 

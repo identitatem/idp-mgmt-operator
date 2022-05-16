@@ -9,7 +9,6 @@ apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: ManagedClusterSet
 metadata:
   name: openid-clusterset-sample
-    name: my-openid-authrealm-ns
 ---
 apiVersion: cluster.open-cluster-management.io/v1alpha1
 kind: Placement
@@ -65,4 +64,4 @@ spec:
             - name
           email:
             - email
-        issuer: ${OPENID_ISSUER}
+        issuer: $OPENID_ISSUER
