@@ -170,6 +170,9 @@ echo "--- Install identity configuration management service for Kubernetes ..."
 echo "--- Install keycloak for OpenID tests ..."
 ./install-keycloak.sh
 
+export OPENID_ISSUER=$(cat "/tmp/openid/openid_issuer")
+echo "OPENID_ISSUER is ${OPENID_ISSUER}"
+
 
 echo "--- Running ginkgo E2E tests"
 ./run-ginkgo-e2e-tests.sh

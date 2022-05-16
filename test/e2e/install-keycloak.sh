@@ -150,6 +150,10 @@ KEYCLOAK_HOST=`oc get route keycloak -n keycloak --template='{{ .spec.host }}'`
 export KEYCLOAK_URL=https://${KEYCLOAK_HOST}/auth
 export OPENID_ISSUER="${KEYCLOAK_URL}/realms/myrealm"
 
+# Save OPENID_ISSUER so parent script can use it
+mkdir /tmp/openid/
+echo ${OPENID_ISSUER} > /tmp/openid/openid_issuer
+
 echo "Keycloak host is ${KEYCLOAK_HOST}"
 
 echo "Create a Keycloak user"
