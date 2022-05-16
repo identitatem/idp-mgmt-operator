@@ -39,7 +39,7 @@ var _ = Describe("AuthRealm is configured for OpenID (keycloak) IDP", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() error {
 			_, err := TestOptions.HubCluster.KubeClientDynamic.Resource(gvr).
-				Namespace("").
+				Namespace("my-openid-authrealm-ns").
 				Get(context.TODO(), "authrealm-openid", metav1.GetOptions{})
 			if err != nil {
 				logf.Log.Info("Error while reading AuthRealm", "Error", err)
