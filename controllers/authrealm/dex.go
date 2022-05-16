@@ -24,6 +24,7 @@ import (
 	clusteradmasset "open-cluster-management.io/clusteradm/pkg/helpers/asset"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/openshift/library-go/pkg/security/ldaputil"
 )
 
 const (
@@ -399,12 +400,21 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			r.Log.Info("generated intermediate connectors", "cs", cs)
 		case openshiftconfigv1.IdentityProviderTypeLDAP:
 			r.Log.Info("create connector for LDAP")
+			url, err := ldaputil.ParseURL(idp.LDAP.URL)
+			if err != nil {
+				return nil, fmt.Errorf("Error parsing LDAP URL: %v", err)
+			}
+			var scope string
+			if url.Scope == ldaputil.ScopeSingleLevel {
+				scope = "one"
+			}
+			fmt.Println("scope - ", scope)
 			c := &dexoperatorv1alpha1.ConnectorSpec{
 				Type: dexoperatorv1alpha1.ConnectorTypeLDAP,
 				Name: idp.Name,
 				Id:   idp.Name,
 				LDAP: dexoperatorv1alpha1.LDAPConfigSpec{
-					Host:   idp.LDAP.URL,
+					Host:   url.Host,
 					BindDN: idp.LDAP.BindDN,
 					BindPWRef: corev1.SecretReference{
 						Name:      idp.LDAP.BindPassword.Name,
@@ -418,9 +428,10 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 						Namespace: authRealm.Namespace,
 					},
 					UserSearch: dexoperatorv1alpha1.UserSearchSpec{
-						BaseDN:    authRealm.Spec.LDAPExtraConfigs[idp.Name].BaseDN,
-						Filter:    authRealm.Spec.LDAPExtraConfigs[idp.Name].Filter,
-						Username:  idp.LDAP.Attributes.PreferredUsername[0],
+						BaseDN:    url.BaseDN,
+						Filter:    url.Filter,
+						Scope:     scope,
+						Username:  url.QueryAttribute,
 						IDAttr:    idp.LDAP.Attributes.ID[0],
 						EmailAttr: idp.LDAP.Attributes.Email[0],
 						NameAttr:  idp.LDAP.Attributes.Name[0],
