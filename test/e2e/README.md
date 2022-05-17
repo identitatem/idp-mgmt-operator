@@ -5,6 +5,7 @@
 - An OCP cluster with ACM or MCE installed (Hub cluster)
 - A managed cluster imported successfully into the hub cluster
 - The IDP management operator installed and running on the hub cluster
+- For OpenID tests, Keycloak operator must be installed in keycloak namespace
 
 #### Steps to run tests:
 
@@ -66,9 +67,20 @@
      # Signed certificate for secure LDAP
      export LDAP_AZURE_SERVER_CERT=...     
      ```
- 
-6. Then execute the following command to run e2e testing:
+6. For the OpenID (Keycloak) IDP run the following script to setup keycloak and export a few environment variables:
+   ```bash
+    # Setup OpenID client secret
+    export OPENID_CLIENT_SECRET=$(head /dev/urandom | LC_CTYPE=C tr -dc a-z0-9 | head -c 16 ; echo '')
+    # Setup a keycloak instance and set OPENID_ISSUER (via saving to /tmp/openid/openid_issuer)
+    test/e2e/install-keycloak.sh    
+    ```
+
+7. Then execute the following command to run e2e testing:
 
     ```
     make e2e-ginkgo-test
+    ```
+    NOTE: Or you may want to use
+    ```
+    ginkgo -tags e2e -v test/e2e --  --ginkgo.vv --ginkgo.trace
     ```

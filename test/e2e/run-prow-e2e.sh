@@ -71,6 +71,8 @@ export GIT_REPO_SLUG=$GIT_REPO_SLUG
 export AWS_ACCESS_KEY_ID=$(cat "/etc/ocm-mgdsvcs-e2e-test/aws-access-key")
 export AWS_SECRET_ACCESS_KEY=$(cat "/etc/ocm-mgdsvcs-e2e-test/aws-secret-access-key")
 
+# Generate a random password for OpenID client secret
+export OPENID_CLIENT_SECRET=$(head /dev/urandom | LC_CTYPE=C tr -dc a-z0-9 | head -c 16 ; echo '')
 
 
 # Workaround for "error: x509: certificate signed by unknown authority" problem with oc login
@@ -164,6 +166,14 @@ export IDP_MGMT_OPERATOR_DIR=${IDP_MGMT_OPERATOR_DIR:-"/idp-mgmt-operator"}
 
 echo "--- Install identity configuration management service for Kubernetes ..."
 ./install-IDP.sh
+
+echo "--- Install keycloak for OpenID tests ..."
+./install-keycloak.sh
+
+# export variable saved from keycloak install/config 
+export OPENID_ISSUER=$(cat "/tmp/openid/openid_issuer")
+echo "OPENID_ISSUER is ${OPENID_ISSUER}"
+
 
 echo "--- Running ginkgo E2E tests"
 ./run-ginkgo-e2e-tests.sh
