@@ -28,8 +28,7 @@ import (
 
 	hypershiftdeploymentv1alpha1 "github.com/stolostron/hypershift-deployment-controller/api/v1alpha1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
+	// Retrieve the hypershift statuses and push them in the AuthRealm
 	//+kubebuilder:scaffold:imports
 )
 
@@ -48,7 +47,7 @@ type HypershiftDeploymentReconciler struct {
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms},verbs=get;list;watch;get
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms/status},verbs=patch
 
-//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={hypershiftdeployments},verbs=get;list;watch;create;update
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={hypershiftdeployments},verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -64,7 +63,7 @@ func (r *HypershiftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl
 	_ = r.Log.WithValues("namespace", req.NamespacedName, "name", req.Name)
 
 	// your logic here
-	// Fetch the ClusterOAuth instance
+	// Fetch the hypershiftdeployment instance
 	instance := &hypershiftdeploymentv1alpha1.HypershiftDeployment{}
 
 	if err := r.Client.Get(
@@ -86,14 +85,7 @@ func (r *HypershiftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl
 		"name", instance.GetName(),
 		"namespace", instance.GetNamespace())
 
-	if instance.DeletionTimestamp != nil {
-		if result, err := r.processHypershiftDeployment(instance, true); err != nil || result.Requeue {
-			return result, err
-		}
-		return reconcile.Result{}, nil
-	}
-
-	if result, err := r.processHypershiftDeployment(instance, false); err != nil || result.Requeue {
+	if result, err := r.processHypershiftDeployment(instance, instance.DeletionTimestamp != nil); err != nil || result.Requeue {
 		return result, err
 	}
 

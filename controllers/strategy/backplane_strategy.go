@@ -28,21 +28,7 @@ func (r *StrategyReconciler) backplanePlacementStrategy(strategy *identitatemv1a
 		},
 	}
 
-	for _, cp := range placement.Spec.Predicates {
-		placementStrategy.Spec.Predicates[0].RequiredClusterSelector.ClaimSelector.MatchExpressions =
-			append(placementStrategy.Spec.Predicates[0].RequiredClusterSelector.ClaimSelector.MatchExpressions,
-				cp.RequiredClusterSelector.ClaimSelector.MatchExpressions...)
-	}
-
-	for _, cp := range placement.Spec.Predicates {
-		placementStrategy.Spec.Predicates[0].RequiredClusterSelector.LabelSelector.MatchExpressions =
-			append(placementStrategy.Spec.Predicates[0].RequiredClusterSelector.LabelSelector.MatchExpressions,
-				cp.RequiredClusterSelector.LabelSelector.MatchExpressions...)
-		//We can overwrite the Matchlabel as the strategy check only on MatchExpression, in the future if the strategy
-		//checks also on label, we will need to merge
-		placementStrategy.Spec.Predicates[0].RequiredClusterSelector.LabelSelector.MatchLabels =
-			cp.RequiredClusterSelector.LabelSelector.MatchLabels
-	}
+	addUserDefinedSelectors(placement, placementStrategy)
 
 	r.Log.Info("placementstrategy after adding labelselector", "placementstrategy", placementStrategy)
 }

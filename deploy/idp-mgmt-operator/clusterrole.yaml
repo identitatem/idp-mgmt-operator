@@ -163,7 +163,6 @@ rules:
     resources:
       - hypershiftdeployments
     verbs:
-      - create
       - get
       - list
       - update
