@@ -413,6 +413,7 @@ var _ = Describe("Process AuthRealm Github: ", func() {
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 								Type: openshiftconfigv1.IdentityProviderTypeLDAP,
 								LDAP: &openshiftconfigv1.LDAPIdentityProvider{
+									URL: "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 									BindPassword: openshiftconfigv1.SecretNameReference{
 										Name: AuthRealmName + "-" + string(openshiftconfigv1.IdentityProviderTypeLDAP),
 									},
@@ -558,7 +559,7 @@ var _ = Describe("Process AuthRealm LDAP: ", func() {
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 								Type: openshiftconfigv1.IdentityProviderTypeLDAP,
 								LDAP: &openshiftconfigv1.LDAPIdentityProvider{
-									URL:    "myldap.example.com",
+									URL:    "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 									BindDN: BindDN,
 									Attributes: openshiftconfigv1.LDAPAttributeMapping{
 										ID:                []string{"DN"},

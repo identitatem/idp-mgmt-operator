@@ -15,6 +15,7 @@ import (
 	"github.com/identitatem/idp-mgmt-operator/deploy"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/library-go/pkg/security/ldaputil"
 	giterrors "github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -24,7 +25,6 @@ import (
 	clusteradmasset "open-cluster-management.io/clusteradm/pkg/helpers/asset"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"github.com/openshift/library-go/pkg/security/ldaputil"
 )
 
 const (
@@ -408,7 +408,11 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			if url.Scope == ldaputil.ScopeSingleLevel {
 				scope = "one"
 			}
-			fmt.Println("scope - ", scope)
+
+			if url.Scope == ldaputil.ScopeWholeSubtree {
+				scope = "sub"
+			}
+
 			c := &dexoperatorv1alpha1.ConnectorSpec{
 				Type: dexoperatorv1alpha1.ConnectorTypeLDAP,
 				Name: idp.Name,

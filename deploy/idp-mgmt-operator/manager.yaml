@@ -6,9 +6,7 @@ metadata:
   name: idp-mgmt-operator-manager
   namespace: {{ .Namespace }}
   labels:
-    app: ldap-test
-    app.kubernetes.io/component: ldap-test
-    app.kubernetes.io/instance: ldap-test
+    control-plane: idp-mgmt-operator-manager
 spec:
   selector:
     matchLabels:
