@@ -411,7 +411,9 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			if url.Scope == ldaputil.ScopeWholeSubtree {
 				scope = "sub"
 			}
-
+			if url.Scope == ldaputil.ScopeBaseObject {
+				scope = "base"
+			}
 			c := &dexoperatorv1alpha1.ConnectorSpec{
 				Type: dexoperatorv1alpha1.ConnectorTypeLDAP,
 				Name: idp.Name,
@@ -441,6 +443,12 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 					},
 					GroupSearch: authRealm.Spec.LDAPExtraConfigs[idp.Name].GroupSearch,
 				},
+			}
+			if url.Scheme == "ldap" {
+				c.LDAP.StartTLS = true
+			}
+			if url.Scheme == "ldaps" {
+				c.LDAP.StartTLS = false
 			}
 			r.Log.Info("generated connector", "c.LDAP", c.LDAP)
 			cs = append(cs, *c)

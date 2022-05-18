@@ -60,7 +60,7 @@ export LDAP_AZURE_BIND_PASSWORD=$(cat "/etc/ocm-mgdsvcs-e2e-test/ldap-azure-bind
 export LDAP_AZURE_BASE_DN=$(cat "/etc/ocm-mgdsvcs-e2e-test/ldap-azure-base-dn")
 export LDAP_AZURE_SERVER_CERT=$(cat "/etc/ocm-mgdsvcs-e2e-test/ldap-azure-server-cert")
 
-export LDAP_AZURE_URL="ldaps://"+$LDAP_AZURE_HOST+"/"+$LDAP_AZURE_BASE_DN+"?userPrincipalName?one?(objectClass=person)"
+export LDAP_AZURE_URL="ldaps://"$LDAP_AZURE_HOST"/"$LDAP_AZURE_BASE_DN"?userPrincipalName?one?(objectClass=person)"
 
 export ACME_REPO="github.com/acmesh-official/acme.sh"
 export IDP_MGMT_OPERATOR_REPO="github.com/identitatem/idp-mgmt-operator"
