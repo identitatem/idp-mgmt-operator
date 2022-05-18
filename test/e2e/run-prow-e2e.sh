@@ -53,11 +53,14 @@ export CYPRESS_OPTIONS_GH_OAUTH_APPS_URL=$(cat "/etc/ocm-mgdsvcs-e2e-test/github
 export CYPRESS_OPTIONS_GH_SECRET_KEY_FOR_TOTP=$(cat "/etc/ocm-mgdsvcs-e2e-test/github-secret-key-for-totp")
 
 # LDAP (Azure Active Directory)
+
 export LDAP_AZURE_HOST=$(cat "/etc/ocm-mgdsvcs-e2e-test/ldap-azure-host")
 export LDAP_AZURE_BIND_DN=$(cat "/etc/ocm-mgdsvcs-e2e-test/ldap-azure-bind-dn")
 export LDAP_AZURE_BIND_PASSWORD=$(cat "/etc/ocm-mgdsvcs-e2e-test/ldap-azure-bind-password")
 export LDAP_AZURE_BASE_DN=$(cat "/etc/ocm-mgdsvcs-e2e-test/ldap-azure-base-dn")
 export LDAP_AZURE_SERVER_CERT=$(cat "/etc/ocm-mgdsvcs-e2e-test/ldap-azure-server-cert")
+
+export LDAP_AZURE_URL="ldaps://"+$LDAP_AZURE_HOST+"/"+$LDAP_AZURE_BASE_DN+"?userPrincipalName?one?(objectClass=person)"
 
 export ACME_REPO="github.com/acmesh-official/acme.sh"
 export IDP_MGMT_OPERATOR_REPO="github.com/identitatem/idp-mgmt-operator"

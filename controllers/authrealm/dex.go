@@ -408,7 +408,6 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			if url.Scope == ldaputil.ScopeSingleLevel {
 				scope = "one"
 			}
-
 			if url.Scope == ldaputil.ScopeWholeSubtree {
 				scope = "sub"
 			}
