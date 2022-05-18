@@ -405,15 +405,15 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 				return nil, fmt.Errorf("Error parsing LDAP URL: %v", err)
 			}
 			var scope string
-			if url.Scope == ldaputil.ScopeSingleLevel {
+			switch url.Scope {
+			case ldaputil.ScopeSingleLevel:
 				scope = "one"
-			}
-			if url.Scope == ldaputil.ScopeWholeSubtree {
+			case ldaputil.ScopeWholeSubtree:
 				scope = "sub"
-			}
-			if url.Scope == ldaputil.ScopeBaseObject {
+			case ldaputil.ScopeBaseObject:
 				scope = "base"
 			}
+			
 			c := &dexoperatorv1alpha1.ConnectorSpec{
 				Type: dexoperatorv1alpha1.ConnectorTypeLDAP,
 				Name: idp.Name,
@@ -444,12 +444,13 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 					GroupSearch: authRealm.Spec.LDAPExtraConfigs[idp.Name].GroupSearch,
 				},
 			}
-			if url.Scheme == "ldap" {
+			switch url.Scheme {
+			case "ldap":
 				c.LDAP.StartTLS = true
-			}
-			if url.Scheme == "ldaps" {
+			case "ldaps":
 				c.LDAP.StartTLS = false
 			}
+			
 			r.Log.Info("generated connector", "c.LDAP", c.LDAP)
 			cs = append(cs, *c)
 			fmt.Println("cs: ", cs)
