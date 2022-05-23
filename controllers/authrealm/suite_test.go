@@ -495,7 +495,7 @@ var _ = Describe("Process AuthRealm Github: ", func() {
 
 })
 
-var _ = Describe("Process AuthRealm LDAP: ", func() {
+var _ = Describe("Process AuthRealm LDAP wtih ldap url schema ldap: ", func() {
 	AuthRealmName := "my-authrealm-ldap"
 	AuthRealmNameSpace := "my-authrealm-ldap-ns"
 	RouteSubDomain := "myroute-ldap"
@@ -635,6 +635,169 @@ var _ = Describe("Process AuthRealm LDAP: ", func() {
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeLDAP))
 			Expect(dexServer.Spec.IngressCertificateRef.Name).To(Equal(authRealm.Spec.CertificatesSecretRef.Name))
 			Expect(dexServer.Spec.Connectors[0].LDAP.StartTLS).To(Equal(true))
+			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.BaseDN).To(Equal(BaseDN))
+			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.Filter).To(Equal(Filter))
+			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.NameAttr).To(Equal(NameAttr))
+			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.EmailAttr).To(Equal(EmailAttr))
+			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.Username).To(Equal("mail"))
+			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.IDAttr).To(Equal(IDAttr))
+			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.Scope).To(Equal("one"))
+
+			Expect(dexServer.Spec.Connectors[0].LDAP.GroupSearch.BaseDN).To(Equal(BaseDN))
+			Expect(dexServer.Spec.Connectors[0].LDAP.GroupSearch.Filter).To(Equal(GroupFilter))
+			Expect(dexServer.Spec.Connectors[0].LDAP.GroupSearch.UserMatchers[0].GroupAttr).To(Equal(GroupAttr))
+			Expect(dexServer.Spec.Connectors[0].LDAP.GroupSearch.UserMatchers[0].UserAttr).To(Equal(UserAttr))
+			Expect(dexServer.Spec.Connectors[0].LDAP.GroupSearch.NameAttr).To(Equal(NameAttr))
+			// Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Namespace).To(Equal(dexServerName))
+
+			Expect(len(dexServer.Status.RelatedObjects)).To(Equal(1))
+			Expect(dexServer.Status.RelatedObjects[0].Kind).To(Equal("AuthRealm"))
+			//TODO CA missing in Web
+		})
+	})
+
+})
+
+var _ = Describe("Process AuthRealm LDAP wtih ldap url schema ldaps: ", func() {
+	AuthRealmName := "my-authrealm-ldaps1"
+	AuthRealmNameSpace := "my-authrealm-ldap-ns1"
+	RouteSubDomain := "myroute-ldap1"
+	CertificatesSecretRef := "my-certs1"
+	BindDN := "cn=Manager,dc=example,dc=com"
+	Filter := "(objectClass=person)"
+	BaseDN := "dc=example,dc=com"
+	GroupFilter := "(objectClass=groupOfNames)"
+	GroupAttr := "member"
+	UserAttr := "DN"
+	NameAttr := "cn"
+	EmailAttr := "mail"
+	IDAttr := "DN"
+	It("Check CRDs availability", func() {
+		By("Checking authrealms CRD", func() {
+			readerStrategy := idpconfig.GetScenarioResourcesReader()
+			_, err := getCRD(readerStrategy, "crd/bases/identityconfig.identitatem.io_authrealms.yaml")
+			Expect(err).Should(BeNil())
+		})
+	})
+	It("process a AuthRealm CR LDAP", func() {
+		By("creation test namespace", func() {
+			ns := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: AuthRealmNameSpace,
+				},
+			}
+			err := k8sClient.Create(context.TODO(), ns)
+			Expect(err).To(BeNil())
+		})
+		By("creating the certificate secret", func() {
+			secret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      CertificatesSecretRef,
+					Namespace: AuthRealmNameSpace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": []byte("tls.mycrt"),
+					"tls.key": []byte("tls.mykey"),
+					"ca.crt":  []byte("ca.crt"),
+				},
+			}
+			err := k8sClient.Create(context.TODO(), secret)
+			Expect(err).To(BeNil())
+
+		})
+		var authRealm *identitatemv1alpha1.AuthRealm
+		By("creating a AuthRealm CR type ldap", func() {
+			authRealm = &identitatemv1alpha1.AuthRealm{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      AuthRealmName,
+					Namespace: AuthRealmNameSpace,
+				},
+				Spec: identitatemv1alpha1.AuthRealmSpec{
+					RouteSubDomain: RouteSubDomain,
+					Type:           identitatemv1alpha1.AuthProxyDex,
+					CertificatesSecretRef: corev1.LocalObjectReference{
+						Name: CertificatesSecretRef,
+					},
+					IdentityProviders: []openshiftconfigv1.IdentityProvider{
+						{
+							Name: "my-ldap",
+							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+								Type: openshiftconfigv1.IdentityProviderTypeLDAP,
+								LDAP: &openshiftconfigv1.LDAPIdentityProvider{
+									URL:    "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
+									BindDN: BindDN,
+									Attributes: openshiftconfigv1.LDAPAttributeMapping{
+										ID:                []string{IDAttr},
+										PreferredUsername: []string{"mail"},
+										Name:              []string{NameAttr},
+										Email:             []string{"mail"},
+									},
+								},
+							},
+						},
+					},
+					LDAPExtraConfigs: map[string]identitatemv1alpha1.LDAPExtraConfig{
+						"my-ldap": {
+							GroupSearch: dexoperatorv1alpha1.GroupSearchSpec{
+								BaseDN: BaseDN,
+								Filter: GroupFilter,
+								UserMatchers: []dexoperatorv1alpha1.UserMatcher{
+									{
+										UserAttr:  UserAttr,
+										GroupAttr: GroupAttr,
+									},
+								},
+								NameAttr: NameAttr,
+							},
+						},
+					},
+				},
+			}
+			var err error
+			authRealm, err = clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By("Run reconcile", func() {
+			req := ctrl.Request{}
+			req.Name = AuthRealmName
+			req.Namespace = AuthRealmNameSpace
+			_, err := r.Reconcile(context.TODO(), req)
+			Expect(err).Should(BeNil())
+		})
+		By("Checking AuthRealm", func() {
+			authRealm, err := clientSetMgmt.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName, metav1.GetOptions{})
+			Expect(err).Should(BeNil())
+			status := meta.FindStatusCondition(authRealm.Status.Conditions, identitatemv1alpha1.AuthRealmApplied)
+			Expect(status).NotTo(BeNil())
+			Expect(meta.IsStatusConditionTrue(authRealm.Status.Conditions, identitatemv1alpha1.AuthRealmApplied)).To(BeTrue())
+		})
+		By("Checking Backplane Strategy", func() {
+			_, err := clientSetStrategy.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName+"-backplane", metav1.GetOptions{})
+			Expect(err).Should(BeNil())
+		})
+		// By("Checking GRC Strategy", func() {
+		// 	_, err := clientSetStrategy.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), AuthRealmName+"-grc", metav1.GetOptions{})
+		// 	Expect(err).Should(BeNil())
+		// })
+		By("Checking Dex Operator Namespace", func() {
+			ns := &corev1.Namespace{}
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexOperatorNamespace()}, ns)
+			Expect(err).Should(BeNil())
+		})
+		By("Checking Dex Deployment", func() {
+			ns := &appsv1.Deployment{}
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: "dex-operator", Namespace: helpers.DexOperatorNamespace()}, ns)
+			Expect(err).Should(BeNil())
+		})
+		By("Checking DexServer", func() {
+			dexServer := &identitatemdexserverv1lapha1.DexServer{}
+			err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: helpers.DexServerName(), Namespace: helpers.DexServerNamespace(authRealm)}, dexServer)
+			Expect(err).Should(BeNil())
+			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
+			Expect(dexServer.Spec.Connectors[0].LDAP.BindDN).To(Equal(BindDN))
+			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeLDAP))
+			Expect(dexServer.Spec.IngressCertificateRef.Name).To(Equal(authRealm.Spec.CertificatesSecretRef.Name))
+			Expect(dexServer.Spec.Connectors[0].LDAP.StartTLS).To(Equal(false))
 			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.BaseDN).To(Equal(BaseDN))
 			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.Filter).To(Equal(Filter))
 			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.NameAttr).To(Equal(NameAttr))

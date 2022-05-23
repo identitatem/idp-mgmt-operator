@@ -110,7 +110,7 @@ func (a *AuthRealmAdmissionHook) ValidateAuthRealm(admissionSpec *admissionv1bet
 					status.Allowed = false
 					status.Result = &metav1.Status{
 						Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
-						Message: "Error parsing LDAP URL: " + err.Error()  + "LDAP URL syntax is <ldap://host:port/basedn?attribute?scope?filter> ",
+						Message: "Error parsing LDAP URL: " + err.Error() + " LDAP URL syntax is <ldap://host:port/basedn?attribute?scope?filter>",
 					}
 					return status
 				}
