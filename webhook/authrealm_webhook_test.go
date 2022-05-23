@@ -34,6 +34,7 @@ func TestAuthRealmValidate(t *testing.T) {
 		proxytype        identitatemv1alpha1.AuthProxyType
 		routeSubDomain   string
 		team             []string
+		url string
 		request          *admissionv1beta1.AdmissionRequest
 		expectedResponse *admissionv1beta1.AdmissionResponse
 	}{
@@ -255,6 +256,24 @@ func TestAuthRealmValidate(t *testing.T) {
 				Result: &metav1.Status{
 					Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
 					Message: "team should be in format <org>/<team>",
+				},
+			},
+		},
+		{
+			title:     "invalidate creating AuthRealm invalid LDAP URL",
+			name:      "authrealm-test",
+			namespace: "authrealm-test-ns",
+			proxytype: identitatemv1alpha1.AuthProxyDex,
+			url:      "ldap://myldap.example.com:389/dc=example,dc=com?mail,cn?(objectClass=person)",
+			request: &admissionv1beta1.AdmissionRequest{
+				Resource:  authrealmSchema,
+				Operation: admissionv1beta1.Create,
+			},
+			expectedResponse: &admissionv1beta1.AdmissionResponse{
+				Allowed: false,
+				Result: &metav1.Status{
+					Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
+					Message: "Error parsing LDAP URL: invalid scope \"(objectClass=person)\" LDAP URL syntax is <ldap://host:port/basedn?attribute?scope?filter>",
 				},
 			},
 		},

@@ -15,6 +15,7 @@ import (
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/library-go/pkg/security/ldaputil"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -102,6 +103,16 @@ func (a *AuthRealmAdmissionHook) ValidateAuthRealm(admissionSpec *admissionv1bet
 							return status
 						}
 					}
+				}
+			}
+			if idp.Type == openshiftconfigv1.IdentityProviderTypeLDAP {
+				if _, err := ldaputil.ParseURL(idp.LDAP.URL); err != nil {
+					status.Allowed = false
+					status.Result = &metav1.Status{
+						Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
+						Message: "Error parsing LDAP URL: " + err.Error()  + "LDAP URL syntax is <ldap://host:port/basedn?attribute?scope?filter> ",
+					}
+					return status
 				}
 			}
 		}
