@@ -507,6 +507,8 @@ var _ = Describe("Process AuthRealm LDAP: ", func() {
 	GroupAttr := "member"
 	UserAttr := "DN"
 	NameAttr := "cn"
+	EmailAttr := "mail"
+	IDAttr := "DN"
 	It("Check CRDs availability", func() {
 		By("Checking authrealms CRD", func() {
 			readerStrategy := idpconfig.GetScenarioResourcesReader()
@@ -559,12 +561,12 @@ var _ = Describe("Process AuthRealm LDAP: ", func() {
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 								Type: openshiftconfigv1.IdentityProviderTypeLDAP,
 								LDAP: &openshiftconfigv1.LDAPIdentityProvider{
-									URL:    "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
+									URL:    "ldap://myldap.example.com:389/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 									BindDN: BindDN,
 									Attributes: openshiftconfigv1.LDAPAttributeMapping{
-										ID:                []string{"DN"},
+										ID:                []string{IDAttr},
 										PreferredUsername: []string{"mail"},
-										Name:              []string{"cn"},
+										Name:              []string{NameAttr},
 										Email:             []string{"mail"},
 									},
 								},
@@ -573,8 +575,6 @@ var _ = Describe("Process AuthRealm LDAP: ", func() {
 					},
 					LDAPExtraConfigs: map[string]identitatemv1alpha1.LDAPExtraConfig{
 						"my-ldap": {
-							BaseDN: BaseDN,
-							Filter: Filter,
 							GroupSearch: dexoperatorv1alpha1.GroupSearchSpec{
 								BaseDN: BaseDN,
 								Filter: GroupFilter,
@@ -632,16 +632,24 @@ var _ = Describe("Process AuthRealm LDAP: ", func() {
 			Expect(err).Should(BeNil())
 			Expect(len(dexServer.Spec.Connectors)).To(Equal(1))
 			Expect(dexServer.Spec.Connectors[0].LDAP.BindDN).To(Equal(BindDN))
+			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeLDAP))
+			Expect(dexServer.Spec.IngressCertificateRef.Name).To(Equal(authRealm.Spec.CertificatesSecretRef.Name))
+			Expect(dexServer.Spec.Connectors[0].LDAP.StartTLS).To(Equal(true))
 			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.BaseDN).To(Equal(BaseDN))
 			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.Filter).To(Equal(Filter))
+			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.NameAttr).To(Equal(NameAttr))
+			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.EmailAttr).To(Equal(EmailAttr))
+			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.Username).To(Equal("mail"))
+			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.IDAttr).To(Equal(IDAttr))
+			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.Scope).To(Equal("one"))
+
 			Expect(dexServer.Spec.Connectors[0].LDAP.GroupSearch.BaseDN).To(Equal(BaseDN))
 			Expect(dexServer.Spec.Connectors[0].LDAP.GroupSearch.Filter).To(Equal(GroupFilter))
 			Expect(dexServer.Spec.Connectors[0].LDAP.GroupSearch.UserMatchers[0].GroupAttr).To(Equal(GroupAttr))
 			Expect(dexServer.Spec.Connectors[0].LDAP.GroupSearch.UserMatchers[0].UserAttr).To(Equal(UserAttr))
 			Expect(dexServer.Spec.Connectors[0].LDAP.GroupSearch.NameAttr).To(Equal(NameAttr))
 			// Expect(dexServer.Spec.Connectors[0].Config.ClientSecretRef.Namespace).To(Equal(dexServerName))
-			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeLDAP))
-			Expect(dexServer.Spec.IngressCertificateRef.Name).To(Equal(authRealm.Spec.CertificatesSecretRef.Name))
+
 			Expect(len(dexServer.Status.RelatedObjects)).To(Equal(1))
 			Expect(dexServer.Status.RelatedObjects[0].Kind).To(Equal("AuthRealm"))
 			//TODO CA missing in Web
