@@ -271,6 +271,15 @@ var _ = Describe("Process manifestwork: ", func() {
 			Expect(err).To(BeNil())
 		})
 
+		By("Creating managedCluster", func() {
+			mc := &clusterv1.ManagedCluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: ClusterName,
+				},
+			}
+			err := k8sClient.Create(context.TODO(), mc)
+			Expect(err).To(BeNil())
+		})
 		By("Creating a manifestwork idp-oauth", func() {
 			mw := &workv1.ManifestWork{
 				TypeMeta: metav1.TypeMeta{

@@ -173,7 +173,7 @@ func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.A
 			if err := r.Client.Delete(context.TODO(), crb); err != nil {
 				return ctrl.Result{}, giterrors.WithStack(err)
 			}
-			r.Log.Info("waiting clusterRoleBiding to be deleted", "name", "dex-operator-rolebinding")
+			r.Log.Info("waiting clusterRoleBinding to be deleted", "name", "dex-operator-rolebinding")
 			return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Second}, nil
 		case !errors.IsNotFound(err):
 			return ctrl.Result{}, giterrors.WithStack(err)
@@ -470,34 +470,6 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 	}
 	r.Log.Info("generated connectors", "cs", cs)
 	return cs, giterrors.WithStack(err)
-}
-
-func (r *AuthRealmReconciler) processAuthRealmDeletion(authRealm *identitatemv1alpha1.AuthRealm) (ctrl.Result, error) {
-	if r, err := r.processDexServerDeletion(authRealm); err != nil || r.Requeue {
-		return r, err
-	}
-	r.Log.Info("delete Strategy", "name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType))
-	st := &identitatemv1alpha1.Strategy{}
-	err := r.Client.Get(context.TODO(),
-		client.ObjectKey{
-			Name:      helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType),
-			Namespace: authRealm.Namespace},
-		st)
-	switch {
-	case err == nil:
-		if err := r.Client.Delete(context.TODO(), st); err != nil {
-			return ctrl.Result{}, giterrors.WithStack(err)
-		}
-		r.Log.Info("waiting strategy to be deleted",
-			"name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType),
-			"namespace", authRealm.Namespace)
-		return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Second}, nil
-	case !errors.IsNotFound(err):
-		return ctrl.Result{}, giterrors.WithStack(err)
-	}
-	r.Log.Info("deleted Strategy", "name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType))
-	r.Log.Info("delete DexOperator")
-	return r.deleteDexOperator(authRealm)
 }
 
 func (r *AuthRealmReconciler) processDexServerDeletion(authRealm *identitatemv1alpha1.AuthRealm) (ctrl.Result, error) {

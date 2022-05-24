@@ -18,6 +18,7 @@ import (
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/controllers/authrealm"
 	"github.com/identitatem/idp-mgmt-operator/controllers/clusteroauth"
+	"github.com/identitatem/idp-mgmt-operator/controllers/hypershiftdeployment"
 	"github.com/identitatem/idp-mgmt-operator/controllers/manifestwork"
 	"github.com/identitatem/idp-mgmt-operator/controllers/placementdecision"
 	"github.com/identitatem/idp-mgmt-operator/controllers/strategy"
@@ -149,6 +150,20 @@ func (o *managerOptions) run() {
 		Log:                ctrl.Log.WithName("controllers").WithName("ManifestWork"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ManifestWork")
+		os.Exit(1)
+	}
+
+	//This manager consolidate all HypershiftDeployment to update the Authrealm status
+	setupLog.Info("Add HypershiftDeployment reconciler")
+	if err = (&hypershiftdeployment.HypershiftDeploymentReconciler{
+		Client:             mgr.GetClient(),
+		KubeClient:         kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
+		DynamicClient:      dynamic.NewForConfigOrDie(ctrl.GetConfigOrDie()),
+		APIExtensionClient: apiextensionsclient.NewForConfigOrDie(ctrl.GetConfigOrDie()),
+		Scheme:             mgr.GetScheme(),
+		Log:                ctrl.Log.WithName("controllers").WithName("HypershiftDeployment"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "HypershiftDeployment")
 		os.Exit(1)
 	}
 

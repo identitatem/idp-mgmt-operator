@@ -184,6 +184,19 @@ var _ = Describe("AuthRealm", func() {
 				return nil
 			}, 60, 1).Should(BeNil())
 		})
+		By("Checking the strategy hypershift creation", func() {
+			Eventually(func() error {
+				_, err := identitatemClientSet.
+					IdentityconfigV1alpha1().
+					Strategies(AuthRealmNameSpace).
+					Get(context.TODO(), AuthRealmName+"-"+string(identitatemv1alpha1.HypershiftStrategyType), metav1.GetOptions{})
+				if err != nil {
+					logf.Log.Info("Error while reading strategy", "Error", err)
+					return err
+				}
+				return nil
+			}, 60, 1).Should(BeNil())
+		})
 		// By("Checking the strategy grc creation", func() {
 		// 	Eventually(func() error {
 		// 		_, err := authClientSet.
@@ -232,6 +245,15 @@ var _ = Describe("AuthRealm", func() {
 				return err
 			}, 60, 1).ShouldNot(BeNil())
 		})
+		By("Checking strategy Hypershift deleted", func() {
+			Eventually(func() error {
+				_, err := identitatemClientSet.
+					IdentityconfigV1alpha1().
+					Strategies(AuthRealmNameSpace).
+					Get(context.TODO(), AuthRealmName+"-"+string(identitatemv1alpha1.HypershiftStrategyType), metav1.GetOptions{})
+				return err
+			}, 60, 1).ShouldNot(BeNil())
+		})
 		// By("Checking strategy GRC deleted", func() {
 		// 	Eventually(func() error {
 		// 		_, err := strategyClientSet.
@@ -249,8 +271,9 @@ var _ = Describe("Strategy", func() {
 	AuthRealmName := "my-authrealm"
 	AuthRealmNameSpace := "my-authrealmns"
 	// CertificatesSecretRef := "my-certs"
-	StrategyName := AuthRealmName + "-backplane"
-	PlacementStrategyName := StrategyName
+	StrategyBackplaneName := AuthRealmName + "-" + string(identitatemv1alpha1.BackplaneStrategyType)
+	StrategyHypershiftName := AuthRealmName + "-" + string(identitatemv1alpha1.HypershiftStrategyType)
+	PlacementStrategyName := StrategyBackplaneName
 	ClusterName := "my-cluster"
 	MyIDPName := "my-idp"
 	MyGithubAppClientID := "my-github-app-client-id"
@@ -346,11 +369,25 @@ var _ = Describe("Strategy", func() {
 		By("Create a Backplane Strategy", func() {
 			strategy := &identitatemv1alpha1.Strategy{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      StrategyName,
+					Name:      StrategyBackplaneName,
 					Namespace: AuthRealmNameSpace,
 				},
 				Spec: identitatemv1alpha1.StrategySpec{
 					Type: identitatemv1alpha1.BackplaneStrategyType,
+				},
+			}
+			controllerutil.SetOwnerReference(authRealm, strategy, scheme.Scheme)
+			_, err := identitatemClientSet.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Create(context.TODO(), strategy, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+		})
+		By("Create a Hypershift Strategy", func() {
+			strategy := &identitatemv1alpha1.Strategy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      StrategyHypershiftName,
+					Namespace: AuthRealmNameSpace,
+				},
+				Spec: identitatemv1alpha1.StrategySpec{
+					Type: identitatemv1alpha1.HypershiftStrategyType,
 				},
 			}
 			controllerutil.SetOwnerReference(authRealm, strategy, scheme.Scheme)
@@ -382,7 +419,7 @@ var _ = Describe("Strategy", func() {
 				var err error
 				var strategy *identitatemv1alpha1.Strategy
 				Eventually(func() error {
-					strategy, err = identitatemClientSet.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), StrategyName, metav1.GetOptions{})
+					strategy, err = identitatemClientSet.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Get(context.TODO(), StrategyBackplaneName, metav1.GetOptions{})
 					if err != nil {
 						return err
 					}
@@ -415,7 +452,7 @@ var _ = Describe("Strategy", func() {
 		By("Create Placement Decision CR with the cluster in it", func() {
 			placementDecision = &clusterv1alpha1.PlacementDecision{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      StrategyName,
+					Name:      StrategyBackplaneName,
 					Namespace: AuthRealmNameSpace,
 					Labels: map[string]string{
 						clusterv1alpha1.PlacementLabel: placementStrategy.Name,
@@ -429,7 +466,7 @@ var _ = Describe("Strategy", func() {
 			Expect(err).To(BeNil())
 
 			Eventually(func() error {
-				placementDecision, err = clientSetCluster.ClusterV1alpha1().PlacementDecisions(AuthRealmNameSpace).Get(context.TODO(), StrategyName, metav1.GetOptions{})
+				placementDecision, err = clientSetCluster.ClusterV1alpha1().PlacementDecisions(AuthRealmNameSpace).Get(context.TODO(), StrategyBackplaneName, metav1.GetOptions{})
 				Expect(err).To(BeNil())
 
 				placementDecision.Status.Decisions = []clusterv1alpha1.ClusterDecision{
@@ -541,7 +578,7 @@ var _ = Describe("Strategy", func() {
 			}, 30, 1).Should(BeNil())
 		})
 		By("Remove cluster from placementdecision", func() {
-			placementDecision, err := clientSetCluster.ClusterV1alpha1().PlacementDecisions(AuthRealmNameSpace).Get(context.TODO(), StrategyName, metav1.GetOptions{})
+			placementDecision, err := clientSetCluster.ClusterV1alpha1().PlacementDecisions(AuthRealmNameSpace).Get(context.TODO(), StrategyBackplaneName, metav1.GetOptions{})
 			Expect(err).To(BeNil())
 
 			placementDecision.Status.Decisions = []clusterv1alpha1.ClusterDecision{}
@@ -575,26 +612,35 @@ var _ = Describe("Strategy", func() {
 			}, 30, 1).Should(BeNil())
 		})
 		By("Setting restore oauth manifestwork to Applied", func() {
-			gvr := schema.GroupVersionResource{Group: "work.open-cluster-management.io", Version: "v1", Resource: "manifestworks"}
-			u, err := dynamicClient.Resource(gvr).Namespace(ClusterName).Get(context.TODO(), helpers.ManifestWorkOriginalOAuthName(), metav1.GetOptions{})
-			Expect(err).To(BeNil())
-			mcv := &manifestworkv1.ManifestWork{}
-			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), mcv)
-			Expect(err).To(BeNil())
-			mcv.Status.Conditions = []metav1.Condition{
-				{
-					Type:               "Applied",
-					Status:             metav1.ConditionTrue,
-					Reason:             "AppliedManifestComplete",
-					Message:            "Apply manifest complete",
-					LastTransitionTime: metav1.Now(),
-				},
-			}
-			uc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mcv)
-			Expect(err).To(BeNil())
-			u.SetUnstructuredContent(uc)
-			_, err = dynamicClient.Resource(gvr).Namespace(ClusterName).UpdateStatus(context.TODO(), u, metav1.UpdateOptions{})
-			Expect(err).To(BeNil())
+			Eventually(func() error {
+				gvr := schema.GroupVersionResource{Group: "work.open-cluster-management.io", Version: "v1", Resource: "manifestworks"}
+				u, err := dynamicClient.Resource(gvr).Namespace(ClusterName).Get(context.TODO(), helpers.ManifestWorkOriginalOAuthName(), metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+				mcv := &manifestworkv1.ManifestWork{}
+				err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), mcv)
+				if err != nil {
+					return err
+				}
+				mcv.Status.Conditions = []metav1.Condition{
+					{
+						Type:               "Applied",
+						Status:             metav1.ConditionTrue,
+						Reason:             "AppliedManifestComplete",
+						Message:            "Apply manifest complete",
+						LastTransitionTime: metav1.Now(),
+					},
+				}
+				uc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mcv)
+				if err != nil {
+					return err
+				}
+				u.SetUnstructuredContent(uc)
+				_, err = dynamicClient.Resource(gvr).Namespace(ClusterName).UpdateStatus(context.TODO(), u, metav1.UpdateOptions{})
+				return err
+
+			}, 30, 1).Should(BeNil())
 		})
 		By(fmt.Sprintf("Checking clusteroauth deletion %s", AuthRealmName), func() {
 			Eventually(func() error {

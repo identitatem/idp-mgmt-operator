@@ -16,6 +16,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,6 +33,7 @@ import (
 	idpclientset "github.com/identitatem/idp-client-api/api/client/clientset/versioned"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	idpconfig "github.com/identitatem/idp-client-api/config"
+	"github.com/identitatem/idp-mgmt-operator/controllers/authrealm"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	viewv1beta1 "github.com/stolostron/multicloud-operators-foundation/pkg/apis/view/v1beta1"
@@ -53,6 +55,8 @@ var clientSetCluster *clientsetcluster.Clientset
 var clientSetWork *clientsetwork.Clientset
 var k8sClient client.Client
 var testEnv *envtest.Environment
+var reconciler *ClusterOAuthReconciler
+var authRealmReconciler *authrealm.AuthRealmReconciler
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -139,6 +143,22 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	reconciler = &ClusterOAuthReconciler{
+		Client:        k8sClient,
+		KubeClient:    kubernetes.NewForConfigOrDie(cfg),
+		DynamicClient: dynamic.NewForConfigOrDie(cfg),
+		Log:           logf.Log,
+		Scheme:        scheme.Scheme,
+	}
+
+	authRealmReconciler = &authrealm.AuthRealmReconciler{
+		Client:             k8sClient,
+		KubeClient:         kubernetes.NewForConfigOrDie(cfg),
+		DynamicClient:      dynamic.NewForConfigOrDie(cfg),
+		APIExtensionClient: apiextensionsclient.NewForConfigOrDie(cfg),
+		Log:                logf.Log,
+		Scheme:             scheme.Scheme,
+	}
 	By("Creating infra", func() {
 		infraConfig := &openshiftconfigv1.Infrastructure{
 			ObjectMeta: metav1.ObjectMeta{
@@ -237,6 +257,18 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 			Expect(err).To(BeNil())
 		})
 
+		By("Creating strategies", func() {
+			err := helpers.CreateStrategy(authRealmReconciler.Client,
+				authRealmReconciler.Scheme,
+				identitatemv1alpha1.BackplaneStrategyType,
+				authRealm)
+			Expect(err).To(BeNil())
+			err = helpers.CreateStrategy(authRealmReconciler.Client,
+				authRealmReconciler.Scheme,
+				identitatemv1alpha1.HypershiftStrategyType,
+				authRealm)
+			Expect(err).To(BeNil())
+		})
 		By(fmt.Sprintf("creation of ClusterOAuth for managed cluster %s", ClusterName), func() {
 			clusterOAuth := &identitatemv1alpha1.ClusterOAuth{
 				TypeMeta: metav1.TypeMeta{
@@ -289,18 +321,17 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 		})
 
 		By("Calling reconcile", func() {
-			r := &ClusterOAuthReconciler{
-				Client:        k8sClient,
-				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
-				DynamicClient: dynamic.NewForConfigOrDie(cfg),
-				Log:           logf.Log,
-				Scheme:        scheme.Scheme,
-			}
 			req := ctrl.Request{}
 			req.Name = AuthRealmName
 			req.Namespace = ClusterName
 
-			_, err := r.Reconcile(context.TODO(), req)
+			_, err := reconciler.Reconcile(context.TODO(), req)
+			Expect(err).To(BeNil())
+		})
+
+		originalOAuth := &corev1.ConfigMap{}
+		By("Checking originalOAuth", func() {
+			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ConfigMapOriginalOAuthName(), Namespace: ClusterName}, originalOAuth)
 			//Not nil because need to save OAuth
 			Expect(err).ToNot(BeNil())
 		})
@@ -312,19 +343,20 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 		})
 
 		By("Calling reconcile after managedclusterview generated", func() {
-			r := &ClusterOAuthReconciler{
-				Client:        k8sClient,
-				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
-				DynamicClient: dynamic.NewForConfigOrDie(cfg),
-				Log:           logf.Log,
-				Scheme:        scheme.Scheme,
-			}
 			req := ctrl.Request{}
 			req.Name = AuthRealmName
 			req.Namespace = ClusterName
-			_, err := r.Reconcile(context.TODO(), req)
+			_, err := reconciler.Reconcile(context.TODO(), req)
 			//Not nil because waiting for the managedclusterview status.result
-			Expect(err).ToNot(BeNil())
+			Expect(err).To(BeNil())
+		})
+
+		mcv = &viewv1beta1.ManagedClusterView{}
+		By("Checking managedclusterview", func() {
+			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: helpers.ManagedClusterViewOAuthName(), Namespace: ClusterName}, mcv)
+			Expect(err).To(BeNil())
+			//no status result yet
+			Expect(mcv.Status.Result.Raw).To(BeNil())
 		})
 
 		By("Adding a result in the managedclusterview", func() {
@@ -350,17 +382,10 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 		})
 
 		By("Calling reconcile after status added", func() {
-			r := &ClusterOAuthReconciler{
-				Client:        k8sClient,
-				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
-				DynamicClient: dynamic.NewForConfigOrDie(cfg),
-				Log:           logf.Log,
-				Scheme:        scheme.Scheme,
-			}
 			req := ctrl.Request{}
 			req.Name = AuthRealmName
 			req.Namespace = ClusterName
-			_, err := r.Reconcile(context.TODO(), req)
+			_, err := reconciler.Reconcile(context.TODO(), req)
 			Expect(err).To(BeNil())
 		})
 
@@ -372,17 +397,10 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 		})
 
 		By("Calling reconcile 2nd time", func() {
-			r := &ClusterOAuthReconciler{
-				Client:        k8sClient,
-				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
-				DynamicClient: dynamic.NewForConfigOrDie(cfg),
-				Log:           logf.Log,
-				Scheme:        scheme.Scheme,
-			}
 			req := ctrl.Request{}
 			req.Name = AuthRealmName
 			req.Namespace = ClusterName
-			_, err := r.Reconcile(context.TODO(), req)
+			_, err := reconciler.Reconcile(context.TODO(), req)
 			Expect(err).To(BeNil())
 		})
 
@@ -464,17 +482,10 @@ var _ = Describe("Process clusterOAuth for Strategy backplane: ", func() {
 		})
 
 		By("Calling reconcile", func() {
-			r := &ClusterOAuthReconciler{
-				Client:        k8sClient,
-				KubeClient:    kubernetes.NewForConfigOrDie(cfg),
-				DynamicClient: dynamic.NewForConfigOrDie(cfg),
-				Log:           logf.Log,
-				Scheme:        scheme.Scheme,
-			}
 			req := ctrl.Request{}
 			req.Name = AuthRealmName2
 			req.Namespace = ClusterName
-			_, err := r.Reconcile(context.TODO(), req)
+			_, err := reconciler.Reconcile(context.TODO(), req)
 			Expect(err).To(BeNil())
 		})
 

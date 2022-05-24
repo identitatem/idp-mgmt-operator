@@ -161,38 +161,37 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 	return nil
 }
 
-func (r *PlacementDecisionReconciler) GetStrategyFromPlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) (*identitatemv1alpha1.StrategyList, error) {
+func (r *PlacementDecisionReconciler) GetStrategyFromPlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) (*identitatemv1alpha1.Strategy, error) {
 	r.Log.Info("GetStrategyFromPlacementDecision placementDecision:", "name", placementDecision.Name, "namespace", placementDecision.Namespace)
 	if placementName, ok := placementDecision.GetLabels()[clusterv1alpha1.PlacementLabel]; ok {
 		placement := &clusterv1alpha1.Placement{}
 		if err := r.Get(context.TODO(), client.ObjectKey{Name: placementName, Namespace: placementDecision.Namespace}, placement); err != nil {
 			return nil, err
 		}
-		return r.GetStrategiesFromPlacement(placement)
+		return r.GetStrategyFromPlacement(placement)
 	}
 	return nil, giterrors.WithStack(fmt.Errorf("placementDecision %s has no label %s", placementDecision.Name, clusterv1alpha1.PlacementLabel))
 }
 
-func (r *PlacementDecisionReconciler) GetStrategiesFromPlacement(placement *clusterv1alpha1.Placement) (*identitatemv1alpha1.StrategyList, error) {
-	r.Log.Info("GetStrategiesFromPlacement", "placementName", placement.Name, "placementNamespace", placement.Namespace)
+func (r *PlacementDecisionReconciler) GetStrategyFromPlacement(placement *clusterv1alpha1.Placement) (*identitatemv1alpha1.Strategy, error) {
+	r.Log.Info("GetStrategiesFromPlacement",
+		"placementName", placement.Name,
+		"placementNamespace", placement.Namespace)
 	strategies := &identitatemv1alpha1.StrategyList{}
 	if err := r.List(context.TODO(), strategies, &client.ListOptions{Namespace: placement.Namespace}); err != nil {
 		return nil, giterrors.WithStack(err)
 	}
-	foundStrategies := &identitatemv1alpha1.StrategyList{}
-	foundStrategies.Items = make([]identitatemv1alpha1.Strategy, 0)
 	for _, strategy := range strategies.Items {
 		if strategy.Spec.PlacementRef.Name == placement.Name {
-			foundStrategies.Items = append(foundStrategies.Items, strategy)
+			return &strategy, nil
 		}
 	}
-	if len(foundStrategies.Items) == 0 {
-		return nil, giterrors.WithStack(errors.NewNotFound(identitatemv1alpha1.Resource("strategies"), placement.Name))
-	}
-	return foundStrategies, nil
+	return nil, fmt.Errorf("strategy for %s placement not found ", placement.Name)
 }
 
-func (r *PlacementDecisionReconciler) inPlacementDecision(clusterName string, placement *clusterv1alpha1.Placement) (bool, error) {
+func (r *PlacementDecisionReconciler) inPlacementDecision(clusterName string,
+	placement *clusterv1alpha1.Placement) (bool, error) {
+	r.Log.Info("inPlacementDecision", "clusterName", clusterName, "placementName", placement.Name)
 	placementDecisions := &clusterv1alpha1.PlacementDecisionList{}
 	if err := r.Client.List(context.TODO(), placementDecisions, client.MatchingLabels{
 		clusterv1alpha1.PlacementLabel: placement.Name,

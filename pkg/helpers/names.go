@@ -10,24 +10,39 @@ import (
 )
 
 const (
-	manifestWorkOAuthName         string = "idp-oauth"
-	manifestWorkOriginalOAuthName string = "idp-oauth-original"
-	manifestWorkSecretName        string = "idp-secret"
-	managedClusterViewOAuth       string = "oauth-view"
-	configMapOriginalOAuth        string = "idp-oauth-original"
-	dexServerName                 string = "dex-server"
-	dexOperatorNamespace          string = "idp-mgmt-dex"
-	dexServerNamespacePrefix      string = "idp-mgmt"
-	idpConfigLabel                       = "auth.identitatem.io/installer-config"
+	manifestWorkOAuthName            string = "idp-oauth"
+	manifestWorkOriginalOAuthName    string = "idp-oauth-original"
+	manifestWorkSecretName           string = "idp-secret"
+	managedClusterViewOAuth          string = "oauth-view"
+	managedClusterViewOAuthOpenshift string = "oauth-openshift-view"
+	configMapOriginalOAuth           string = "idp-oauth-original"
+	dexServerName                    string = "dex-server"
+	dexOperatorNamespace             string = "idp-mgmt-dex"
+	dexServerNamespacePrefix         string = "idp-mgmt"
+	idpConfigLabel                          = "auth.identitatem.io/installer-config"
 )
 
 const (
-	ClusterNameLabel          string = "cluster.identitatem.io/name"
-	IdentityProviderNameLabel string = "identityprovider.identitatem.io/name"
+	HypershiftDeploymentInfraIDLabel        string = "hypershift.openshift.io/infra-id"
+	HypershiftDeploymentForceReconcileLabel string = "hypershift.openshift.io/force-reconcile"
+	ClusterNameLabel                        string = "cluster.identitatem.io/name"
+	IdentityProviderNameLabel               string = "identityprovider.identitatem.io/name"
+	StrategyTypeLabel                       string = "identityprovider.identitatem.io/strategy-type"
+	HostedClusterClusterClaim               string = "hostedcluster.hypershift.openshift.io"
+	ConsoleURLClusterClaim                  string = "consoleurl.cluster.open-cluster-management.io"
+	HostingClusterAnnotation                string = "import.open-cluster-management.io/hosting-cluster-name"
+)
+
+const (
+	OAuthRedirectURIsClusterClaimName string = "oauthredirecturis.openshift.io"
 )
 
 func ManifestWorkOAuthName() string {
 	return manifestWorkOAuthName
+}
+
+func ManifestWorkHostedOAuthName(clusterName string) string {
+	return fmt.Sprintf("%s-%s", ManifestWorkOAuthName(), clusterName)
 }
 
 func ManifestWorkOriginalOAuthName() string {
@@ -40,6 +55,13 @@ func ManifestWorkSecretName() string {
 
 func ManagedClusterViewOAuthName() string {
 	return managedClusterViewOAuth
+}
+func ManagedClusterViewOAuthOpenshiftName() string {
+	return managedClusterViewOAuthOpenshift
+}
+
+func ManagedClusterViewOAuthOpenshiftNamespace(clusterName string) string {
+	return "clusters-" + clusterName
 }
 
 func ConfigMapOriginalOAuthName() string {

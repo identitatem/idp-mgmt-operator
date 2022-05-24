@@ -4,7 +4,6 @@ package authrealm
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-logr/logr"
 	giterrors "github.com/pkg/errors"
@@ -156,23 +155,7 @@ func (r *AuthRealmReconciler) processAuthRealmUpdate(authRealm *identitatemv1alp
 	// 	return ctrl.Result{}, err
 	// }
 
-	//Create Backplane strategy
-	if err := r.createStrategy(identitatemv1alpha1.BackplaneStrategyType, authRealm); err != nil {
-		r.Log.Info("Update status create strategy failure",
-			"type", identitatemv1alpha1.BackplaneStrategyType,
-			"name", helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType),
-			"namespace", authRealm.Namespace,
-			"error", err.Error())
-		cond := &metav1.Condition{
-			Type:   identitatemv1alpha1.AuthRealmApplied,
-			Status: metav1.ConditionFalse,
-			Reason: "AuthRealmAppliedFailed",
-			Message: fmt.Sprintf("failed to create strategy type: %s name: %s namespace: %s error: %s",
-				identitatemv1alpha1.BackplaneStrategyType,
-				helpers.StrategyName(authRealm, identitatemv1alpha1.BackplaneStrategyType),
-				authRealm.Namespace,
-				err.Error()),
-		}
+	if cond, err := r.createStrategies(authRealm); err != nil {
 		return cond, err
 	}
 
@@ -181,6 +164,17 @@ func (r *AuthRealmReconciler) processAuthRealmUpdate(authRealm *identitatemv1alp
 		"namespace", authRealm.Namespace)
 
 	return nil, nil
+}
+
+func (r *AuthRealmReconciler) processAuthRealmDeletion(authRealm *identitatemv1alpha1.AuthRealm) (ctrl.Result, error) {
+	if result, err := r.processDexServerDeletion(authRealm); err != nil || result.Requeue {
+		return result, err
+	}
+	if result, err := r.deleteStrategies(authRealm); err != nil || result.Requeue {
+		return result, err
+	}
+	r.Log.Info("delete DexOperator")
+	return r.deleteDexOperator(authRealm)
 }
 
 func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {

@@ -161,6 +161,15 @@ rules:
   - apiGroups:
       - cluster.open-cluster-management.io
     resources:
+      - hypershiftdeployments
+    verbs:
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - cluster.open-cluster-management.io
+    resources:
       - managedclusters
     verbs:
       - get

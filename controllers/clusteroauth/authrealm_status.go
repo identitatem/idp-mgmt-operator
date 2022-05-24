@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *ClusterOAuthReconciler) updateClusterOAuthStatusConditions(
+func (r *ClusterOAuthReconciler) setConditions(
 	clusterOAuth *identitatemv1alpha1.ClusterOAuth, newConditions ...metav1.Condition) error {
 	patch := client.MergeFrom(clusterOAuth.DeepCopy())
 	clusterOAuth.Status.Conditions = helpers.MergeStatusConditions(clusterOAuth.Status.Conditions, newConditions...)
@@ -60,7 +60,7 @@ func (r *ClusterOAuthReconciler) updateAuthRealmStatusClusterOAuthConditions(
 	return giterrors.WithStack(r.Client.Status().Patch(context.TODO(), authRealm, patch))
 }
 
-func (r *ClusterOAuthReconciler) deleteAuthRealmStatusClusterOAuthConditions(
+func (r *ClusterOAuthReconciler) deleteAuthRealmConditions(
 	clusterOAuth *identitatemv1alpha1.ClusterOAuth) error {
 	authRealm := &identitatemv1alpha1.AuthRealm{}
 	if err := r.Client.Get(context.TODO(),

@@ -1,6 +1,6 @@
 // Copyright Red Hat
 
-package manifestwork
+package hypershiftdeployment
 
 import (
 	"context"
@@ -26,17 +26,14 @@ import (
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 
-	// clusterv1 "open-cluster-management.io/api/cluster/v1"
-	// clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
+	hypershiftdeploymentv1alpha1 "github.com/stolostron/hypershift-deployment-controller/api/v1alpha1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
-	manifestworkv1 "open-cluster-management.io/api/work/v1"
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
+	// Retrieve the hypershift statuses and push them in the AuthRealm
 	//+kubebuilder:scaffold:imports
 )
 
-// ManifestWorkReconciler reconciles a Strategy object
-type ManifestWorkReconciler struct {
+// HypershiftDeploymentReconciler reconciles a Strategy object
+type HypershiftDeploymentReconciler struct {
 	client.Client
 	KubeClient         kubernetes.Interface
 	DynamicClient      dynamic.Interface
@@ -50,7 +47,7 @@ type ManifestWorkReconciler struct {
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms},verbs=get;list;watch;get
 //+kubebuilder:rbac:groups=identityconfig.identitatem.io,resources={authrealms/status},verbs=patch
 
-//+kubebuilder:rbac:groups=work.open-cluster-management.io,resources={manifestworks},verbs=get;list;watch
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources={hypershiftdeployments},verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -61,13 +58,13 @@ type ManifestWorkReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
-func (r *ManifestWorkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *HypershiftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("namespace", req.NamespacedName, "name", req.Name)
 
 	// your logic here
-	// Fetch the ClusterOAuth instance
-	instance := &manifestworkv1.ManifestWork{}
+	// Fetch the hypershiftdeployment instance
+	instance := &hypershiftdeploymentv1alpha1.HypershiftDeployment{}
 
 	if err := r.Client.Get(
 		context.TODO(),
@@ -84,33 +81,28 @@ func (r *ManifestWorkReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return reconcile.Result{}, err
 	}
 
-	r.Log.Info("Running Reconcile for Manifestwork.", "Name: ", instance.GetName(), " Namespace:", instance.GetNamespace())
+	r.Log.Info("Running Reconcile for HypershiftDeployment.",
+		"name", instance.GetName(),
+		"namespace", instance.GetNamespace())
 
-	//TODO add test if managedclsuter exists for that ns/cluster
-	if instance.DeletionTimestamp != nil {
-		if result, err := r.processManifestWorkhUpdate(instance, true); err != nil || result.Requeue {
-			return result, err
-		}
-		return reconcile.Result{}, nil
-	}
-
-	if result, err := r.processManifestWorkhUpdate(instance, false); err != nil || result.Requeue {
+	if result, err := r.processHypershiftDeployment(instance, instance.DeletionTimestamp != nil); err != nil || result.Requeue {
 		return result, err
 	}
 
 	return reconcile.Result{}, nil
 }
 
-func (r *ManifestWorkReconciler) processManifestWorkhUpdate(manifestwork *manifestworkv1.ManifestWork, delete bool) (reconcile.Result, error) {
+func (r *HypershiftDeploymentReconciler) processHypershiftDeployment(hd *hypershiftdeploymentv1alpha1.HypershiftDeployment,
+	delete bool) (reconcile.Result, error) {
 	clusterOAuths := &identitatemv1alpha1.ClusterOAuthList{}
-	if err := r.Client.List(context.TODO(), clusterOAuths, client.InNamespace(manifestwork.Namespace)); err != nil {
+	if err := r.Client.List(context.TODO(), clusterOAuths, client.InNamespace(hd.Spec.InfraID)); err != nil {
 		return ctrl.Result{}, err
 	}
 	for i, clusterOAuth := range clusterOAuths.Items {
 		if clusterOAuth.DeletionTimestamp != nil {
 			continue
 		}
-		r.Log.Info("process manifestwork", "manifestworkName", manifestwork.Name, "clusterOAuthName", clusterOAuth.Name)
+		r.Log.Info("process hypershiftDeployment", "hypershiftDeploymentName", hd.Name, "clusterOAuthName", clusterOAuth.Name)
 		authRealm := &identitatemv1alpha1.AuthRealm{}
 		if err := r.Client.Get(context.TODO(),
 			client.ObjectKey{
@@ -124,14 +116,14 @@ func (r *ManifestWorkReconciler) processManifestWorkhUpdate(manifestwork *manife
 		if err != nil {
 			return ctrl.Result{}, giterrors.WithStack(err)
 		}
-		if !helpers.IsHostedCluster(mc) {
-			r.Log.Info("Update AuthRealm backplane status")
-			if err := r.updateAuthRealmStatusManifestWorkConditions(
+		if helpers.IsHostedCluster(mc) {
+			r.Log.Info("Update AuthRealm hypershift status")
+			if result, err := r.updateAuthRealmStatusHypershiftDeploymentConditions(
 				authRealm,
 				&clusterOAuths.Items[i],
-				manifestwork,
-				delete); err != nil {
-				return ctrl.Result{}, err
+				hd,
+				delete); err != nil || result.Requeue {
+				return result, err
 			}
 		}
 	}
@@ -139,7 +131,7 @@ func (r *ManifestWorkReconciler) processManifestWorkhUpdate(manifestwork *manife
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *ManifestWorkReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *HypershiftDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := corev1.AddToScheme(mgr.GetScheme()); err != nil {
 		return giterrors.WithStack(err)
 	}
@@ -148,19 +140,18 @@ func (r *ManifestWorkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return giterrors.WithStack(err)
 	}
 
-	if err := manifestworkv1.AddToScheme(mgr.GetScheme()); err != nil {
+	if err := hypershiftdeploymentv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		return giterrors.WithStack(err)
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&manifestworkv1.ManifestWork{},
+		For(&hypershiftdeploymentv1alpha1.HypershiftDeployment{},
 			builder.WithPredicates(predicate.Funcs{
 				UpdateFunc: func(e event.UpdateEvent) bool {
-					mwOld := e.ObjectOld.(*manifestworkv1.ManifestWork)
-					mwNew := e.ObjectNew.(*manifestworkv1.ManifestWork)
-					return mwNew.Name == helpers.ManifestWorkOAuthName() &&
-						(!equality.Semantic.DeepEqual(mwOld.Status, mwNew.Status) ||
-							mwOld.DeletionTimestamp != mwNew.DeletionTimestamp)
+					mwOld := e.ObjectOld.(*hypershiftdeploymentv1alpha1.HypershiftDeployment)
+					mwNew := e.ObjectNew.(*hypershiftdeploymentv1alpha1.HypershiftDeployment)
+					return !equality.Semantic.DeepEqual(mwOld.Status, mwNew.Status) ||
+						mwOld.DeletionTimestamp != mwNew.DeletionTimestamp
 				}},
 			)).Complete(r)
 }
