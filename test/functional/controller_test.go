@@ -232,15 +232,6 @@ var _ = Describe("AuthRealm", func() {
 				return err
 			}, 60, 1).ShouldNot(BeNil())
 		})
-		// By("Checking strategy GRC deleted", func() {
-		// 	Eventually(func() error {
-		// 		_, err := strategyClientSet.
-		// 			IdentityconfigV1alpha1().
-		// 			Strategies(AuthRealmNameSpace).
-		// 			Get(context.TODO(), AuthRealmName+"-"+string(identitatemv1alpha1.GrcStrategyType), metav1.GetOptions{})
-		// 		return err
-		// 	}, 60, 1).ShouldNot(BeNil())
-		// })
 	})
 
 })
@@ -343,20 +334,20 @@ var _ = Describe("Strategy", func() {
 			authRealm, err = identitatemClientSet.IdentityconfigV1alpha1().AuthRealms(AuthRealmNameSpace).Create(context.TODO(), authRealm, metav1.CreateOptions{})
 			Expect(err).To(BeNil())
 		})
-		By("Create a Backplane Strategy", func() {
-			strategy := &identitatemv1alpha1.Strategy{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      StrategyName,
-					Namespace: AuthRealmNameSpace,
-				},
-				Spec: identitatemv1alpha1.StrategySpec{
-					Type: identitatemv1alpha1.BackplaneStrategyType,
-				},
-			}
-			controllerutil.SetOwnerReference(authRealm, strategy, scheme.Scheme)
-			_, err := identitatemClientSet.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Create(context.TODO(), strategy, metav1.CreateOptions{})
-			Expect(err).To(BeNil())
-		})
+		// By("Create a Backplane Strategy", func() {
+		// 	strategy := &identitatemv1alpha1.Strategy{
+		// 		ObjectMeta: metav1.ObjectMeta{
+		// 			Name:      StrategyName,
+		// 			Namespace: AuthRealmNameSpace,
+		// 		},
+		// 		Spec: identitatemv1alpha1.StrategySpec{
+		// 			Type: identitatemv1alpha1.BackplaneStrategyType,
+		// 		},
+		// 	}
+		// 	controllerutil.SetOwnerReference(authRealm, strategy, scheme.Scheme)
+		// 	_, err := identitatemClientSet.IdentityconfigV1alpha1().Strategies(AuthRealmNameSpace).Create(context.TODO(), strategy, metav1.CreateOptions{})
+		// 	Expect(err).To(BeNil())
+		// })
 		By("creation cluster namespace", func() {
 			ns := &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -395,10 +386,12 @@ var _ = Describe("Strategy", func() {
 				}, 30, 1).Should(BeNil())
 			})
 			By("Checking placement strategy", func() {
-				_, err := clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).
+				ps, err := clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).
 					Get(context.TODO(), PlacementStrategyName, metav1.GetOptions{})
 				Expect(err).To(BeNil())
 				Expect(len(placement.Spec.Predicates)).Should(Equal(1))
+				_, ok := ps.GetAnnotations()[helpers.PlacementStrategyAnnotation]
+				Expect(ok).To(BeTrue())
 			})
 		})
 	})
@@ -572,7 +565,7 @@ var _ = Describe("Strategy", func() {
 					return nil
 				}
 				return fmt.Errorf("clientSecret %s in ns %s still exist", helpers.ClusterOAuthName(authRealmObjectKey), ClusterName)
-			}, 30, 1).Should(BeNil())
+			}, 60, 1).Should(BeNil())
 		})
 		By("Setting restore oauth manifestwork to Applied", func() {
 			gvr := schema.GroupVersionResource{Group: "work.open-cluster-management.io", Version: "v1", Resource: "manifestworks"}
@@ -637,6 +630,63 @@ var _ = Describe("Strategy", func() {
 				return fmt.Errorf("DexClient %s still exist", AuthRealmName)
 
 			}, 30, 1).Should(BeNil())
+		})
+	})
+})
+
+var _ = Describe("Non strategy placement", func() {
+	AuthRealmNameSpace := "my-authrealmns-nps"
+	// CertificatesSecretRef := "my-certs"
+	PlacementName := "non-strategy-placement"
+	It("process a Strategy", func() {
+		By(fmt.Sprintf("creation of User namespace %s", AuthRealmNameSpace), func() {
+			ns := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: AuthRealmNameSpace,
+				},
+			}
+			err := k8sClient.Create(context.TODO(), ns)
+			Expect(err).To(BeNil())
+		})
+		var placement *clusterv1alpha1.Placement
+		By("Creating a non strategy placement", func() {
+			placement = &clusterv1alpha1.Placement{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      PlacementName,
+					Namespace: AuthRealmNameSpace,
+				},
+				Spec: clusterv1alpha1.PlacementSpec{
+					Predicates: []clusterv1alpha1.ClusterPredicate{
+						{
+							RequiredClusterSelector: clusterv1alpha1.ClusterSelector{
+								LabelSelector: metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										"mylabel": "test",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			var err error
+			placement, err = clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).
+				Create(context.TODO(), placement, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+
+		})
+		By("delete non strategy placement", func() {
+			err := clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).
+				Delete(context.TODO(), PlacementName, metav1.DeleteOptions{})
+			Expect(err).To(BeNil())
+			Eventually(func() error {
+				_, err := clientSetCluster.ClusterV1alpha1().Placements(AuthRealmNameSpace).Get(context.TODO(), PlacementName, metav1.GetOptions{})
+				if err == nil {
+					return fmt.Errorf("non strategy placement %s/%s still exists", AuthRealmNameSpace, PlacementName)
+				}
+				return nil
+			}, 60, 1).Should(BeNil())
+
 		})
 	})
 })

@@ -18,12 +18,13 @@ const (
 	dexServerName                 string = "dex-server"
 	dexOperatorNamespace          string = "idp-mgmt-dex"
 	dexServerNamespacePrefix      string = "idp-mgmt"
-	idpConfigLabel                       = "auth.identitatem.io/installer-config"
+	idpConfigLabel                string = "auth.identitatem.io/installer-config"
 )
 
 const (
-	ClusterNameLabel          string = "cluster.identitatem.io/name"
-	IdentityProviderNameLabel string = "identityprovider.identitatem.io/name"
+	ClusterNameLabel            string = "cluster.identitatem.io/name"
+	IdentityProviderNameLabel   string = "identityprovider.identitatem.io/name"
+	PlacementStrategyAnnotation string = "auth.identitatem.io/placement-strategy"
 )
 
 func ManifestWorkOAuthName() string {

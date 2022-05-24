@@ -1,5 +1,6 @@
 // Copyright Red Hat
 
+//go:build functional
 // +build functional
 
 package functional
@@ -206,6 +207,8 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
+	//Uncomment the skip bellow if you want to be able to see logs during debugging.
+	// Skip("")
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter)))
 	SetDefaultEventuallyTimeout(20 * time.Second)
 	SetDefaultEventuallyPollingInterval(1 * time.Second)

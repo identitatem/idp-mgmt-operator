@@ -224,6 +224,9 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 		// Not Found! Create
 		placementStrategy = &clusterv1alpha1.Placement{
 			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					helpers.PlacementStrategyAnnotation: "",
+				},
 				Namespace: strategy.Namespace,
 				Name:      placementStrategyName,
 			},

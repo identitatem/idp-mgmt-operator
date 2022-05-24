@@ -274,8 +274,33 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		},
 	})
 
+	annotationPlacementFilter := func(obj client.Object) bool {
+		annotations := obj.GetAnnotations()
+		if annotations == nil || len(annotations) == 0 {
+			return false
+		}
+		_, ok := annotations[helpers.PlacementStrategyAnnotation]
+		return ok
+	}
+
+	placementPredicate := predicate.Predicate(predicate.Funcs{
+		GenericFunc: func(e event.GenericEvent) bool { return false },
+		DeleteFunc:  func(e event.DeleteEvent) bool { return annotationPlacementFilter(e.Object) },
+		CreateFunc:  func(e event.CreateEvent) bool { return annotationPlacementFilter(e.Object) },
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			placementOld := e.ObjectOld.(*identitatemv1alpha1.AuthRealm)
+			placementNew := e.ObjectNew.(*identitatemv1alpha1.AuthRealm)
+			// only handle the Finalizer and Spec changes
+			return (!annotationPlacementFilter(placementNew)) &&
+				(!equality.Semantic.DeepEqual(e.ObjectOld.GetFinalizers(), e.ObjectNew.GetFinalizers()) ||
+					!equality.Semantic.DeepEqual(placementOld.Spec, placementNew.Spec) ||
+					placementOld.DeletionTimestamp != placementNew.DeletionTimestamp)
+
+		},
+	})
+
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&clusterv1alpha1.Placement{}).
+		For(&clusterv1alpha1.Placement{}).WithEventFilter(placementPredicate).
 		Watches(&source.Kind{Type: &identitatemv1alpha1.AuthRealm{}},
 			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
 				authrealm := o.(*identitatemv1alpha1.AuthRealm)

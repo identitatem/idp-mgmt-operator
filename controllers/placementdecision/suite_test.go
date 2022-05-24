@@ -311,6 +311,9 @@ var _ = Describe("Process Strategy backplane: ", func() {
 		By("Creating the placement strategy", func() {
 			placementStrategy = &clusterv1alpha1.Placement{
 				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						helpers.PlacementStrategyAnnotation: "",
+					},
 					Name:      PlacementStrategyName,
 					Namespace: AuthRealmNameSpace,
 				},
