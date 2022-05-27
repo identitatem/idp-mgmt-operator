@@ -66,7 +66,6 @@ func (r *AuthRealmReconciler) deleteStrategies(authRealm *identitatemv1alpha1.Au
 
 func (r *AuthRealmReconciler) deleteStrategy(authRealm *identitatemv1alpha1.AuthRealm,
 	t identitatemv1alpha1.StrategyType) (ctrl.Result, error) {
-	r.Log.Info("delete Strategy", "name", helpers.StrategyName(authRealm, t))
 	st := &identitatemv1alpha1.Strategy{}
 	err := r.Client.Get(context.TODO(),
 		client.ObjectKey{
@@ -75,6 +74,7 @@ func (r *AuthRealmReconciler) deleteStrategy(authRealm *identitatemv1alpha1.Auth
 		st)
 	switch {
 	case err == nil:
+		r.Log.Info("delete Strategy", "name", helpers.StrategyName(authRealm, t))
 		if err := r.Client.Delete(context.TODO(), st); err != nil {
 			return ctrl.Result{}, giterrors.WithStack(err)
 		}

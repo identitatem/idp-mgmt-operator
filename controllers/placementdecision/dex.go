@@ -65,7 +65,7 @@ func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authRealm *identitat
 		if !ok {
 			dexClientsToBeDeleted = append(dexClientsToBeDeleted, dexClient)
 			if result, err := r.deleteConfig(dexClient.GetLabels()[helpers.ClusterNameLabel],
-				false); err != nil || result.Requeue {
+				placement); err != nil || result.Requeue {
 				return result, err
 			}
 		}
@@ -249,7 +249,7 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 
 func (r *PlacementDecisionReconciler) deleteConfig(
 	clusterName string,
-	onlyIfAuthRealmDeleted bool) (ctrl.Result, error) {
+	placement *clusterv1alpha1.Placement) (ctrl.Result, error) {
 	clusterOAuthList := &identitatemv1alpha1.ClusterOAuthList{}
 	if err := r.List(context.TODO(), clusterOAuthList, &client.ListOptions{Namespace: clusterName}); err != nil {
 		return ctrl.Result{}, err
@@ -260,18 +260,16 @@ func (r *PlacementDecisionReconciler) deleteConfig(
 			Name:      clusterOAuth.Spec.AuthRealmReference.Name,
 			Namespace: clusterOAuth.Spec.AuthRealmReference.Namespace,
 		}
-		if onlyIfAuthRealmDeleted {
-			//Delete only if the authrealm is deleted or in deletion
-			authRealm := &identitatemv1alpha1.AuthRealm{}
-			err := r.Get(context.TODO(), authRealmObjectKey, authRealm)
-			if err == nil {
-				if authRealm.DeletionTimestamp == nil {
-					continue
-				}
+		toBeDeleted := false
+		for _, ownerRef := range placement.GetOwnerReferences() {
+			if ownerRef.Kind == "Strategy" &&
+				ownerRef.Name == clusterOAuth.Spec.StrategyReference.Name {
+				toBeDeleted = true
+				break
 			}
-			if !errors.IsNotFound(err) {
-				return ctrl.Result{}, err
-			}
+		}
+		if !toBeDeleted {
+			continue
 		}
 		clusterOAuthsToBeDeleted = append(clusterOAuthsToBeDeleted, clusterOAuth)
 		r.Log.Info("delete configuration for cluster", "name", clusterName)

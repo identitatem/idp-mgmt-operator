@@ -19,7 +19,7 @@ const (
 	dexServerName                    string = "dex-server"
 	dexOperatorNamespace             string = "idp-mgmt-dex"
 	dexServerNamespacePrefix         string = "idp-mgmt"
-	idpConfigLabel                          = "auth.identitatem.io/installer-config"
+	idpConfigLabel                   string = "auth.identitatem.io/installer-config"
 )
 
 const (
@@ -31,6 +31,7 @@ const (
 	HostedClusterClusterClaim               string = "hostedcluster.hypershift.openshift.io"
 	ConsoleURLClusterClaim                  string = "consoleurl.cluster.open-cluster-management.io"
 	HostingClusterAnnotation                string = "import.open-cluster-management.io/hosting-cluster-name"
+	PlacementStrategyAnnotation             string = "auth.identitatem.io/placement-strategy"
 )
 
 const (
