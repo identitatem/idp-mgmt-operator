@@ -189,7 +189,12 @@ func (r *StrategyReconciler) processStrategyUpdate(strategy *identitatemv1alpha1
 		return fmt.Errorf("strategy type %s not supported", strategy.Spec.Type)
 	}
 
-	r.Log.Info("placementstrategy after update", "placementStrategy", placementStrategy)
+	// update the Placement ref
+	strategy.Spec.PlacementRef.Name = placementStrategy.Name
+	if err := r.Client.Update(context.TODO(), strategy); err != nil {
+		return err
+	}
+
 	//Create or update placementStrategy
 	switch placementStrategyExists {
 	case true:
@@ -197,16 +202,12 @@ func (r *StrategyReconciler) processStrategyUpdate(strategy *identitatemv1alpha1
 			return err
 		}
 	case false:
-		if err := r.Client.Create(context.Background(), placementStrategy); err != nil {
+		if err := r.Client.Create(context.TODO(), placementStrategy); err != nil {
 			return err
 		}
 	}
 
-	// update the Placement ref
-	strategy.Spec.PlacementRef.Name = placementStrategy.Name
-	if err := r.Client.Update(context.TODO(), strategy); err != nil {
-		return err
-	}
+	r.Log.Info("placementstrategy after update", "placementStrategy", placementStrategy)
 
 	return nil
 }
@@ -225,6 +226,9 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 		// Not Found! Create
 		placementStrategy = &clusterv1alpha1.Placement{
 			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					helpers.PlacementStrategyAnnotation: "",
+				},
 				Namespace: strategy.Namespace,
 				Name:      placementStrategyName,
 			},

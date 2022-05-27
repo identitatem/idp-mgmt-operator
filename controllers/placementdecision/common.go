@@ -24,7 +24,7 @@ import (
 func (r *PlacementDecisionReconciler) createClientSecret(
 	decision clusterv1alpha1.ClusterDecision,
 	authRealm *identitatemv1alpha1.AuthRealm) (*corev1.Secret, error) {
-	r.Log.Info("create clientSecret for", "cluster", decision.ClusterName, "identityProvider", authRealm.Name)
+	r.Log.Info("check clientSecret for", "cluster", decision.ClusterName, "identityProvider", authRealm.Name)
 	authRealmObjectKey := client.ObjectKey{
 		Name:      authRealm.Name,
 		Namespace: authRealm.Namespace,
@@ -45,6 +45,7 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 				"clientSecret": []byte(helpers.RandomString(32, helpers.RandomTypePassword)),
 			},
 		}
+		r.Log.Info("create clientSecret for", "cluster", decision.ClusterName, "identityProvider", authRealm.Name, "name", clientSecret.Name)
 		if err := r.Create(context.TODO(), clientSecret); err != nil {
 			return nil, giterrors.WithStack(err)
 		}
@@ -181,7 +182,9 @@ func (r *PlacementDecisionReconciler) GetStrategyFromPlacement(placement *cluste
 	if err := r.List(context.TODO(), strategies, &client.ListOptions{Namespace: placement.Namespace}); err != nil {
 		return nil, giterrors.WithStack(err)
 	}
+	r.Log.Info("strategies", "nb", len(strategies.Items))
 	for _, strategy := range strategies.Items {
+		r.Log.Info("checking strategy", "namespace", strategy.Namespace, "name", strategy.Name, "strategy.Spec.PlacementRef.Name", strategy.Spec.PlacementRef.Name)
 		if strategy.Spec.PlacementRef.Name == placement.Name {
 			return &strategy, nil
 		}

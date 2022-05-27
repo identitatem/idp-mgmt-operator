@@ -158,9 +158,8 @@ func (r *PlacementDecisionReconciler) processPlacementDecisionUpdate(placement *
 	if err := r.updateAuthRealmStatusPlacementStatus(strategy, placement); err != nil {
 		return ctrl.Result{}, err
 	}
-	// }
-	// if err := r.processPlacementDecisionDeletion(placement, true); err != nil {
-	// 	return err
+	// if result, err := r.processPlacementDecisionDeletion(placement, true); err != nil {
+	// 	return result, err
 	// }
 	return ctrl.Result{}, nil
 }
@@ -212,7 +211,7 @@ func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placement
 	}
 	for _, placementDecision := range placementDecisions.Items {
 		for _, decision := range placementDecision.Status.Decisions {
-			if result, err := r.deleteConfig(decision.ClusterName, onlyIfAuthRealmDeleted); err != nil || result.Requeue {
+			if result, err := r.deleteConfig(decision.ClusterName, placement); err != nil || result.Requeue {
 				return result, err
 			}
 		}
@@ -277,8 +276,51 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		},
 	})
 
+	annotationPlacementFilter := func(obj client.Object) bool {
+		annotations := obj.GetAnnotations()
+		if len(annotations) == 0 {
+			return false
+		}
+		_, ok := annotations[helpers.PlacementStrategyAnnotation]
+		return ok
+	}
+
+	placementPredicate := predicate.Predicate(predicate.Funcs{
+		GenericFunc: func(e event.GenericEvent) bool { return false },
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			// Filter only if obj is placement
+			switch e.Object.(type) {
+			case *clusterv1alpha1.Placement:
+				return annotationPlacementFilter(e.Object)
+			default:
+				return true
+			}
+		},
+		CreateFunc: func(e event.CreateEvent) bool {
+			// Filter only if obj is placement
+			switch e.Object.(type) {
+			case *clusterv1alpha1.Placement:
+				return annotationPlacementFilter(e.Object)
+			default:
+				return true
+			}
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			// Filter only if obj is placement
+			switch e.ObjectOld.(type) {
+			case *clusterv1alpha1.Placement:
+				placementOld := e.ObjectOld.(*clusterv1alpha1.Placement)
+				placementNew := e.ObjectNew.(*clusterv1alpha1.Placement)
+				// only handle the IDP generated placements
+				return annotationPlacementFilter(placementNew) || annotationPlacementFilter(placementOld)
+			default:
+				return true
+			}
+		},
+	})
+
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&clusterv1alpha1.Placement{}).
+		For(&clusterv1alpha1.Placement{}).WithEventFilter(placementPredicate).
 		Watches(&source.Kind{Type: &identitatemv1alpha1.AuthRealm{}},
 			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
 				authrealm := o.(*identitatemv1alpha1.AuthRealm)

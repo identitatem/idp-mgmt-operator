@@ -296,7 +296,7 @@ func (mgr *BackplaneMgr) Unmanage() (mgresult ctrl.Result, err error) {
 		return ctrl.Result{}, err
 	}
 
-	if len(clusterOAuths.Items) == 1 {
+	if len(clusterOAuths.Items) == 1 && clusterOAuths.Items[0].DeletionTimestamp != nil {
 		mgr.Reconciler.Log.Info("delete for manifestwork",
 			"name", helpers.ManifestWorkOAuthName(),
 			"namespace", mgr.ClusterOAuth.Namespace)

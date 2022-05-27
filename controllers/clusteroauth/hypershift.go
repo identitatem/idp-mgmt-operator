@@ -207,7 +207,7 @@ func (mgr *HypershiftMgr) Unmanage() (ctrl.Result, error) {
 		return ctrl.Result{}, giterrors.WithStack(err)
 	}
 
-	if len(clusterOAuths.Items) == 1 {
+	if len(clusterOAuths.Items) == 1 && clusterOAuths.Items[0].DeletionTimestamp != nil {
 		hd, err := mgr.getHypershiftDeployment(mgr.ClusterOAuth.Namespace)
 		if err != nil {
 			return ctrl.Result{}, err
