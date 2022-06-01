@@ -58,11 +58,12 @@ const DEX_CLIENT_SECRET_LABEL = "auth.identitatem.io/dex-client-secret"
 // ClusterOAuthReconciler reconciles a Strategy object
 type ClusterOAuthReconciler struct {
 	client.Client
-	KubeClient         kubernetes.Interface
-	DynamicClient      dynamic.Interface
-	APIExtensionClient apiextensionsclient.Interface
-	Log                logr.Logger
-	Scheme             *runtime.Scheme
+	KubeClient                    kubernetes.Interface
+	DynamicClient                 dynamic.Interface
+	APIExtensionClient            apiextensionsclient.Interface
+	HypershiftDeploymentInstalled bool
+	Log                           logr.Logger
+	Scheme                        *runtime.Scheme
 }
 
 // +kubebuilder:rbac:groups="",resources={configmaps},verbs=get;create;update;list;watch;delete
@@ -246,14 +247,6 @@ func (r *ClusterOAuthReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return giterrors.WithStack(err)
 	}
 
-	// if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-	// 	return giterrors.WithStack(err)
-	// }
-
-	// if err := clusterv1.AddToScheme(mgr.GetScheme()); err != nil {
-	// 	return giterrors.WithStack(err)
-	// }
-
 	if err := manifestworkv1.AddToScheme(mgr.GetScheme()); err != nil {
 		return giterrors.WithStack(err)
 	}
@@ -274,14 +267,15 @@ func (r *ClusterOAuthReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return giterrors.WithStack(err)
 	}
 
-	if err := hypershiftdeploymentv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		return giterrors.WithStack(err)
+	if r.HypershiftDeploymentInstalled {
+		if err := hypershiftdeploymentv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+			return giterrors.WithStack(err)
+		}
 	}
 
-	return ctrl.NewControllerManagedBy(mgr).
+	c := ctrl.NewControllerManagedBy(mgr).
 		For(&identitatemv1alpha1.ClusterOAuth{}).
 		Owns(&manifestworkv1.ManifestWork{}).
-		Owns(&hypershiftdeploymentv1alpha1.HypershiftDeployment{}).
 		Watches(&source.Kind{Type: &corev1.Secret{}},
 			&handler.EnqueueRequestForObject{},
 			builder.WithPredicates(predicate.Funcs{
@@ -291,6 +285,9 @@ func (r *ClusterOAuthReconciler) SetupWithManager(mgr ctrl.Manager) error {
 					}
 					return false
 				},
-			})).
-		Complete(r)
+			}))
+	if r.HypershiftDeploymentInstalled {
+		c = c.Watches(&source.Kind{Type: &hypershiftdeploymentv1alpha1.HypershiftDeployment{}}, &handler.EnqueueRequestForObject{})
+	}
+	return c.Complete(r)
 }

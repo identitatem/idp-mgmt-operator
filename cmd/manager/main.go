@@ -3,9 +3,12 @@
 package manager
 
 import (
+	"context"
 	"os"
 
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -83,6 +86,20 @@ func (o *managerOptions) run() {
 
 	setupLog.Info("Add AuthRealm reconciler")
 
+	hypershiftDeploymentInstalled := true
+	apiExtensionsClient := apiextensionsclient.NewForConfigOrDie(ctrl.GetConfigOrDie())
+	_, err = apiExtensionsClient.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(),
+		"hypershiftdeployments.cluster.open-cluster-management.io",
+		metav1.GetOptions{})
+	if err != nil {
+		setupLog.Info("hypershiftdeployments.cluster.open-cluster-management.io CRD", "err", err)
+		if !errors.IsNotFound(err) {
+			setupLog.Error(err, "unable to check HypershiftDeployment CRD")
+			os.Exit(1)
+		}
+		hypershiftDeploymentInstalled = false
+	}
+
 	if err = (&authrealm.AuthRealmReconciler{
 		Client:             mgr.GetClient(),
 		KubeClient:         kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
@@ -128,12 +145,13 @@ func (o *managerOptions) run() {
 	//send it to the managedcluster using the available strategy
 	setupLog.Info("Add ClusterOAuth reconciler")
 	if err = (&clusteroauth.ClusterOAuthReconciler{
-		Client:             mgr.GetClient(),
-		KubeClient:         kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
-		DynamicClient:      dynamic.NewForConfigOrDie(ctrl.GetConfigOrDie()),
-		APIExtensionClient: apiextensionsclient.NewForConfigOrDie(ctrl.GetConfigOrDie()),
-		Scheme:             mgr.GetScheme(),
-		Log:                ctrl.Log.WithName("controllers").WithName("ClusterOAuth"),
+		Client:                        mgr.GetClient(),
+		KubeClient:                    kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
+		DynamicClient:                 dynamic.NewForConfigOrDie(ctrl.GetConfigOrDie()),
+		APIExtensionClient:            apiextensionsclient.NewForConfigOrDie(ctrl.GetConfigOrDie()),
+		HypershiftDeploymentInstalled: hypershiftDeploymentInstalled,
+		Scheme:                        mgr.GetScheme(),
+		Log:                           ctrl.Log.WithName("controllers").WithName("ClusterOAuth"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ClusterOAuth")
 		os.Exit(1)
@@ -154,17 +172,19 @@ func (o *managerOptions) run() {
 	}
 
 	//This manager consolidate all HypershiftDeployment to update the Authrealm status
-	setupLog.Info("Add HypershiftDeployment reconciler")
-	if err = (&hypershiftdeployment.HypershiftDeploymentReconciler{
-		Client:             mgr.GetClient(),
-		KubeClient:         kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
-		DynamicClient:      dynamic.NewForConfigOrDie(ctrl.GetConfigOrDie()),
-		APIExtensionClient: apiextensionsclient.NewForConfigOrDie(ctrl.GetConfigOrDie()),
-		Scheme:             mgr.GetScheme(),
-		Log:                ctrl.Log.WithName("controllers").WithName("HypershiftDeployment"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "HypershiftDeployment")
-		os.Exit(1)
+	if hypershiftDeploymentInstalled {
+		setupLog.Info("Add HypershiftDeployment reconciler")
+		if err = (&hypershiftdeployment.HypershiftDeploymentReconciler{
+			Client:             mgr.GetClient(),
+			KubeClient:         kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
+			DynamicClient:      dynamic.NewForConfigOrDie(ctrl.GetConfigOrDie()),
+			APIExtensionClient: apiextensionsclient.NewForConfigOrDie(ctrl.GetConfigOrDie()),
+			Scheme:             mgr.GetScheme(),
+			Log:                ctrl.Log.WithName("controllers").WithName("HypershiftDeployment"),
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "HypershiftDeployment")
+			os.Exit(1)
+		}
 	}
 
 	// add healthz/readyz check handler

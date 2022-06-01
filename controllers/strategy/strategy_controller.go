@@ -157,15 +157,12 @@ func (r *StrategyReconciler) processStrategyUpdate(strategy *identitatemv1alpha1
 	if authRealm.DeletionTimestamp != nil {
 		return nil
 	}
-	// get placement info from AuthRealm ownerRef
-
-	//Make sure Placement is created and correct
-	//TODO!!! Right now we will have to manullay add a label to managed clusters in order for the placementDecision
-	//        to return a result cloudservices=grc|backplane
-	//Check if there is a predicate to add, if not nothing to do
 
 	placement := &clusterv1alpha1.Placement{}
 	if err := r.Client.Get(context.TODO(), client.ObjectKey{Name: authRealm.Spec.PlacementRef.Name, Namespace: strategy.Namespace}, placement); err != nil {
+		if errors.IsNotFound(err) {
+			return r.deleteStrategyPlacement(authRealm.Spec.PlacementRef.Name, strategy.Namespace)
+		}
 		return err
 	}
 
@@ -212,6 +209,27 @@ func (r *StrategyReconciler) processStrategyUpdate(strategy *identitatemv1alpha1
 	return nil
 }
 
+//deleteStrategyPlacement deletes strategy placement related to a placement
+func (r *StrategyReconciler) deleteStrategyPlacement(name, namespace string) error {
+	//Could be a user placement referenced in one or more strategy placement and so we have to delete the strategy placement
+	strategyPlacements := &clusterv1alpha1.PlacementList{}
+	err := r.Client.List(context.TODO(), strategyPlacements,
+		client.InNamespace(namespace),
+		client.MatchingLabels{
+			helpers.PlacementStrategyLabel: name,
+		})
+	if err != nil {
+		return err
+	}
+	for _, sp := range strategyPlacements.Items {
+		err := r.Client.Delete(context.TODO(), sp.DeepCopy(), &client.DeleteOptions{})
+		if err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.Strategy,
 	authRealm *identitatemv1alpha1.AuthRealm,
 	placement *clusterv1alpha1.Placement) (*clusterv1alpha1.Placement, bool, error) {
@@ -226,8 +244,8 @@ func (r *StrategyReconciler) getStrategyPlacement(strategy *identitatemv1alpha1.
 		// Not Found! Create
 		placementStrategy = &clusterv1alpha1.Placement{
 			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					helpers.PlacementStrategyAnnotation: "",
+				Labels: map[string]string{
+					helpers.PlacementStrategyLabel: placement.Name,
 				},
 				Namespace: strategy.Namespace,
 				Name:      placementStrategyName,

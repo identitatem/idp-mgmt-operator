@@ -96,6 +96,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
+			// Delete the strategy placement linked to that placement
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -124,15 +125,16 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 }
 
+func isLinkedToStrategy(obj client.Object) bool {
+	labels := obj.GetLabels()
+	if len(labels) == 0 {
+		return false
+	}
+	_, ok := labels[helpers.PlacementStrategyLabel]
+	return ok
+}
+
 func (r *PlacementDecisionReconciler) processPlacementDecisionUpdate(placement *clusterv1alpha1.Placement) (ctrl.Result, error) {
-	//Check if the placementDecision is linked to a strategy
-	ok, err := r.isLinkedToStrategy(placement)
-	if !ok {
-		return ctrl.Result{}, nil
-	}
-	if err != nil {
-		return ctrl.Result{}, err
-	}
 
 	//Add finalizer
 	r.Log.Info("add finalizer", "Finalizer:", helpers.AuthrealmFinalizer, "name", placement.Name, "namespace", placement.Namespace)
@@ -176,25 +178,8 @@ func (r *PlacementDecisionReconciler) processPlacementDecision(
 	return ctrl.Result{}, nil
 }
 
-func (r *PlacementDecisionReconciler) isLinkedToStrategy(placement *clusterv1alpha1.Placement) (bool, error) {
-	_, err := r.GetStrategyFromPlacement(placement)
-	if err != nil {
-		r.Log.Info("PlacementDecision not linked to a strategy", "Error:", err)
-		//No further processing
-		return false, nil
-	}
-	return true, giterrors.WithStack(err)
-}
-
 func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placement *clusterv1alpha1.Placement,
 	onlyIfAuthRealmDeleted bool) (ctrl.Result, error) {
-	ok, err := r.isLinkedToStrategy(placement)
-	if !ok {
-		return ctrl.Result{}, nil
-	}
-	if err != nil {
-		return ctrl.Result{}, err
-	}
 
 	r.Log.Info("start deletion of Placement",
 		"namespace", placement.Namespace,
@@ -276,22 +261,13 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		},
 	})
 
-	annotationPlacementFilter := func(obj client.Object) bool {
-		annotations := obj.GetAnnotations()
-		if len(annotations) == 0 {
-			return false
-		}
-		_, ok := annotations[helpers.PlacementStrategyAnnotation]
-		return ok
-	}
-
 	placementPredicate := predicate.Predicate(predicate.Funcs{
 		GenericFunc: func(e event.GenericEvent) bool { return false },
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// Filter only if obj is placement
 			switch e.Object.(type) {
 			case *clusterv1alpha1.Placement:
-				return annotationPlacementFilter(e.Object)
+				return isLinkedToStrategy(e.Object)
 			default:
 				return true
 			}
@@ -300,7 +276,7 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			// Filter only if obj is placement
 			switch e.Object.(type) {
 			case *clusterv1alpha1.Placement:
-				return annotationPlacementFilter(e.Object)
+				return isLinkedToStrategy(e.Object)
 			default:
 				return true
 			}
@@ -312,7 +288,7 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				placementOld := e.ObjectOld.(*clusterv1alpha1.Placement)
 				placementNew := e.ObjectNew.(*clusterv1alpha1.Placement)
 				// only handle the IDP generated placements
-				return annotationPlacementFilter(placementNew) || annotationPlacementFilter(placementOld)
+				return isLinkedToStrategy(placementNew) || isLinkedToStrategy(placementOld)
 			default:
 				return true
 			}

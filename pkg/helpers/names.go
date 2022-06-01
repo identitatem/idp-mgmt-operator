@@ -31,7 +31,7 @@ const (
 	HostedClusterClusterClaim               string = "hostedcluster.hypershift.openshift.io"
 	ConsoleURLClusterClaim                  string = "consoleurl.cluster.open-cluster-management.io"
 	HostingClusterAnnotation                string = "import.open-cluster-management.io/hosting-cluster-name"
-	PlacementStrategyAnnotation             string = "auth.identitatem.io/placement-strategy"
+	PlacementStrategyLabel                  string = "auth.identitatem.io/placement-strategy"
 )
 
 const (

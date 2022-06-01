@@ -213,7 +213,8 @@ var _ = AfterSuite(func() {
 	SetDefaultEventuallyTimeout(20 * time.Second)
 	SetDefaultEventuallyPollingInterval(1 * time.Second)
 	By("Deleting idpconfig", func() {
-		err := identitatemClientSet.IdentityconfigV1alpha1().IDPConfigs("idp-mgmt-config").Delete(context.TODO(), "idpconfig", metav1.DeleteOptions{})
+		err := identitatemClientSet.IdentityconfigV1alpha1().IDPConfigs("idp-mgmt-config").
+			Delete(context.TODO(), "idpconfig", metav1.DeleteOptions{})
 		Expect(err).NotTo(HaveOccurred())
 	})
 	By("Checking idpconfig deletion", func() {

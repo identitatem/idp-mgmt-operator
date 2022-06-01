@@ -76,7 +76,7 @@ func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authRealm *identitat
 		r.Log.Info("delete dexclient", "namespace", dexClientToBeDeleted.Namespace, "name", dexClientToBeDeleted.Name)
 		dexClient := &dexoperatorv1alpha1.DexClient{}
 		err := r.Client.Get(context.TODO(),
-			client.ObjectKey{Name: dexClient.Name, Namespace: dexClient.Namespace},
+			client.ObjectKey{Name: dexClientToBeDeleted.Name, Namespace: dexClientToBeDeleted.Namespace},
 			dexClient)
 		switch {
 		case err == nil:
@@ -91,11 +91,11 @@ func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authRealm *identitat
 	//Wait dexclient deleted
 	for _, dexClientToBeDeleted := range dexClientsToBeDeleted {
 		dexClient := &dexoperatorv1alpha1.DexClient{}
-		r.Log.Info("check dexclient deletion", "namespace", dexClient.Namespace, "name", dexClient.Name)
+		r.Log.Info("check dexclient deletion", "namespace", dexClientToBeDeleted.Namespace, "name", dexClientToBeDeleted.Name)
 		if err := r.Client.Get(context.TODO(),
 			client.ObjectKey{Name: dexClientToBeDeleted.Name, Namespace: dexClientToBeDeleted.Namespace},
 			dexClient); err == nil {
-			r.Log.Info("waiting dexclient deletion", "namespace", dexClient.Namespace, "name", dexClient.Name)
+			r.Log.Info("waiting dexclient deletion", "namespace", dexClientToBeDeleted.Namespace, "name", dexClientToBeDeleted.Name)
 			return ctrl.Result{Requeue: true,
 				RequeueAfter: 1 * time.Second}, nil
 		}
