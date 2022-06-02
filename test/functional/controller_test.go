@@ -18,6 +18,7 @@ import (
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	viewv1beta1 "github.com/stolostron/multicloud-operators-foundation/pkg/apis/view/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -148,6 +149,23 @@ var createPlacement = func(testData TestData) {
 	})
 }
 
+var updatePlacement = func(name, namespace string, predicates []clusterv1alpha1.ClusterPredicate) {
+	var placement *clusterv1alpha1.Placement
+	By("Getting the placement", func() {
+		var err error
+		placement, err = clientSetCluster.ClusterV1alpha1().Placements(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+		Expect(err).To(BeNil())
+	})
+
+	By(fmt.Sprintf("Updating placement %s with new predicates", name), func() {
+		placement.Spec.Predicates = predicates
+		var err error
+		_, err = clientSetCluster.ClusterV1alpha1().Placements(namespace).
+			Update(context.TODO(), placement, metav1.UpdateOptions{})
+		Expect(err).To(BeNil())
+	})
+}
+
 var createManagedCluster = func(testData TestData) {
 	By(fmt.Sprintf("creation cluster namespace %s", testData.ClusterName), func() {
 		ns := &corev1.Namespace{
@@ -238,8 +256,10 @@ var checkGeneratedResources = func(testData TestData) {
 		}, 60, 1).Should(BeNil())
 	})
 	By(fmt.Sprintf("Checking creation of strategy placement %s", testData.PlacementStrategyBackplaneName), func() {
+		var strategyPlacement *clusterv1alpha1.Placement
 		Eventually(func() error {
-			_, err := clientSetCluster.ClusterV1alpha1().Placements(testData.AuthRealm.Namespace).Get(context.TODO(), testData.PlacementStrategyBackplaneName, metav1.GetOptions{})
+			var err error
+			strategyPlacement, err = clientSetCluster.ClusterV1alpha1().Placements(testData.AuthRealm.Namespace).Get(context.TODO(), testData.PlacementStrategyBackplaneName, metav1.GetOptions{})
 			if err != nil {
 				if !errors.IsNotFound(err) {
 					return err
@@ -247,12 +267,30 @@ var checkGeneratedResources = func(testData TestData) {
 				logf.Log.Info("Placement", "Name", testData.PlacementStrategyBackplaneName, "Namespace", testData.AuthRealm.Namespace)
 				return err
 			}
+			placement, err := clientSetCluster.ClusterV1alpha1().Placements(testData.AuthRealm.Namespace).Get(context.TODO(), testData.PlacementName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			found := false
+			for _, p := range strategyPlacement.Spec.Predicates {
+				logf.Log.Info("StrategyPlacement", "Namespace", strategyPlacement.Namespace, "Name", strategyPlacement.Name, "LabelSelector", p.RequiredClusterSelector.LabelSelector)
+				logf.Log.Info("Placement", "Namespace", placement.Namespace, "Name", placement.Name, "LabelSelector", placement.Spec.Predicates[0].RequiredClusterSelector.LabelSelector)
+				if equality.Semantic.DeepEqual(p.RequiredClusterSelector.LabelSelector, placement.Spec.Predicates[0].RequiredClusterSelector.LabelSelector) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("Placement strategy %s/%s doesn't contain the placement labelselector", strategyPlacement.Namespace, strategyPlacement.Name)
+			}
 			return nil
 		}, 60, 1).Should(BeNil())
 	})
 	By(fmt.Sprintf("Checking creation of strategy placement %s", testData.PlacementStrategyHypershiftName), func() {
+		var strategyPlacement *clusterv1alpha1.Placement
 		Eventually(func() error {
-			_, err := clientSetCluster.ClusterV1alpha1().Placements(testData.AuthRealm.Namespace).Get(context.TODO(), testData.PlacementStrategyHypershiftName, metav1.GetOptions{})
+			var err error
+			strategyPlacement, err = clientSetCluster.ClusterV1alpha1().Placements(testData.AuthRealm.Namespace).Get(context.TODO(), testData.PlacementStrategyHypershiftName, metav1.GetOptions{})
 			if err != nil {
 				if !errors.IsNotFound(err) {
 					return err
@@ -260,8 +298,25 @@ var checkGeneratedResources = func(testData TestData) {
 				logf.Log.Info("Placement", "Name", testData.PlacementStrategyHypershiftName, "Namespace", testData.AuthRealm.Namespace)
 				return err
 			}
+			placement, err := clientSetCluster.ClusterV1alpha1().Placements(testData.AuthRealm.Namespace).Get(context.TODO(), testData.PlacementName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			found := false
+			for _, p := range strategyPlacement.Spec.Predicates {
+				logf.Log.Info("StrategyPlacement", "Namespace", strategyPlacement.Namespace, "Name", strategyPlacement.Name, "LabelSelector", p.RequiredClusterSelector.LabelSelector)
+				logf.Log.Info("Placement", "Namespace", placement.Namespace, "Name", placement.Name, "LabelSelector", placement.Spec.Predicates[0].RequiredClusterSelector.LabelSelector)
+				if equality.Semantic.DeepEqual(p.RequiredClusterSelector.LabelSelector, placement.Spec.Predicates[0].RequiredClusterSelector.LabelSelector) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("Placement strategy %s/%s doesn't contain the placement labelselector", strategyPlacement.Namespace, strategyPlacement.Name)
+			}
 			return nil
 		}, 60, 1).Should(BeNil())
+
 	})
 }
 
@@ -556,7 +611,29 @@ var deleteAuthRealm = func(testData TestData) {
 	})
 }
 
+var checkPlacementClean = func(testData TestData) {
+	By("Checking placement Backplane deleted", func() {
+		Eventually(func() error {
+			_, err := clientSetCluster.
+				ClusterV1alpha1().
+				Placements(testData.AuthRealm.Namespace).
+				Get(context.TODO(), testData.PlacementName+"-"+string(identitatemv1alpha1.BackplaneStrategyType), metav1.GetOptions{})
+			return err
+		}, 120, 1).ShouldNot(BeNil())
+	})
+	By("Checking placement Hypershift deleted", func() {
+		Eventually(func() error {
+			_, err := clientSetCluster.
+				ClusterV1alpha1().
+				Placements(testData.AuthRealm.Namespace).
+				Get(context.TODO(), testData.PlacementName+"-"+string(identitatemv1alpha1.HypershiftStrategyType), metav1.GetOptions{})
+			return err
+		}, 120, 1).ShouldNot(BeNil())
+	})
+}
+
 var checkAuthrealmClean = func(testData TestData) {
+	By("Checking placements", func() { checkPlacementClean(testData) })
 	By("Checking strategy Backplane deleted", func() {
 		Eventually(func() error {
 			_, err := identitatemClientSet.
@@ -606,7 +683,7 @@ type TestData struct {
 	ClusterName                     string
 }
 
-var _ = Describe("AuthRealm with add and remove from placement", func() {
+var _ = Describe("AuthRealmAddRemoveFromPlacement", func() {
 	testData := TestData{
 		ClusterName:   "my-cluster-0",
 		PlacementName: "my-placement-0",
@@ -665,7 +742,7 @@ var _ = Describe("AuthRealm with add and remove from placement", func() {
 
 })
 
-var _ = Describe("AuthRealm create and delete", func() {
+var _ = Describe("CreateDelete", func() {
 	testData := TestData{
 		ClusterName:   "my-cluster-1",
 		PlacementName: "my-placement-1",
@@ -719,7 +796,116 @@ var _ = Describe("AuthRealm create and delete", func() {
 	It(fmt.Sprintf("check authrealm %s cleaned", testData.AuthRealm.Name), func() { checkAuthrealmClean(testData) })
 })
 
-var _ = Describe("2 AuthRealms/2 placements/1 cluster create and delete", func() {
+var _ = Describe("UpatePlacememt", func() {
+	testData := TestData{
+		ClusterName:   "my-cluster-pl",
+		PlacementName: "my-placement-pl",
+	}
+	testData.AuthRealm = &identitatemv1alpha1.AuthRealm{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-authrealm-pl",
+			Namespace: "my-authrealm-ns-pl",
+		},
+		Spec: identitatemv1alpha1.AuthRealmSpec{
+			RouteSubDomain: "myroute-pl",
+			Type:           identitatemv1alpha1.AuthProxyDex,
+			IdentityProviders: []openshiftconfigv1.IdentityProvider{
+				{
+					Name:          "my-idp-pl",
+					MappingMethod: openshiftconfigv1.MappingMethodClaim,
+					IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+						Type: openshiftconfigv1.IdentityProviderTypeGitHub,
+						GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+							ClientSecret: openshiftconfigv1.SecretNameReference{
+								Name: "my-authrealm-pl" + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub),
+							},
+							ClientID: "my-github-app-client-id-pl",
+						},
+					},
+				},
+			},
+			PlacementRef: corev1.LocalObjectReference{
+				Name: testData.PlacementName,
+			},
+		},
+	}
+	testData.StrategyBackplaneName = testData.AuthRealm.Name + "-" + string(identitatemv1alpha1.BackplaneStrategyType)
+	testData.StrategyHypershiftName = testData.AuthRealm.Name + "-" + string(identitatemv1alpha1.HypershiftStrategyType)
+	testData.PlacementStrategyBackplaneName = testData.PlacementName + "-" + string(identitatemv1alpha1.BackplaneStrategyType)
+	testData.PlacementStrategyHypershiftName = testData.PlacementName + "-" + string(identitatemv1alpha1.HypershiftStrategyType)
+	It("Check requirement", func() { checkEnvironment() })
+	It(fmt.Sprintf("Create placement %s", testData.PlacementName), func() { createPlacement(testData) })
+
+	It(fmt.Sprintf("create AuthRealm %s", testData.AuthRealm.Name), func() { createAuthRealm(testData) })
+	It(fmt.Sprintf("check generated resources for authrealm %s", testData.AuthRealm.Name), func() { checkGeneratedResources(testData) })
+
+	predicates := []clusterv1alpha1.ClusterPredicate{
+		{
+			RequiredClusterSelector: clusterv1alpha1.ClusterSelector{
+				LabelSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"mylabel": "newlabel",
+					},
+				},
+			},
+		},
+	}
+	It(fmt.Sprintf("Update placement with new predicate %s", testData.PlacementName), func() { updatePlacement(testData.PlacementName, testData.AuthRealm.Namespace, predicates) })
+	It(fmt.Sprintf("check generated resources for authrealm %s", testData.AuthRealm.Name), func() { checkGeneratedResources(testData) })
+})
+
+var _ = Describe("DeletePlacememt", func() {
+	testData := TestData{
+		ClusterName:   "my-cluster-dpl",
+		PlacementName: "my-placement-dpl",
+	}
+	testData.AuthRealm = &identitatemv1alpha1.AuthRealm{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-authrealm-dpl",
+			Namespace: "my-authrealm-ns-dpl",
+		},
+		Spec: identitatemv1alpha1.AuthRealmSpec{
+			RouteSubDomain: "myroute-dpl",
+			Type:           identitatemv1alpha1.AuthProxyDex,
+			IdentityProviders: []openshiftconfigv1.IdentityProvider{
+				{
+					Name:          "my-idp-dpl",
+					MappingMethod: openshiftconfigv1.MappingMethodClaim,
+					IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+						Type: openshiftconfigv1.IdentityProviderTypeGitHub,
+						GitHub: &openshiftconfigv1.GitHubIdentityProvider{
+							ClientSecret: openshiftconfigv1.SecretNameReference{
+								Name: "my-authrealm-dpl" + "-" + string(openshiftconfigv1.IdentityProviderTypeGitHub),
+							},
+							ClientID: "my-github-app-client-id-dpl",
+						},
+					},
+				},
+			},
+			PlacementRef: corev1.LocalObjectReference{
+				Name: testData.PlacementName,
+			},
+		},
+	}
+	testData.StrategyBackplaneName = testData.AuthRealm.Name + "-" + string(identitatemv1alpha1.BackplaneStrategyType)
+	testData.StrategyHypershiftName = testData.AuthRealm.Name + "-" + string(identitatemv1alpha1.HypershiftStrategyType)
+	testData.PlacementStrategyBackplaneName = testData.PlacementName + "-" + string(identitatemv1alpha1.BackplaneStrategyType)
+	testData.PlacementStrategyHypershiftName = testData.PlacementName + "-" + string(identitatemv1alpha1.HypershiftStrategyType)
+	It("Check requirement", func() { checkEnvironment() })
+	It(fmt.Sprintf("Create placement %s", testData.PlacementName), func() { createPlacement(testData) })
+
+	It(fmt.Sprintf("create AuthRealm %s", testData.AuthRealm.Name), func() { createAuthRealm(testData) })
+	It(fmt.Sprintf("check generated resources for authrealm %s", testData.AuthRealm.Name), func() { checkGeneratedResources(testData) })
+
+	It(fmt.Sprintf("Deleting placement %s", testData.PlacementName), func() {
+		err := clientSetCluster.ClusterV1alpha1().Placements(testData.AuthRealm.Namespace).Delete(context.TODO(), testData.PlacementName, metav1.DeleteOptions{})
+		Expect(err).Should(BeNil())
+	})
+
+	It(fmt.Sprintf("Check strategy placement deletion for placement %s", testData.PlacementName), func() { checkPlacementClean(testData) })
+})
+
+var _ = Describe("2AuthRealms-2Placements-1Cluster", func() {
 	testData1 := TestData{
 		//Use the same cluster
 		ClusterName:   "my-cluster-22",
@@ -836,7 +1022,7 @@ var _ = Describe("2 AuthRealms/2 placements/1 cluster create and delete", func()
 
 })
 
-// var _ = Describe("2 AuthRealms/1 placement/1 cluster create and delete", func() {
+// var _ = Describe("2AuthRealms-1Placement-1Cluster", func() {
 // 	Context("221", func() {
 // 		testData1 := TestData{
 // 			//Use the same cluster
@@ -941,21 +1127,21 @@ var _ = Describe("2 AuthRealms/2 placements/1 cluster create and delete", func()
 // 		It(fmt.Sprintf("check managedcluster %s cleaned", testData1.ClusterName), func() { checkManagedClusterClean(testData1) })
 // 		It(fmt.Sprintf("check authrealm %s cleaned", testData1.AuthRealm.Name), func() { checkAuthrealmClean(testData1) })
 
-//Check testData2
-// It(fmt.Sprintf("check generated resources for authrealm %s", testData2.AuthRealm.Name), func() { checkGeneratedResources(testData2) })
-// It(fmt.Sprintf("Check managedcluster %s configuration", testData2.ClusterName), func() { checkManagedCluster(testData2) })
+// 		// Check testData2
+// 		It(fmt.Sprintf("check generated resources for authrealm %s", testData2.AuthRealm.Name), func() { checkGeneratedResources(testData2) })
+// 		It(fmt.Sprintf("Check managedcluster %s configuration", testData2.ClusterName), func() { checkManagedCluster(testData2) })
 
-//Delete and check testData2
-// It(fmt.Sprintf("delete the authrealm %s", testData2.AuthRealm.Name), func() { deleteAuthRealm(testData2) })
-// It(fmt.Sprintf("check restore oauth %s", testData2.AuthRealm.Name), func() { checkRestoreOAuth(testData2) })
-// It(fmt.Sprintf("check managedcluster %s cleaned", testData2.ClusterName), func() { checkManagedClusterClean(testData2) })
-// It(fmt.Sprintf("check authrealm %s cleaned", testData2.AuthRealm.Name), func() { checkAuthrealmClean(testData2) })
+// 		// Delete and check testData2
+// 		It(fmt.Sprintf("delete the authrealm %s", testData2.AuthRealm.Name), func() { deleteAuthRealm(testData2) })
+// 		It(fmt.Sprintf("check restore oauth %s", testData2.AuthRealm.Name), func() { checkRestoreOAuth(testData2) })
+// 		It(fmt.Sprintf("check managedcluster %s cleaned", testData2.ClusterName), func() { checkManagedClusterClean(testData2) })
+// 		It(fmt.Sprintf("check authrealm %s cleaned", testData2.AuthRealm.Name), func() { checkAuthrealmClean(testData2) })
 
 // 	})
 
 // })
 
-var _ = Describe("Non strategy placement", func() {
+var _ = Describe("NonStrategyPlacement", func() {
 	AuthRealmNameSpace := "my-authrealmns-nps"
 	// CertificatesSecretRef := "my-certs"
 	PlacementName := "non-strategy-placement"

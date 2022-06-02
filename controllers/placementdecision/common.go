@@ -189,7 +189,7 @@ func (r *PlacementDecisionReconciler) GetStrategyFromPlacement(placement *cluste
 			return &strategy, nil
 		}
 	}
-	return nil, fmt.Errorf("strategy for %s placement not found ", placement.Name)
+	return nil, nil
 }
 
 func (r *PlacementDecisionReconciler) inPlacementDecision(clusterName string,
