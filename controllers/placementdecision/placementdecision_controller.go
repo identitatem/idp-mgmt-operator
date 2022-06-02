@@ -96,7 +96,6 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			// Delete the strategy placement linked to that placement
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -264,39 +263,23 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	placementPredicate := predicate.Predicate(predicate.Funcs{
 		GenericFunc: func(e event.GenericEvent) bool { return false },
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			// Filter only if obj is placement
-			switch e.Object.(type) {
-			case *clusterv1alpha1.Placement:
-				return isLinkedToStrategy(e.Object)
-			default:
-				return true
-			}
+			// only handle the IDP generated placements
+			return isLinkedToStrategy(e.Object)
 		},
 		CreateFunc: func(e event.CreateEvent) bool {
-			// Filter only if obj is placement
-			switch e.Object.(type) {
-			case *clusterv1alpha1.Placement:
-				return isLinkedToStrategy(e.Object)
-			default:
-				return true
-			}
+			// only handle the IDP generated placements
+			return isLinkedToStrategy(e.Object)
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			// Filter only if obj is placement
-			switch e.ObjectOld.(type) {
-			case *clusterv1alpha1.Placement:
-				placementOld := e.ObjectOld.(*clusterv1alpha1.Placement)
-				placementNew := e.ObjectNew.(*clusterv1alpha1.Placement)
-				// only handle the IDP generated placements
-				return isLinkedToStrategy(placementNew) || isLinkedToStrategy(placementOld)
-			default:
-				return true
-			}
+			placementOld := e.ObjectOld.(*clusterv1alpha1.Placement)
+			placementNew := e.ObjectNew.(*clusterv1alpha1.Placement)
+			// only handle the IDP generated placements
+			return isLinkedToStrategy(placementNew) || isLinkedToStrategy(placementOld)
 		},
 	})
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&clusterv1alpha1.Placement{}).WithEventFilter(placementPredicate).
+		For(&clusterv1alpha1.Placement{}, builder.WithPredicates(placementPredicate)).
 		Watches(&source.Kind{Type: &identitatemv1alpha1.AuthRealm{}},
 			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
 				authrealm := o.(*identitatemv1alpha1.AuthRealm)
@@ -355,6 +338,5 @@ func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 					}
 				}
 				return req
-			})).
-		Complete(r)
+			})).Complete(r)
 }

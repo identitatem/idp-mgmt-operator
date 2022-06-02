@@ -211,7 +211,8 @@ func (r *StrategyReconciler) processStrategyUpdate(strategy *identitatemv1alpha1
 
 //deleteStrategyPlacement deletes strategy placement related to a placement
 func (r *StrategyReconciler) deleteStrategyPlacement(name, namespace string) error {
-	//Could be a user placement referenced in one or more strategy placement and so we have to delete the strategy placement
+	//Could be a user placement referenced in one or more strategy placement
+	//and so we have to delete the strategy placement
 	strategyPlacements := &clusterv1alpha1.PlacementList{}
 	err := r.Client.List(context.TODO(), strategyPlacements,
 		client.InNamespace(namespace),

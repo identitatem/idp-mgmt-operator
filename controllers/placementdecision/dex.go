@@ -95,7 +95,9 @@ func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authRealm *identitat
 		if err := r.Client.Get(context.TODO(),
 			client.ObjectKey{Name: dexClientToBeDeleted.Name, Namespace: dexClientToBeDeleted.Namespace},
 			dexClient); err == nil {
-			r.Log.Info("waiting dexclient deletion", "namespace", dexClientToBeDeleted.Namespace, "name", dexClientToBeDeleted.Name)
+			r.Log.Info("waiting dexclient deletion",
+				"namespace", dexClientToBeDeleted.Namespace,
+				"name", dexClientToBeDeleted.Name)
 			return ctrl.Result{Requeue: true,
 				RequeueAfter: 1 * time.Second}, nil
 		}

@@ -287,7 +287,9 @@ func (r *ClusterOAuthReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				},
 			}))
 	if r.HypershiftDeploymentInstalled {
-		c = c.Watches(&source.Kind{Type: &hypershiftdeploymentv1alpha1.HypershiftDeployment{}}, &handler.EnqueueRequestForObject{})
+		c = c.Watches(&source.Kind{
+			Type: &hypershiftdeploymentv1alpha1.HypershiftDeployment{},
+		}, &handler.EnqueueRequestForObject{})
 	}
 	return c.Complete(r)
 }
