@@ -23,7 +23,7 @@ import (
 	"github.com/identitatem/idp-mgmt-operator/controllers/clusteroauth"
 	"github.com/identitatem/idp-mgmt-operator/controllers/hypershiftdeployment"
 	"github.com/identitatem/idp-mgmt-operator/controllers/manifestwork"
-	"github.com/identitatem/idp-mgmt-operator/controllers/placementdecision"
+	"github.com/identitatem/idp-mgmt-operator/controllers/placement"
 	"github.com/identitatem/idp-mgmt-operator/controllers/strategy"
 	"github.com/spf13/cobra"
 	// +kubebuilder:scaffold:imports
@@ -129,15 +129,15 @@ func (o *managerOptions) run() {
 
 	//This manager creates the DexClient and ClusterOAuth based on placementDecision
 	setupLog.Info("Add DexClient reconciler")
-	if err = (&placementdecision.PlacementDecisionReconciler{
+	if err = (&placement.PlacementReconciler{
 		Client:             mgr.GetClient(),
 		KubeClient:         kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
 		DynamicClient:      dynamic.NewForConfigOrDie(ctrl.GetConfigOrDie()),
 		APIExtensionClient: apiextensionsclient.NewForConfigOrDie(ctrl.GetConfigOrDie()),
 		Scheme:             mgr.GetScheme(),
-		Log:                ctrl.Log.WithName("controllers").WithName("PlacementDecision"),
+		Log:                ctrl.Log.WithName("controllers").WithName("Placement"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "PlacementDecision")
+		setupLog.Error(err, "unable to create controller", "controller", "Placement")
 		os.Exit(1)
 	}
 
