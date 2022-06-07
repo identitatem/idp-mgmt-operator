@@ -64,8 +64,6 @@ func (mgr *HypershiftMgr) Save() (ctrl.Result, error) {
 		return ctrl.Result{}, giterrors.WithStack(mgr.Reconciler.Client.Create(context.TODO(), cm))
 	}
 	b, err := yaml.YAMLToJSON(hd.Spec.HostedClusterSpec.Configuration.Items[index].Raw)
-	mgr.Reconciler.Log.Info("OAuth:", "Raw", string(hd.Spec.HostedClusterSpec.Configuration.Items[index].Raw))
-	mgr.Reconciler.Log.Info("OAuth:", "Raw-JSON", string(b))
 	if err != nil {
 		return ctrl.Result{}, giterrors.WithStack(err)
 	}

@@ -1,6 +1,6 @@
 // Copyright Red Hat
 
-package placementdecision
+package placement
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	giterrors "github.com/pkg/errors"
 
 	ocinfrav1 "github.com/openshift/api/config/v1"
-	// corev1 "k8s.io/api/core/v1"
 
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -31,7 +30,6 @@ import (
 	"github.com/go-logr/logr"
 	dexoperatorv1alpha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 
-	//identitatemdexserverv1lapha1 "github.com/identitatem/dex-operator/api/v1alpha1"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	idpoperatorconfig "github.com/identitatem/idp-client-api/config"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
@@ -41,13 +39,11 @@ import (
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	workv1 "open-cluster-management.io/api/work/v1"
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
 	//+kubebuilder:scaffold:imports
 )
 
-// PlacementDecisionReconciler reconciles a Strategy object
-type PlacementDecisionReconciler struct {
+// PlacementReconciler reconciles a Strategy object
+type PlacementReconciler struct {
 	client.Client
 	KubeClient         kubernetes.Interface
 	DynamicClient      dynamic.Interface
@@ -79,7 +75,7 @@ type PlacementDecisionReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
-func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *PlacementReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("namespace", req.NamespacedName, "name", req.Name)
 
@@ -106,7 +102,7 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	//if deletetimestamp then delete dex namespace
 	if instance.DeletionTimestamp != nil {
-		if result, err := r.processPlacementDecisionDeletion(instance, false); err != nil || result.Requeue {
+		if result, err := r.processPlacementDeletion(instance, false); err != nil || result.Requeue {
 			return result, err
 		}
 		r.Log.Info("remove finalizer", "Finalizer:", helpers.AuthrealmFinalizer, "name", instance.Name, "namespace", instance.Namespace)
@@ -117,13 +113,14 @@ func (r *PlacementDecisionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
-	if result, err := r.processPlacementDecisionUpdate(instance); err != nil || result.Requeue {
+	if result, err := r.processPlacementUpdate(instance); err != nil || result.Requeue {
 		return result, err
 	}
 	return ctrl.Result{}, nil
 
 }
 
+// Check if a placement is linked to a strategy
 func isLinkedToStrategy(obj client.Object) bool {
 	labels := obj.GetLabels()
 	if len(labels) == 0 {
@@ -133,7 +130,7 @@ func isLinkedToStrategy(obj client.Object) bool {
 	return ok
 }
 
-func (r *PlacementDecisionReconciler) processPlacementDecisionUpdate(placement *clusterv1alpha1.Placement) (ctrl.Result, error) {
+func (r *PlacementReconciler) processPlacementUpdate(placement *clusterv1alpha1.Placement) (ctrl.Result, error) {
 
 	//Add finalizer
 	r.Log.Info("add finalizer", "Finalizer:", helpers.AuthrealmFinalizer, "name", placement.Name, "namespace", placement.Namespace)
@@ -147,26 +144,22 @@ func (r *PlacementDecisionReconciler) processPlacementDecisionUpdate(placement *
 		return ctrl.Result{}, err
 	}
 
-	// for i := range strategies.Items {
 	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if result, err := r.processPlacementDecision(authRealm, strategy, placement); err != nil || result.Requeue {
+	if result, err := r.processPlacement(authRealm, strategy, placement); err != nil || result.Requeue {
 		return result, err
 	}
 	if err := r.updateAuthRealmStatusPlacementStatus(strategy, placement); err != nil {
 		return ctrl.Result{}, err
 	}
-	// if result, err := r.processPlacementDecisionDeletion(placement, true); err != nil {
-	// 	return result, err
-	// }
 	return ctrl.Result{}, nil
 }
 
-//processPlacementDecision generates resources for the Backplane strategy
-func (r *PlacementDecisionReconciler) processPlacementDecision(
+//processPlacement generates resources for the Backplane strategy
+func (r *PlacementReconciler) processPlacement(
 	authRealm *identitatemv1alpha1.AuthRealm,
 	strategy *identitatemv1alpha1.Strategy,
 	placement *clusterv1alpha1.Placement) (ctrl.Result, error) {
@@ -177,7 +170,7 @@ func (r *PlacementDecisionReconciler) processPlacementDecision(
 	return ctrl.Result{}, nil
 }
 
-func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placement *clusterv1alpha1.Placement,
+func (r *PlacementReconciler) processPlacementDeletion(placement *clusterv1alpha1.Placement,
 	onlyIfAuthRealmDeleted bool) (ctrl.Result, error) {
 
 	r.Log.Info("start deletion of Placement",
@@ -204,7 +197,7 @@ func (r *PlacementDecisionReconciler) processPlacementDecisionDeletion(placement
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *PlacementDecisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *PlacementReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	//Install CRD
 	applierBuilder := &clusteradmapply.ApplierBuilder{}

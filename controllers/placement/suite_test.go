@@ -1,6 +1,6 @@
 // Copyright Red Hat
 
-package placementdecision
+package placement
 
 import (
 	"context"
@@ -382,7 +382,7 @@ var _ = Describe("Process Strategy backplane: ", func() {
 			Expect(err).To(BeNil())
 		})
 		By("Calling reconcile", func() {
-			r := &PlacementDecisionReconciler{
+			r := &PlacementReconciler{
 				Client: k8sClient,
 				Log:    logf.Log,
 				Scheme: scheme.Scheme,

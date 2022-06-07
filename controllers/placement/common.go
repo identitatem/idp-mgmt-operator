@@ -1,6 +1,6 @@
 // Copyright Red Hat
 
-package placementdecision
+package placement
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 )
 
-func (r *PlacementDecisionReconciler) createClientSecret(
+func (r *PlacementReconciler) createClientSecret(
 	decision clusterv1alpha1.ClusterDecision,
 	authRealm *identitatemv1alpha1.AuthRealm) (*corev1.Secret, error) {
 	r.Log.Info("check clientSecret for", "cluster", decision.ClusterName, "identityProvider", authRealm.Name)
@@ -53,9 +53,9 @@ func (r *PlacementDecisionReconciler) createClientSecret(
 	return clientSecret, nil
 }
 
-func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv1alpha1.AuthRealm,
+func (r *PlacementReconciler) createClusterOAuth(authRealm *identitatemv1alpha1.AuthRealm,
 	strategy *identitatemv1alpha1.Strategy,
-	placementDecision clusterv1alpha1.PlacementDecision,
+	Placement clusterv1alpha1.PlacementDecision,
 	decision clusterv1alpha1.ClusterDecision,
 	dexClient *dexoperatorv1alpha1.DexClient) error {
 	r.Log.Info("create clusterOAuth for", "cluster", decision.ClusterName, "authRealm", authRealm.Name)
@@ -162,7 +162,7 @@ func (r *PlacementDecisionReconciler) createClusterOAuth(authRealm *identitatemv
 	return nil
 }
 
-func (r *PlacementDecisionReconciler) GetStrategyFromPlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) (*identitatemv1alpha1.Strategy, error) {
+func (r *PlacementReconciler) GetStrategyFromPlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) (*identitatemv1alpha1.Strategy, error) {
 	r.Log.Info("GetStrategyFromPlacementDecision placementDecision:", "name", placementDecision.Name, "namespace", placementDecision.Namespace)
 	if placementName, ok := placementDecision.GetLabels()[clusterv1alpha1.PlacementLabel]; ok {
 		placement := &clusterv1alpha1.Placement{}
@@ -174,7 +174,7 @@ func (r *PlacementDecisionReconciler) GetStrategyFromPlacementDecision(placement
 	return nil, giterrors.WithStack(fmt.Errorf("placementDecision %s has no label %s", placementDecision.Name, clusterv1alpha1.PlacementLabel))
 }
 
-func (r *PlacementDecisionReconciler) GetStrategyFromPlacement(placement *clusterv1alpha1.Placement) (*identitatemv1alpha1.Strategy, error) {
+func (r *PlacementReconciler) GetStrategyFromPlacement(placement *clusterv1alpha1.Placement) (*identitatemv1alpha1.Strategy, error) {
 	r.Log.Info("GetStrategiesFromPlacement",
 		"placementName", placement.Name,
 		"placementNamespace", placement.Namespace)
@@ -192,7 +192,7 @@ func (r *PlacementDecisionReconciler) GetStrategyFromPlacement(placement *cluste
 	return nil, nil
 }
 
-func (r *PlacementDecisionReconciler) inPlacementDecision(clusterName string,
+func (r *PlacementReconciler) inPlacementDecision(clusterName string,
 	placement *clusterv1alpha1.Placement) (bool, error) {
 	r.Log.Info("inPlacementDecision", "clusterName", clusterName, "placementName", placement.Name)
 	placementDecisions := &clusterv1alpha1.PlacementDecisionList{}

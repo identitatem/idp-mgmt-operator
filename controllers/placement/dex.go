@@ -1,6 +1,6 @@
 // Copyright Red Hat
 
-package placementdecision
+package placement
 
 import (
 	"context"
@@ -26,7 +26,7 @@ import (
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 )
 
-func (r *PlacementDecisionReconciler) syncDexClients(authRealm *identitatemv1alpha1.AuthRealm,
+func (r *PlacementReconciler) syncDexClients(authRealm *identitatemv1alpha1.AuthRealm,
 	strategy *identitatemv1alpha1.Strategy,
 	placement *clusterv1alpha1.Placement) (ctrl.Result, error) {
 
@@ -41,7 +41,7 @@ func (r *PlacementDecisionReconciler) syncDexClients(authRealm *identitatemv1alp
 	return ctrl.Result{}, nil
 }
 
-func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authRealm *identitatemv1alpha1.AuthRealm,
+func (r *PlacementReconciler) deleteObsoleteConfigs(authRealm *identitatemv1alpha1.AuthRealm,
 	strategy *identitatemv1alpha1.Strategy,
 	placement *clusterv1alpha1.Placement) (ctrl.Result, error) {
 	r.Log.Info("delete obsolete config for Authrealm", "Namespace", authRealm.Namespace, "Name", authRealm.Name)
@@ -107,7 +107,7 @@ func (r *PlacementDecisionReconciler) deleteObsoleteConfigs(authRealm *identitat
 	return ctrl.Result{}, nil
 }
 
-func (r *PlacementDecisionReconciler) createConfigs(authRealm *identitatemv1alpha1.AuthRealm,
+func (r *PlacementReconciler) createConfigs(authRealm *identitatemv1alpha1.AuthRealm,
 	strategy *identitatemv1alpha1.Strategy,
 	placement *clusterv1alpha1.Placement) error {
 	placementDecisions := &clusterv1alpha1.PlacementDecisionList{}
@@ -137,7 +137,7 @@ func (r *PlacementDecisionReconciler) createConfigs(authRealm *identitatemv1alph
 	return nil
 }
 
-func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1alpha1.AuthRealm,
+func (r *PlacementReconciler) createDexClient(authRealm *identitatemv1alpha1.AuthRealm,
 	placementDecision clusterv1alpha1.PlacementDecision,
 	strategy *identitatemv1alpha1.Strategy,
 	decision clusterv1alpha1.ClusterDecision,
@@ -249,7 +249,7 @@ func (r *PlacementDecisionReconciler) createDexClient(authRealm *identitatemv1al
 	return dexClient, nil
 }
 
-func (r *PlacementDecisionReconciler) deleteConfig(
+func (r *PlacementReconciler) deleteConfig(
 	clusterName string,
 	placement *clusterv1alpha1.Placement) (ctrl.Result, error) {
 	clusterOAuthList := &identitatemv1alpha1.ClusterOAuthList{}

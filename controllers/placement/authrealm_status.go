@@ -1,6 +1,6 @@
 // Copyright Red Hat
 
-package placementdecision
+package placement
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *PlacementDecisionReconciler) updateAuthRealmStatusPlacementStatus(
+func (r *PlacementReconciler) updateAuthRealmStatusPlacementStatus(
 	strategy *identitatemv1alpha1.Strategy,
 	placement *clusterv1alpha1.Placement) error {
 
