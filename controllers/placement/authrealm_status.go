@@ -4,11 +4,11 @@ package placement
 
 import (
 	"context"
-	"fmt"
 
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	giterrors "github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -28,7 +28,13 @@ func (r *PlacementReconciler) updateAuthRealmStatusPlacementStatus(
 		"strategyIndex", strategyIndex,
 		"placement.Status", placement.Status)
 	if strategyIndex == -1 {
-		return fmt.Errorf("strategy %s not found", strategy.Name)
+		strategyIndex = len(authRealm.Status.Strategies)
+		authRealm.Status.Strategies = append(authRealm.Status.Strategies, identitatemv1alpha1.AuthRealmStrategyStatus{
+			Name: strategy.Name,
+			StrategyStatus: identitatemv1alpha1.StrategyStatus{
+				Conditions: make([]metav1.Condition, 0),
+			},
+		})
 	}
 
 	r.Log.Info("UpdateAuthRealmStatusPlacementStatus",

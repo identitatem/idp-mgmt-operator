@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -39,11 +40,13 @@ import (
 	dexoperatorconfig "github.com/identitatem/dex-operator/config"
 	identitatemclientset "github.com/identitatem/idp-client-api/api/client/clientset/versioned"
 	identitatemv1alpha1 "github.com/identitatem/idp-client-api/api/identitatem/v1alpha1"
+	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	viewv1beta1 "github.com/stolostron/multicloud-operators-foundation/pkg/apis/view/v1beta1"
 	clientsetcluster "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
+	manifestworkv1 "open-cluster-management.io/api/work/v1"
 	workv1 "open-cluster-management.io/api/work/v1"
 	clusteradmapply "open-cluster-management.io/clusteradm/pkg/helpers/apply"
 )
@@ -58,6 +61,8 @@ var dynamicClient dynamic.Interface
 var cfg *rest.Config
 
 var idpConfig *identitatemv1alpha1.IDPConfig
+
+var stopManifestWorkController chan bool
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter)))
@@ -204,6 +209,8 @@ var _ = BeforeSuite(func() {
 			return nil
 		}, 30, 1).Should(BeNil())
 	})
+	stopManifestWorkController = make(chan bool)
+	go manifestworkController(stopManifestWorkController)
 })
 
 var _ = AfterSuite(func() {
@@ -244,8 +251,67 @@ var _ = AfterSuite(func() {
 			return nil
 		}, 60, 1).Should(BeNil())
 	})
-
+	defer func() { stopManifestWorkController <- true }()
 })
+
+func manifestworkController(done chan bool) {
+	gvr := schema.GroupVersionResource{Group: "work.open-cluster-management.io", Version: "v1", Resource: "manifestworks"}
+	for {
+		select {
+		case <-done:
+			logf.Log.Info("managedWork congroller stopped")
+			return
+		default:
+			logf.Log.Info("Run manifestwork controller")
+			mwus, err := dynamicClient.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
+			if err != nil {
+				logf.Log.Error(err, "error when retrieving mw")
+			}
+			for _, mwu := range mwus.Items {
+				if mwu.GetName() == helpers.ManifestWorkOriginalOAuthName() {
+					fmt.Printf("set %s/%s/%s to applied\n", mwu.GetKind(), mwu.GetNamespace(), mwu.GetName())
+					mcv := &manifestworkv1.ManifestWork{}
+					err = runtime.DefaultUnstructuredConverter.FromUnstructured(mwu.UnstructuredContent(), mcv)
+					if err != nil {
+						logf.Log.Error(err, "error when converting mw", "name", mwu.GetName())
+					}
+					alreadySet := false
+					for _, c := range mcv.Status.Conditions {
+						if c.Type == "Applied" && c.Status == metav1.ConditionTrue {
+							alreadySet = true
+							break
+						}
+					}
+					if alreadySet {
+						logf.Log.Info("already set to applied", "kind", mwu.GetKind(), "namespace", mwu.GetNamespace(), "name", mwu.GetName())
+						continue
+					}
+					mcv.Status.Conditions = []metav1.Condition{
+						{
+							Type:               "Applied",
+							Status:             metav1.ConditionTrue,
+							Reason:             "AppliedManifestComplete",
+							Message:            "Apply manifest complete",
+							LastTransitionTime: metav1.Now(),
+						},
+					}
+					uc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mcv)
+					if err != nil {
+						logf.Log.Error(err, "error when converting mw", "name", mwu.GetName())
+					}
+					mwu.SetUnstructuredContent(uc)
+					mwuu := mwu.DeepCopy()
+					mwuu, err = dynamicClient.Resource(gvr).Namespace(mwu.GetNamespace()).UpdateStatus(context.TODO(), mwuu, metav1.UpdateOptions{})
+					if err != nil {
+						logf.Log.Error(err, "error when updating status mw", "name", mwu.GetName())
+					}
+					logf.Log.Info("after update", "mwuu", mwuu)
+				}
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}
+}
 
 func TestRcmController(t *testing.T) {
 	RegisterFailHandler(Fail)

@@ -146,11 +146,12 @@ func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.A
 	}
 	nbFound := 0
 	for _, authRealm := range authRealms.Items {
-		if authRealm.Spec.Type == identitatemv1alpha1.AuthProxyDex || authRealm.Spec.Type == "" {
+		if (authRealm.Spec.Type == identitatemv1alpha1.AuthProxyDex || authRealm.Spec.Type == "") &&
+			authRealm.DeletionTimestamp != nil {
 			nbFound++
 		}
 	}
-	if nbFound == 1 {
+	if nbFound == 0 {
 		//Delete dex-operator ns
 		ns := &corev1.Namespace{}
 		err := r.Client.Get(context.TODO(), client.ObjectKey{Name: helpers.DexOperatorNamespace()}, ns)
@@ -479,13 +480,13 @@ func (r *AuthRealmReconciler) processDexServerDeletion(authRealm *identitatemv1a
 		&client.ListOptions{Namespace: helpers.DexServerNamespace(authRealm)}); err != nil {
 		return ctrl.Result{}, giterrors.WithStack(err)
 	}
-	for _, dc := range ldc.Items {
-		dcc := dc.DeepCopy()
-		r.Log.Info("delete DexClients in ns", "namespace", helpers.DexServerNamespace(authRealm), "name", dc.Name)
-		if err := r.Client.Delete(context.TODO(), dcc); err != nil {
-			return ctrl.Result{}, giterrors.WithStack(err)
-		}
-	}
+	// for _, dc := range ldc.Items {
+	// 	dcc := dc.DeepCopy()
+	// 	r.Log.Info("delete DexClients in ns", "namespace", helpers.DexServerNamespace(authRealm), "name", dc.Name)
+	// 	if err := r.Client.Delete(context.TODO(), dcc); err != nil {
+	// 		return ctrl.Result{}, giterrors.WithStack(err)
+	// 	}
+	// }
 	if len(ldc.Items) != 0 {
 		r.Log.Info("waiting dexclients to be deleted")
 		return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Second}, nil

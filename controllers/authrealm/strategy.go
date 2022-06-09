@@ -85,6 +85,5 @@ func (r *AuthRealmReconciler) deleteStrategy(authRealm *identitatemv1alpha1.Auth
 	case !errors.IsNotFound(err):
 		return ctrl.Result{}, giterrors.WithStack(err)
 	}
-	r.Log.Info("deleted Strategy", "name", helpers.StrategyName(authRealm, t))
 	return ctrl.Result{}, nil
 }

@@ -98,7 +98,7 @@ func (r *PlacementReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, giterrors.WithStack(err)
 	}
 
-	r.Log.Info("running Reconcile for Placement")
+	r.Log.Info("running Reconcile for Placement", "name", instance.Name, "namespace", instance.Namespace)
 
 	//if deletetimestamp then delete dex namespace
 	if instance.DeletionTimestamp != nil {
@@ -139,21 +139,24 @@ func (r *PlacementReconciler) processPlacementUpdate(placement *clusterv1alpha1.
 		return ctrl.Result{}, giterrors.WithStack(err)
 	}
 
-	strategy, err := r.GetStrategyFromPlacement(placement)
+	strategies, err := r.GetStrategyFromPlacement(placement)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, strategy)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
+	for i := range strategies.Items {
 
-	if result, err := r.processPlacement(authRealm, strategy, placement); err != nil || result.Requeue {
-		return result, err
-	}
-	if err := r.updateAuthRealmStatusPlacementStatus(strategy, placement); err != nil {
-		return ctrl.Result{}, err
+		authRealm, err := helpers.GetAuthrealmFromStrategy(r.Client, &strategies.Items[i])
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		if result, err := r.processPlacement(authRealm, &strategies.Items[i], placement); err != nil || result.Requeue {
+			return result, err
+		}
+		if err := r.updateAuthRealmStatusPlacementStatus(&strategies.Items[i], placement); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 	return ctrl.Result{}, nil
 }
@@ -163,7 +166,7 @@ func (r *PlacementReconciler) processPlacement(
 	authRealm *identitatemv1alpha1.AuthRealm,
 	strategy *identitatemv1alpha1.Strategy,
 	placement *clusterv1alpha1.Placement) (ctrl.Result, error) {
-	r.Log.Info("run", "strategy", strategy.Spec.Type)
+	r.Log.Info("run", "strategy", strategy.Name)
 	if result, err := r.syncDexClients(authRealm, strategy, placement); err != nil || result.Requeue {
 		return result, err
 	}
@@ -188,7 +191,7 @@ func (r *PlacementReconciler) processPlacementDeletion(placement *clusterv1alpha
 	}
 	for _, placementDecision := range placementDecisions.Items {
 		for _, decision := range placementDecision.Status.Decisions {
-			if result, err := r.deleteConfig(decision.ClusterName, placement); err != nil || result.Requeue {
+			if result, err := r.deleteClusterOAuthConfig(decision.ClusterName, placement); err != nil || result.Requeue {
 				return result, err
 			}
 		}
@@ -257,17 +260,23 @@ func (r *PlacementReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		GenericFunc: func(e event.GenericEvent) bool { return false },
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// only handle the IDP generated placements
-			return isLinkedToStrategy(e.Object)
+			process := isLinkedToStrategy(e.Object)
+			r.Log.Info("placement event delete", "process", process)
+			return process
 		},
 		CreateFunc: func(e event.CreateEvent) bool {
 			// only handle the IDP generated placements
-			return isLinkedToStrategy(e.Object)
+			process := isLinkedToStrategy(e.Object)
+			r.Log.Info("placement event create", "process", process)
+			return process
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			placementOld := e.ObjectOld.(*clusterv1alpha1.Placement)
 			placementNew := e.ObjectNew.(*clusterv1alpha1.Placement)
+			process := isLinkedToStrategy(placementNew) || isLinkedToStrategy(placementOld)
+			r.Log.Info("placement event delete", "process", process)
+			return process
 			// only handle the IDP generated placements
-			return isLinkedToStrategy(placementNew) || isLinkedToStrategy(placementOld)
 		},
 	})
 
