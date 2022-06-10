@@ -592,42 +592,6 @@ var checkManagedClusterClean = func(testData TestData) {
 	})
 }
 
-// var checkRestoreOAuth = func(testData TestData) {
-// 	By(fmt.Sprintf("Setting restore %s/%s manifestwork to Applied",
-// 		testData.ClusterName,
-// 		helpers.ManifestWorkOriginalOAuthName()), func() {
-// 		Eventually(func() error {
-// 			gvr := schema.GroupVersionResource{Group: "work.open-cluster-management.io", Version: "v1", Resource: "manifestworks"}
-// 			u, err := dynamicClient.Resource(gvr).Namespace(testData.ClusterName).Get(context.TODO(), helpers.ManifestWorkOriginalOAuthName(), metav1.GetOptions{})
-// 			if err != nil {
-// 				return err
-// 			}
-// 			mcv := &manifestworkv1.ManifestWork{}
-// 			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), mcv)
-// 			if err != nil {
-// 				return err
-// 			}
-// 			mcv.Status.Conditions = []metav1.Condition{
-// 				{
-// 					Type:               "Applied",
-// 					Status:             metav1.ConditionTrue,
-// 					Reason:             "AppliedManifestComplete",
-// 					Message:            "Apply manifest complete",
-// 					LastTransitionTime: metav1.Now(),
-// 				},
-// 			}
-// 			uc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mcv)
-// 			if err != nil {
-// 				return err
-// 			}
-// 			u.SetUnstructuredContent(uc)
-// 			_, err = dynamicClient.Resource(gvr).Namespace(testData.ClusterName).UpdateStatus(context.TODO(), u, metav1.UpdateOptions{})
-// 			return err
-
-// 		}, 60, 1).Should(BeNil())
-// 	})
-// }
-
 var deleteAuthRealm = func(testData TestData) {
 	By(fmt.Sprintf("Deleting the authrealm %s", testData.AuthRealm.Name), func() {
 		err := identitatemClientSet.IdentityconfigV1alpha1().AuthRealms(testData.AuthRealm.Namespace).Delete(context.TODO(), testData.AuthRealm.Name, metav1.DeleteOptions{})
