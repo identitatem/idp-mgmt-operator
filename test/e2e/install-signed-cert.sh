@@ -72,16 +72,21 @@ echo "--- OpenShift nodes need several minutes to restart and use new signed cer
 sleep 10
 # show the current status
 oc get clusteroperator
+
+echo "   Waiting for restart - part 1 of 3"
 # Go ahead and sleep for a few minutes for things to settle down
 sleep 120
 # now check all the OpenShift clusteroperators to make sure they are available
 oc wait --for=condition=progressing=false clusteroperator --all --timeout=20m
 oc wait --for=condition=available clusteroperator --all --timeout=20m
+echo "   Waiting for restart - part 2 of 3"
 # Go ahead and sleep for a few seconds to be sure clusteroperator changes did not trigger more changes
-sleep 10
+sleep 60
 # one final check of all the OpenShift clusteroperators to make sure they are available
 oc wait --for=condition=progressing=false clusteroperator --all --timeout=20m
 oc wait --for=condition=available clusteroperator --all --timeout=20m
+
+echo "   Waiting for restart - part 3 of 3"
 # final check to show we are ready to proceed
 oc get clusteroperator
 
