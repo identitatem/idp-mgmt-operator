@@ -289,12 +289,12 @@ check-copyright:
 	@build/check-copyright.sh
 
 test: fmt vet manifests
-	@go test ./... -coverprofile cover.out -coverpkg ./... &&\
-	COVERAGE=`go tool cover -func="cover.out" | grep "total:" | awk '{ print $$3 }' | sed 's/[][()><%]/ /g'` &&\
+	@go test ./... -coverprofile coverage.out -coverpkg ./... &&\
+	COVERAGE=`go tool cover -func="coverage.out" | grep "total:" | awk '{ print $$3 }' | sed 's/[][()><%]/ /g'` &&\
 	echo "-------------------------------------------------------------------------" &&\
 	echo "TOTAL COVERAGE IS $$COVERAGE%" &&\
 	echo "-------------------------------------------------------------------------" &&\
-	go tool cover -html "cover.out" -o ${PROJECT_DIR}/cover.html
+	go tool cover -html "coverage.out" -o ${PROJECT_DIR}/cover.html
 
 # Build manager binary
 manager: fmt vet
@@ -307,7 +307,7 @@ run: fmt vet manifests
 
 
 run-coverage: fmt vet manifests
-	go test -covermode=atomic -coverpkg=github.com/identitatem/${PROJECT_NAME}/controllers/... -tags testrunmain -run "^TestRunMain$$" -coverprofile=cover.out .
+	go test -covermode=atomic -coverpkg=github.com/identitatem/${PROJECT_NAME}/controllers/... -tags testrunmain -run "^TestRunMain$$" -coverprofile=coverage.out .
 
 # Install CRDs into a cluster
 install: manifests
@@ -413,4 +413,3 @@ build-e2e-test-image:
 e2e-ginkgo-test:
 	@echo running e2e ginkgo tests
 	ginkgo -tags e2e -v test/e2e -- -v=5
-	
