@@ -1,5 +1,7 @@
-
 # Copyright Red Hat
+
+-include /opt/build-harness/Makefile.prow
+
 SHELL := /bin/bash
 
 export PROJECT_DIR            = $(shell 'pwd')
