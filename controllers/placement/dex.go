@@ -44,7 +44,10 @@ func (r *PlacementReconciler) syncDexClients(authRealm *identitatemv1alpha1.Auth
 func (r *PlacementReconciler) deleteObsoleteConfigs(authRealm *identitatemv1alpha1.AuthRealm,
 	strategy *identitatemv1alpha1.Strategy,
 	placement *clusterv1alpha1.Placement) (ctrl.Result, error) {
-	r.Log.Info("delete obsolete config for Authrealm", "Namespace", authRealm.Namespace, "Name", authRealm.Name)
+	r.Log.Info("delete obsolete config for Authrealm",
+		"Namespace", authRealm.Namespace,
+		"Name", authRealm.Name,
+		"strategy.Type", strategy.Spec.Type)
 	dexClients := &dexoperatorv1alpha1.DexClientList{}
 	if err := r.Client.List(context.TODO(), dexClients,
 		&client.ListOptions{Namespace: helpers.DexServerNamespace(authRealm)},
@@ -54,6 +57,8 @@ func (r *PlacementReconciler) deleteObsoleteConfigs(authRealm *identitatemv1alph
 		return ctrl.Result{}, err
 	}
 
+	r.Log.Info("dexClientList", "nb", len(dexClients.Items))
+
 	dexClientsToBeDeleted := make([]dexoperatorv1alpha1.DexClient, 0)
 	for _, dexClient := range dexClients.Items {
 		r.Log.Info("for dexClient", "Namespace", dexClient.Namespace, "Name", dexClient.Name)
@@ -61,10 +66,13 @@ func (r *PlacementReconciler) deleteObsoleteConfigs(authRealm *identitatemv1alph
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		r.Log.Info("inPlacementDecision", "result", ok, "placement name", placement.Name)
-		if !ok {
+		r.Log.Info("inPlacementDecision", "result", ok,
+			"placement name", placement.Name,
+			"authRealm.Name", authRealm.Name,
+			"authRealm.DeletionTimestamp", authRealm.DeletionTimestamp)
+		if !ok || authRealm.DeletionTimestamp != nil {
 			dexClientsToBeDeleted = append(dexClientsToBeDeleted, dexClient)
-			if result, err := r.deleteConfig(dexClient.GetLabels()[helpers.ClusterNameLabel],
+			if result, err := r.deleteClusterOAuthConfig(dexClient.GetLabels()[helpers.ClusterNameLabel],
 				placement); err != nil || result.Requeue {
 				return result, err
 			}
@@ -110,6 +118,11 @@ func (r *PlacementReconciler) deleteObsoleteConfigs(authRealm *identitatemv1alph
 func (r *PlacementReconciler) createConfigs(authRealm *identitatemv1alpha1.AuthRealm,
 	strategy *identitatemv1alpha1.Strategy,
 	placement *clusterv1alpha1.Placement) error {
+	if authRealm.DeletionTimestamp != nil {
+		r.Log.Info("do not create clusteroauth config as authrealm is in deletion", "authRealm.Name", authRealm.Name)
+		return nil
+	}
+	r.Log.Info("create clusteroauth config for authrealm", "authRealm.Name", authRealm.Name)
 	placementDecisions := &clusterv1alpha1.PlacementDecisionList{}
 	if err := r.Client.List(context.TODO(), placementDecisions, client.MatchingLabels{
 		clusterv1alpha1.PlacementLabel: placement.Name,
@@ -249,20 +262,23 @@ func (r *PlacementReconciler) createDexClient(authRealm *identitatemv1alpha1.Aut
 	return dexClient, nil
 }
 
-func (r *PlacementReconciler) deleteConfig(
+func (r *PlacementReconciler) deleteClusterOAuthConfig(
 	clusterName string,
 	placement *clusterv1alpha1.Placement) (ctrl.Result, error) {
+	r.Log.Info("get list of clusteroauth", "clustername", clusterName, "placement", placement.Name)
 	clusterOAuthList := &identitatemv1alpha1.ClusterOAuthList{}
 	if err := r.List(context.TODO(), clusterOAuthList, &client.ListOptions{Namespace: clusterName}); err != nil {
 		return ctrl.Result{}, err
 	}
 	clusterOAuthsToBeDeleted := make([]identitatemv1alpha1.ClusterOAuth, 0)
 	for _, clusterOAuth := range clusterOAuthList.Items {
+		r.Log.Info("check if clusteroauth must be deleted", "clustername", clusterName, "clustoauth", clusterOAuth.Name)
 		authRealmObjectKey := client.ObjectKey{
 			Name:      clusterOAuth.Spec.AuthRealmReference.Name,
 			Namespace: clusterOAuth.Spec.AuthRealmReference.Namespace,
 		}
 		toBeDeleted := false
+		r.Log.Info("check if strategy is in placement ownerRef", "strategy", clusterOAuth.Spec.StrategyReference.Name)
 		for _, ownerRef := range placement.GetOwnerReferences() {
 			if ownerRef.Kind == "Strategy" &&
 				ownerRef.Name == clusterOAuth.Spec.StrategyReference.Name {
@@ -271,6 +287,7 @@ func (r *PlacementReconciler) deleteConfig(
 			}
 		}
 		if !toBeDeleted {
+			r.Log.Info("do not delete configuration for cluster", "name", clusterName)
 			continue
 		}
 		clusterOAuthsToBeDeleted = append(clusterOAuthsToBeDeleted, clusterOAuth)

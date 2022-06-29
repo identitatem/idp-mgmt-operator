@@ -162,34 +162,30 @@ func (r *PlacementReconciler) createClusterOAuth(authRealm *identitatemv1alpha1.
 	return nil
 }
 
-func (r *PlacementReconciler) GetStrategyFromPlacementDecision(placementDecision *clusterv1alpha1.PlacementDecision) (*identitatemv1alpha1.Strategy, error) {
-	r.Log.Info("GetStrategyFromPlacementDecision placementDecision:", "name", placementDecision.Name, "namespace", placementDecision.Namespace)
-	if placementName, ok := placementDecision.GetLabels()[clusterv1alpha1.PlacementLabel]; ok {
-		placement := &clusterv1alpha1.Placement{}
-		if err := r.Get(context.TODO(), client.ObjectKey{Name: placementName, Namespace: placementDecision.Namespace}, placement); err != nil {
-			return nil, err
-		}
-		return r.GetStrategyFromPlacement(placement)
-	}
-	return nil, giterrors.WithStack(fmt.Errorf("placementDecision %s has no label %s", placementDecision.Name, clusterv1alpha1.PlacementLabel))
-}
-
-func (r *PlacementReconciler) GetStrategyFromPlacement(placement *clusterv1alpha1.Placement) (*identitatemv1alpha1.Strategy, error) {
+func (r *PlacementReconciler) GetStrategyFromPlacement(placement *clusterv1alpha1.Placement) (strategies *identitatemv1alpha1.StrategyList, err error) {
 	r.Log.Info("GetStrategiesFromPlacement",
 		"placementName", placement.Name,
 		"placementNamespace", placement.Namespace)
-	strategies := &identitatemv1alpha1.StrategyList{}
-	if err := r.List(context.TODO(), strategies, &client.ListOptions{Namespace: placement.Namespace}); err != nil {
+	strategyList := &identitatemv1alpha1.StrategyList{}
+	if err := r.List(context.TODO(), strategyList, &client.ListOptions{Namespace: placement.Namespace}); err != nil {
 		return nil, giterrors.WithStack(err)
 	}
-	r.Log.Info("strategies", "nb", len(strategies.Items))
-	for _, strategy := range strategies.Items {
-		r.Log.Info("checking strategy", "namespace", strategy.Namespace, "name", strategy.Name, "strategy.Spec.PlacementRef.Name", strategy.Spec.PlacementRef.Name)
+	r.Log.Info("strategyList", "nb", len(strategyList.Items))
+	strategies = &identitatemv1alpha1.StrategyList{}
+	strategies.Items = make([]identitatemv1alpha1.Strategy, 0)
+	for _, strategy := range strategyList.Items {
+		r.Log.Info("checking strategy",
+			"namespace", strategy.Namespace,
+			"name", strategy.Name,
+			"strategy.Spec.PlacementRef.Name", strategy.Spec.PlacementRef.Name)
 		if strategy.Spec.PlacementRef.Name == placement.Name {
-			return &strategy, nil
+			r.Log.Info("add strategy to list",
+				"namespace", strategy.Namespace,
+				"name", strategy.Name)
+			strategies.Items = append(strategies.Items, strategy)
 		}
 	}
-	return nil, nil
+	return strategies, nil
 }
 
 func (r *PlacementReconciler) inPlacementDecision(clusterName string,

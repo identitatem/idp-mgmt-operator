@@ -327,6 +327,17 @@ var _ = Describe("Process AuthRealm configured for GitHub IDP", func() {
 			return found
 		}, 300, 1).Should(BeFalse())
 
+		By("Wait for the idp-mgmt-dex namespace to be deleted")
+		Eventually(func() error {
+			_, err := TestOptions.HubCluster.KubeClient.CoreV1().
+				Namespaces().
+				Get(context.TODO(), "idp-mgmt-dex", metav1.GetOptions{})
+			if err != nil {
+				logf.Log.Info("Error retrieving idp-mgmt-dex namespace in hub cluster", "Error", err)
+				return err
+			}
+			return nil
+		}, 300, 1).Should(HaveOccurred())
 		By("Remove labels from the managed cluster")
 		gvr, err = utils.GetGVRForResource("ManagedCluster")
 		Expect(err).NotTo(HaveOccurred())
@@ -364,16 +375,5 @@ var _ = Describe("Process AuthRealm configured for GitHub IDP", func() {
 			}
 			return nil
 		}, 120, 1).Should(BeNil())
-		By("Wait for the idp-mgmt-dex namespace to be deleted")
-		Eventually(func() error {
-			_, err := TestOptions.HubCluster.KubeClient.CoreV1().
-				Namespaces().
-				Get(context.TODO(), "idp-mgmt-dex", metav1.GetOptions{})
-			if err != nil {
-				logf.Log.Info("Error retrieving idp-mgmt-dex namespace in hub cluster", "Error", err)
-				return err
-			}
-			return nil
-		}, 300, 1).Should(HaveOccurred())
 	})
 })
