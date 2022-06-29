@@ -147,10 +147,12 @@ func (r *AuthRealmReconciler) deleteDexOperator(authRealm *identitatemv1alpha1.A
 	nbFound := 0
 	for _, authRealm := range authRealms.Items {
 		if (authRealm.Spec.Type == identitatemv1alpha1.AuthProxyDex || authRealm.Spec.Type == "") &&
-			authRealm.DeletionTimestamp != nil {
+			authRealm.DeletionTimestamp == nil {
+			r.Log.Info("found authrealm", "Namespace", authRealm.Namespace, "Name", authRealm.Name)
 			nbFound++
 		}
 	}
+	r.Log.Info("authrealm found", "number", nbFound)
 	if nbFound == 0 {
 		//Delete dex-operator ns
 		ns := &corev1.Namespace{}

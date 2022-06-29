@@ -212,7 +212,7 @@ func (r *AuthRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			// only handle the Finalizer and Spec changes
 			return !equality.Semantic.DeepEqual(e.ObjectOld.GetFinalizers(), e.ObjectNew.GetFinalizers()) ||
 				!equality.Semantic.DeepEqual(authRealmOld.Spec, authRealmNew.Spec) ||
-				authRealmOld.DeletionTimestamp != authRealmNew.DeletionTimestamp
+				authRealmNew.DeletionTimestamp != nil
 
 		},
 	})
