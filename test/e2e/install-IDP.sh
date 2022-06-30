@@ -31,7 +31,7 @@ echo "--- Start deploy"
 #export CATALOG_DEPLOY_NAMESPACE=idp-mgmt-config
 make deploy
 echo "--- Sleep a bit for installer pod to start..."
-sleep 60
+sleep 120
 
 echo "--- Check namespace - after"
 oc get namespaces

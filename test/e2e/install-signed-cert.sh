@@ -75,7 +75,7 @@ oc get clusteroperator
 
 echo "   Waiting for restart - part 1 of 3"
 # Go ahead and sleep for a few minutes for things to settle down
-sleep 120
+sleep 240
 # now check all the OpenShift clusteroperators to make sure they are available
 oc wait --for=condition=progressing=false clusteroperator --all --timeout=20m
 oc wait --for=condition=available clusteroperator --all --timeout=20m
