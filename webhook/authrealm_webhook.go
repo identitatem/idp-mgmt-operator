@@ -106,11 +106,20 @@ func (a *AuthRealmAdmissionHook) ValidateAuthRealm(admissionSpec *admissionv1bet
 				}
 			}
 			if idp.Type == openshiftconfigv1.IdentityProviderTypeLDAP {
-				if _, err := ldaputil.ParseURL(idp.LDAP.URL); err != nil {
+				url, err := ldaputil.ParseURL(idp.LDAP.URL)
+				if err != nil {
 					status.Allowed = false
 					status.Result = &metav1.Status{
 						Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
 						Message: "Error parsing LDAP URL: " + err.Error() + " LDAP URL syntax is <ldap://host:port/basedn?attribute?scope?filter>",
+					}
+					return status
+				}
+				if url.Scheme == "ldaps" && idp.LDAP.Insecure {
+					status.Allowed = false
+					status.Result = &metav1.Status{
+						Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
+						Message: "insecure should not be true when url.scheme = ldaps ",
 					}
 					return status
 				}

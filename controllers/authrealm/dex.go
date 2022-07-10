@@ -424,7 +424,7 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 						Namespace: authRealm.Namespace,
 					},
 					InsecureNoSSL:      false,
-					InsecureSkipVerify: idp.LDAP.Insecure,
+					InsecureSkipVerify: false,
 					UsernamePrompt:     "Email Address",
 					RootCARef: corev1.SecretReference{
 						Name:      idp.LDAP.CA.Name,
@@ -444,9 +444,19 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			}
 			switch url.Scheme {
 			case "ldap":
-				c.LDAP.StartTLS = true
+				if idp.LDAP.Insecure {
+					c.LDAP.InsecureNoSSL= true
+				    c.LDAP.StartTLS = false
+				}
+				if idp.LDAP.Insecure == false {
+					c.LDAP.InsecureNoSSL= false
+				    c.LDAP.StartTLS = true
+				}
 			case "ldaps":
-				c.LDAP.StartTLS = false
+				if idp.LDAP.Insecure == false {
+					c.LDAP.InsecureNoSSL= false
+					c.LDAP.StartTLS = false
+				}
 			}
 
 			r.Log.Info("generated connector", "c.LDAP", c.LDAP)
