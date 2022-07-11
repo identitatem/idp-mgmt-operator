@@ -1,7 +1,7 @@
 
 # Copyright Red Hat
 
-FROM registry.ci.openshift.org/stolostron/builder:go1.17-linux AS builder
+FROM registry.ci.openshift.org/stolostron/builder:go1.18-linux AS builder
 
 WORKDIR /workspace
 
