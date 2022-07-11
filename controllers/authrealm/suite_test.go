@@ -561,13 +561,13 @@ var _ = Describe("Process AuthRealm LDAP wtih ldap url schema ldap: ", func() {
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 								Type: openshiftconfigv1.IdentityProviderTypeLDAP,
 								LDAP: &openshiftconfigv1.LDAPIdentityProvider{
-									URL:    "ldap://myldap.example.com:389/dc=example,dc=com?mail,cn?one?(objectClass=person)",
+									URL:    "ldap://myldap.example.com:389/"+BaseDN+"?"+EmailAttr+","+NameAttr+"?one?"+Filter,
 									BindDN: BindDN,
 									Attributes: openshiftconfigv1.LDAPAttributeMapping{
 										ID:                []string{IDAttr},
 										PreferredUsername: []string{"mail"},
 										Name:              []string{NameAttr},
-										Email:             []string{"mail"},
+										Email:             []string{EmailAttr},
 									},
 								},
 							},
@@ -635,6 +635,7 @@ var _ = Describe("Process AuthRealm LDAP wtih ldap url schema ldap: ", func() {
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeLDAP))
 			Expect(dexServer.Spec.IngressCertificateRef.Name).To(Equal(authRealm.Spec.CertificatesSecretRef.Name))
 			Expect(dexServer.Spec.Connectors[0].LDAP.StartTLS).To(Equal(true))
+			Expect(dexServer.Spec.Connectors[0].LDAP.InsecureNoSSL).To(Equal(false))
 			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.BaseDN).To(Equal(BaseDN))
 			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.Filter).To(Equal(Filter))
 			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.NameAttr).To(Equal(NameAttr))
@@ -724,13 +725,13 @@ var _ = Describe("Process AuthRealm LDAP wtih ldap url schema ldaps: ", func() {
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 								Type: openshiftconfigv1.IdentityProviderTypeLDAP,
 								LDAP: &openshiftconfigv1.LDAPIdentityProvider{
-									URL:    "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
+									URL:    "ldaps://myldap.example.com:636/"+BaseDN+"?"+EmailAttr+","+NameAttr+"?one?"+Filter,
 									BindDN: BindDN,
 									Attributes: openshiftconfigv1.LDAPAttributeMapping{
 										ID:                []string{IDAttr},
 										PreferredUsername: []string{"mail"},
 										Name:              []string{NameAttr},
-										Email:             []string{"mail"},
+										Email:             []string{EmailAttr},
 									},
 								},
 							},
@@ -798,6 +799,7 @@ var _ = Describe("Process AuthRealm LDAP wtih ldap url schema ldaps: ", func() {
 			Expect(dexServer.Spec.Connectors[0].Type).To(Equal(identitatemdexserverv1lapha1.ConnectorTypeLDAP))
 			Expect(dexServer.Spec.IngressCertificateRef.Name).To(Equal(authRealm.Spec.CertificatesSecretRef.Name))
 			Expect(dexServer.Spec.Connectors[0].LDAP.StartTLS).To(Equal(false))
+			Expect(dexServer.Spec.Connectors[0].LDAP.InsecureNoSSL).To(Equal(false))
 			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.BaseDN).To(Equal(BaseDN))
 			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.Filter).To(Equal(Filter))
 			Expect(dexServer.Spec.Connectors[0].LDAP.UserSearch.NameAttr).To(Equal(NameAttr))

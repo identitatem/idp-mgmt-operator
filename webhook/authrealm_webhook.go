@@ -106,8 +106,7 @@ func (a *AuthRealmAdmissionHook) ValidateAuthRealm(admissionSpec *admissionv1bet
 				}
 			}
 			if idp.Type == openshiftconfigv1.IdentityProviderTypeLDAP {
-				url, err := ldaputil.ParseURL(idp.LDAP.URL)
-				if err != nil {
+				if _, err := ldaputil.ParseURL(idp.LDAP.URL); err != nil {
 					status.Allowed = false
 					status.Result = &metav1.Status{
 						Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
@@ -115,11 +114,11 @@ func (a *AuthRealmAdmissionHook) ValidateAuthRealm(admissionSpec *admissionv1bet
 					}
 					return status
 				}
-				if url.Scheme == "ldaps" && idp.LDAP.Insecure {
+				if idp.LDAP.Insecure {
 					status.Allowed = false
 					status.Result = &metav1.Status{
 						Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
-						Message: "insecure should not be true when url.scheme = ldaps ",
+						Message: "Identity configuration management operator does not support insecure=true for LDAP identity providers",
 					}
 					return status
 				}
