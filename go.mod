@@ -5,8 +5,8 @@ go 1.18
 require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v1.2.2
-	github.com/identitatem/dex-operator v0.0.4-0.20220502185255-8305baf3e5ec
-	github.com/identitatem/idp-client-api v0.0.0-20220509162353-1fe4f0b6695a
+	github.com/identitatem/dex-operator v0.0.4-0.20220707192654-6b712f75ee20
+	github.com/identitatem/idp-client-api v0.0.0-20220707154434-ecd0e23d89f4
 	github.com/onsi/ginkgo/v2 v2.1.3
 	github.com/onsi/gomega v1.18.0
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
