@@ -564,8 +564,8 @@ var _ = Describe("Process AuthRealm LDAP wtih ldap url schema ldap: ", func() {
 									URL:    "ldap://myldap.example.com:389/" + BaseDN + "?" + EmailAttr + "," + NameAttr + "?one?" + Filter,
 									BindDN: BindDN,
 									Attributes: openshiftconfigv1.LDAPAttributeMapping{
-										ID:                []string{"DN"},
-										PreferredUsername: []string{IDAttr},
+										ID:                []string{IDAttr},
+										PreferredUsername: []string{"mail"},
 										Name:              []string{NameAttr},
 										Email:             []string{EmailAttr},
 									},
