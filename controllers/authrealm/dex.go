@@ -15,6 +15,7 @@ import (
 	"github.com/identitatem/idp-mgmt-operator/deploy"
 	"github.com/identitatem/idp-mgmt-operator/pkg/helpers"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/library-go/pkg/security/ldaputil"
 	giterrors "github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -399,28 +400,41 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			r.Log.Info("generated intermediate connectors", "cs", cs)
 		case openshiftconfigv1.IdentityProviderTypeLDAP:
 			r.Log.Info("create connector for LDAP")
+			url, err := ldaputil.ParseURL(idp.LDAP.URL)
+			if err != nil {
+				return nil, fmt.Errorf("Error parsing LDAP URL: %v", err)
+			}
+			var scope string
+			switch url.Scope {
+			case ldaputil.ScopeSingleLevel:
+				scope = "one"
+			case ldaputil.ScopeWholeSubtree:
+				scope = "sub"
+			}
+
 			c := &dexoperatorv1alpha1.ConnectorSpec{
 				Type: dexoperatorv1alpha1.ConnectorTypeLDAP,
 				Name: idp.Name,
 				Id:   idp.Name,
 				LDAP: dexoperatorv1alpha1.LDAPConfigSpec{
-					Host:   idp.LDAP.URL,
+					Host:   url.Host,
 					BindDN: idp.LDAP.BindDN,
 					BindPWRef: corev1.SecretReference{
 						Name:      idp.LDAP.BindPassword.Name,
 						Namespace: authRealm.Namespace,
 					},
 					InsecureNoSSL:      false,
-					InsecureSkipVerify: idp.LDAP.Insecure,
+					InsecureSkipVerify: false,
 					UsernamePrompt:     "Email Address",
 					RootCARef: corev1.SecretReference{
 						Name:      idp.LDAP.CA.Name,
 						Namespace: authRealm.Namespace,
 					},
 					UserSearch: dexoperatorv1alpha1.UserSearchSpec{
-						BaseDN:    authRealm.Spec.LDAPExtraConfigs[idp.Name].BaseDN,
-						Filter:    authRealm.Spec.LDAPExtraConfigs[idp.Name].Filter,
-						Username:  idp.LDAP.Attributes.PreferredUsername[0],
+						BaseDN:    url.BaseDN,
+						Filter:    url.Filter,
+						Scope:     scope,
+						Username:  url.QueryAttribute,
 						IDAttr:    idp.LDAP.Attributes.ID[0],
 						EmailAttr: idp.LDAP.Attributes.Email[0],
 						NameAttr:  idp.LDAP.Attributes.Name[0],
@@ -428,6 +442,19 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 					GroupSearch: authRealm.Spec.LDAPExtraConfigs[idp.Name].GroupSearch,
 				},
 			}
+			switch url.Scheme {
+			case "ldap":
+				if !idp.LDAP.Insecure {
+					c.LDAP.InsecureNoSSL = false
+					c.LDAP.StartTLS = true
+				}
+			case "ldaps":
+				if !idp.LDAP.Insecure {
+					c.LDAP.InsecureNoSSL = false
+					c.LDAP.StartTLS = false
+				}
+			}
+
 			r.Log.Info("generated connector", "c.LDAP", c.LDAP)
 			cs = append(cs, *c)
 			fmt.Println("cs: ", cs)
