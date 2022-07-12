@@ -240,6 +240,7 @@ func replaceEnvVariablesInYamlString(yamlsString string) string {
 	yamlsString = strings.Replace(yamlsString, "$LDAP_AZURE_BIND_PASSWORD", os.Getenv("LDAP_AZURE_BIND_PASSWORD"), -1)
 	yamlsString = strings.Replace(yamlsString, "$LDAP_AZURE_BASE_DN", os.Getenv("LDAP_AZURE_BASE_DN"), -1)
 	yamlsString = strings.Replace(yamlsString, "$LDAP_AZURE_SERVER_CERT", os.Getenv("LDAP_AZURE_SERVER_CERT"), -1)
+	yamlsString = strings.Replace(yamlsString, "$LDAP_AZURE_URL", os.Getenv("LDAP_AZURE_URL"), -1)
 
   // Replace value of OpenID
 	yamlsString = strings.Replace(yamlsString, "$OPENID_CLIENT_SECRET", os.Getenv("OPENID_CLIENT_SECRET"), -1)

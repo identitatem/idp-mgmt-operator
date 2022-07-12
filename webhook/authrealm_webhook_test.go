@@ -34,6 +34,7 @@ func TestAuthRealmValidate(t *testing.T) {
 		proxytype        identitatemv1alpha1.AuthProxyType
 		routeSubDomain   string
 		team             []string
+		url              string
 		request          *admissionv1beta1.AdmissionRequest
 		expectedResponse *admissionv1beta1.AdmissionResponse
 	}{
@@ -43,6 +44,7 @@ func TestAuthRealmValidate(t *testing.T) {
 			namespace:      "authrealm-test-ns",
 			proxytype:      identitatemv1alpha1.AuthProxyDex,
 			routeSubDomain: "abcd",
+			url:            "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 			request: &admissionv1beta1.AdmissionRequest{
 				Resource: metav1.GroupVersionResource{
 					Group:    "test.identityconfig.identitatem.io",
@@ -60,6 +62,7 @@ func TestAuthRealmValidate(t *testing.T) {
 			namespace:      "authrealm-test-ns",
 			proxytype:      identitatemv1alpha1.AuthProxyDex,
 			routeSubDomain: "abcd",
+			url:            "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 			request: &admissionv1beta1.AdmissionRequest{
 				Resource:  authrealmSchema,
 				Operation: admissionv1beta1.Delete,
@@ -90,6 +93,7 @@ func TestAuthRealmValidate(t *testing.T) {
 			namespace:      "authrealm-test-ns",
 			proxytype:      identitatemv1alpha1.AuthProxyDex,
 			routeSubDomain: "a",
+			url:            "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 			request: &admissionv1beta1.AdmissionRequest{
 				Resource: metav1.GroupVersionResource{
 					Group:    "test.identityconfig.identitatem.io",
@@ -107,6 +111,7 @@ func TestAuthRealmValidate(t *testing.T) {
 			namespace:      "authrealm-test-ns",
 			proxytype:      identitatemv1alpha1.AuthProxyDex,
 			routeSubDomain: "abcdefghijklmnopqrstuvwxyz0123456789-abcdefghijklmnopqrstuvwxyz",
+			url:            "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 			request: &admissionv1beta1.AdmissionRequest{
 				Resource: metav1.GroupVersionResource{
 					Group:    "test.identityconfig.identitatem.io",
@@ -124,6 +129,7 @@ func TestAuthRealmValidate(t *testing.T) {
 			namespace:      "authrealm-test-ns",
 			proxytype:      identitatemv1alpha1.AuthProxyDex,
 			routeSubDomain: "abcdefghijklmnopqrstuvwxyz0123456789-abcdefghijklmnopqrstuvwxyz0",
+			url:            "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 			request: &admissionv1beta1.AdmissionRequest{
 				Resource:  authrealmSchema,
 				Operation: admissionv1beta1.Create,
@@ -138,6 +144,7 @@ func TestAuthRealmValidate(t *testing.T) {
 			namespace:      "authrealm-test-ns",
 			proxytype:      identitatemv1alpha1.AuthProxyDex,
 			routeSubDomain: "",
+			url:            "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 			request: &admissionv1beta1.AdmissionRequest{
 				Resource:  authrealmSchema,
 				Operation: admissionv1beta1.Create,
@@ -156,6 +163,7 @@ func TestAuthRealmValidate(t *testing.T) {
 			namespace:      "authrealm-test-ns",
 			proxytype:      identitatemv1alpha1.AuthProxyDex,
 			routeSubDomain: "ABCD",
+			url:            "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 			request: &admissionv1beta1.AdmissionRequest{
 				Resource:  authrealmSchema,
 				Operation: admissionv1beta1.Create,
@@ -174,6 +182,7 @@ func TestAuthRealmValidate(t *testing.T) {
 			namespace:      "authrealm-test-ns",
 			proxytype:      identitatemv1alpha1.AuthProxyDex,
 			routeSubDomain: "a b c d",
+			url:            "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 			request: &admissionv1beta1.AdmissionRequest{
 				Resource:  authrealmSchema,
 				Operation: admissionv1beta1.Create,
@@ -192,6 +201,7 @@ func TestAuthRealmValidate(t *testing.T) {
 			namespace:      "authrealm-test-ns",
 			proxytype:      identitatemv1alpha1.AuthProxyDex,
 			routeSubDomain: "-abcd",
+			url:            "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 			request: &admissionv1beta1.AdmissionRequest{
 				Resource:  authrealmSchema,
 				Operation: admissionv1beta1.Create,
@@ -210,6 +220,7 @@ func TestAuthRealmValidate(t *testing.T) {
 			namespace:      "authrealm-test-ns",
 			proxytype:      identitatemv1alpha1.AuthProxyDex,
 			routeSubDomain: "abcd-",
+			url:            "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 			request: &admissionv1beta1.AdmissionRequest{
 				Resource:  authrealmSchema,
 				Operation: admissionv1beta1.Create,
@@ -228,6 +239,7 @@ func TestAuthRealmValidate(t *testing.T) {
 			namespace:      "authrealm-test-ns",
 			proxytype:      identitatemv1alpha1.AuthProxyDex,
 			routeSubDomain: "abcd!@",
+			url:            "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 			request: &admissionv1beta1.AdmissionRequest{
 				Resource:  authrealmSchema,
 				Operation: admissionv1beta1.Create,
@@ -246,6 +258,7 @@ func TestAuthRealmValidate(t *testing.T) {
 			namespace: "authrealm-test-ns",
 			proxytype: identitatemv1alpha1.AuthProxyDex,
 			team:      []string{"identitatem"},
+			url:       "ldaps://myldap.example.com:636/dc=example,dc=com?mail,cn?one?(objectClass=person)",
 			request: &admissionv1beta1.AdmissionRequest{
 				Resource:  authrealmSchema,
 				Operation: admissionv1beta1.Create,
@@ -258,11 +271,30 @@ func TestAuthRealmValidate(t *testing.T) {
 				},
 			},
 		},
+		{
+			title:          "invalidate creating AuthRealm invalid LDAP URL",
+			name:           "authrealm-test",
+			namespace:      "authrealm-test-ns",
+			proxytype:      identitatemv1alpha1.AuthProxyDex,
+			routeSubDomain: "abcd",
+			url:            "ldap://myldap.example.com:389/dc=example,dc=com?mail,cn?(objectClass=person)",
+			request: &admissionv1beta1.AdmissionRequest{
+				Resource:  authrealmSchema,
+				Operation: admissionv1beta1.Create,
+			},
+			expectedResponse: &admissionv1beta1.AdmissionResponse{
+				Allowed: false,
+				Result: &metav1.Status{
+					Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
+					Message: "Error parsing LDAP URL: invalid scope \"(objectClass=person)\" LDAP URL syntax is <ldap://host:port/basedn?attribute?scope?filter>",
+				},
+			},
+		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
-			authrealm, _ := NewAuthRealm(c.name, c.namespace, c.proxytype, c.routeSubDomain, c.team)
+			authrealm, _ := NewAuthRealm(c.name, c.namespace, c.proxytype, c.routeSubDomain, c.team, c.url)
 			c.request.Object.Raw, _ = json.Marshal(authrealm)
 			admissionHook := &AuthRealmAdmissionHook{}
 			actualResponse := admissionHook.Validate(c.request)
@@ -286,7 +318,7 @@ func NewUnstructured(apiVersion, kind, namespace, name string) *unstructured.Uns
 	}
 }
 
-func NewAuthRealm(name string, namespace string, proxytype identitatemv1alpha1.AuthProxyType, routeSubDomain string, team []string) (*identitatemv1alpha1.AuthRealm, string) {
+func NewAuthRealm(name string, namespace string, proxytype identitatemv1alpha1.AuthProxyType, routeSubDomain string, team []string, url string) (*identitatemv1alpha1.AuthRealm, string) {
 	authrealm := &identitatemv1alpha1.AuthRealm{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -307,6 +339,22 @@ func NewAuthRealm(name string, namespace string, proxytype identitatemv1alpha1.A
 								Name: "client-secret",
 							},
 							Teams: team,
+						},
+					},
+				},
+				{
+					Name: "ldap-idp",
+					IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
+						Type: openshiftconfigv1.IdentityProviderTypeLDAP,
+						LDAP: &openshiftconfigv1.LDAPIdentityProvider{
+							URL:    url,
+							BindDN: "cn=Manager,dc=example,dc=com",
+							Attributes: openshiftconfigv1.LDAPAttributeMapping{
+								ID:                []string{"DN"},
+								PreferredUsername: []string{"mail"},
+								Name:              []string{"cn"},
+								Email:             []string{"mail"},
+							},
 						},
 					},
 				},
