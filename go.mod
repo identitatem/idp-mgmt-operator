@@ -1,16 +1,17 @@
 module github.com/identitatem/idp-mgmt-operator
 
-go 1.17
+go 1.18
 
 require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v1.2.2
-	github.com/identitatem/dex-operator v0.0.4-0.20220502185255-8305baf3e5ec
-	github.com/identitatem/idp-client-api v0.0.0-20220509162353-1fe4f0b6695a
+	github.com/identitatem/dex-operator v0.0.4-0.20220707192654-6b712f75ee20
+	github.com/identitatem/idp-client-api v0.0.0-20220707154434-ecd0e23d89f4
 	github.com/onsi/ginkgo/v2 v2.1.3
 	github.com/onsi/gomega v1.18.0
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 	github.com/openshift/generic-admission-server v1.14.1-0.20210422140326-da96454c926d
+	github.com/openshift/hypershift v0.0.0-20220413171154-1967de8f7854
 	github.com/openshift/library-go v0.0.0-20210916194400-ae21aab32431
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.3.0
@@ -94,7 +95,6 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/openshift/custom-resource-status v0.0.0-20200602122900-c002fd1547ca // indirect
-	github.com/openshift/hypershift v0.0.0-20220413171154-1967de8f7854 // indirect
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -104,7 +104,6 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/russross/blackfriday v1.5.2 // indirect
 	github.com/stolostron/governance-policy-propagator v0.0.0-20220125192743-95d49290a318 // indirect
-	github.com/stolostron/hypershift-deployment-controller v0.0.0-20220419193445-e681acb2caa0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
 	go.etcd.io/etcd/api/v3 v3.5.1 // indirect

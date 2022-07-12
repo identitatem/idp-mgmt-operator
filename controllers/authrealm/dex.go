@@ -445,12 +445,12 @@ func (r *AuthRealmReconciler) createDexConnectors(authRealm *identitatemv1alpha1
 			switch url.Scheme {
 			case "ldap":
 				if !idp.LDAP.Insecure {
-					c.LDAP.InsecureNoSSL= false
-				    c.LDAP.StartTLS = true
+					c.LDAP.InsecureNoSSL = false
+					c.LDAP.StartTLS = true
 				}
 			case "ldaps":
 				if !idp.LDAP.Insecure {
-					c.LDAP.InsecureNoSSL= false
+					c.LDAP.InsecureNoSSL = false
 					c.LDAP.StartTLS = false
 				}
 			}

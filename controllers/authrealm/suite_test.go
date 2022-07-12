@@ -561,7 +561,7 @@ var _ = Describe("Process AuthRealm LDAP wtih ldap url schema ldap: ", func() {
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 								Type: openshiftconfigv1.IdentityProviderTypeLDAP,
 								LDAP: &openshiftconfigv1.LDAPIdentityProvider{
-									URL:    "ldap://myldap.example.com:389/"+BaseDN+"?"+EmailAttr+","+NameAttr+"?one?"+Filter,
+									URL:    "ldap://myldap.example.com:389/" + BaseDN + "?" + EmailAttr + "," + NameAttr + "?one?" + Filter,
 									BindDN: BindDN,
 									Attributes: openshiftconfigv1.LDAPAttributeMapping{
 										ID:                []string{IDAttr},
@@ -725,7 +725,7 @@ var _ = Describe("Process AuthRealm LDAP wtih ldap url schema ldaps: ", func() {
 							IdentityProviderConfig: openshiftconfigv1.IdentityProviderConfig{
 								Type: openshiftconfigv1.IdentityProviderTypeLDAP,
 								LDAP: &openshiftconfigv1.LDAPIdentityProvider{
-									URL:    "ldaps://myldap.example.com:636/"+BaseDN+"?"+EmailAttr+","+NameAttr+"?one?"+Filter,
+									URL:    "ldaps://myldap.example.com:636/" + BaseDN + "?" + EmailAttr + "," + NameAttr + "?one?" + Filter,
 									BindDN: BindDN,
 									Attributes: openshiftconfigv1.LDAPAttributeMapping{
 										ID:                []string{IDAttr},

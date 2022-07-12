@@ -1,4 +1,4 @@
-FROM registry.ci.openshift.org/stolostron/builder:go1.17-linux AS builder
+FROM registry.ci.openshift.org/stolostron/builder:go1.18-linux AS builder
 
 # FROM cypress/included:8.4.1 as production
 # The below is just a copy of the above retagged and pushed to quay.io for easier pulling
@@ -9,7 +9,7 @@ USER root
 
 ENV CYPRESS_CACHE_FOLDER=/idp-mgmt-operator-ui-tests/cypress_cache \
     GOPATH=/go \
-    GOVERSION=1.17.6 \
+    GOVERSION=1.18.3 \
     GOBIN=/go/bin \
     GOCACHE=/go/pkg/cache \
     SONAR_USER_HOME=/opt/sonar/.sonar \

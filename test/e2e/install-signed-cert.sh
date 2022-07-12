@@ -18,6 +18,8 @@ acme_dir=$(mktemp -d -t acme-XXXXX)
 cd "$acme_dir" || exit 1
 export HOME="$acme_dir"
 
+mkdir .acme.sh
+
 
 # Set up repo for cloning
 acme_url="https://${ACME_REPO}.git"
