@@ -104,7 +104,6 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/russross/blackfriday v1.5.2 // indirect
 	github.com/stolostron/governance-policy-propagator v0.0.0-20220125192743-95d49290a318 // indirect
-	github.com/stolostron/hypershift-deployment-controller v0.0.0-20220419193445-e681acb2caa0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
 	go.etcd.io/etcd/api/v3 v3.5.1 // indirect
