@@ -67,7 +67,7 @@ spec:
       type: LDAP
       mappingMethod: add
       ldap:
-        url: $LDAP_AZURE_HOST
+        url: $LDAP_AZURE_URL
         insecure: false
         bindDN: $LDAP_AZURE_BIND_DN
         ca:
