@@ -32,6 +32,10 @@ git clone "$acme_url" "$acme_git_dir" || {
 
 cd ${acme_git_dir}
 
+ACME_RELEASE="3.0.4"
+echo "--- checkout acme release ${ACME_RELEASE}"
+git checkout ${ACME_RELEASE}
+
 echo "--- Check current cluster info"
 oc cluster-info
 
