@@ -39,11 +39,13 @@ export GITHUB_FILENAME=/tmp/${AUTHREALM_GITHUB_NAME}".yaml"
 
 export AUTHREALM_LDAP_NAME=${AUTHREALM_LDAP_NAME:-"authrealm-sample-ldap"}
 export AUTHREALM_LDAP_NS=${AUTHREALM_LDAP_NS:-"authrealm-sample-ldap-ns"}
-export LDAP_BINDPASSWORD=${LDAP_BINDPASSWORD:="ladp bind password"}
+export LDAP_BINDPASSWORD=${LDAP_BINDPASSWORD:="ldap bind password"}
 export LDAP_HOST=${LDAP_HOST:-"ldap host"}
 export LDAP_BIND_DN=${DEXSERVER_LDAP_BIND_DN:-"cn=Manager,dc=example,dc=com"}
 export LDAP_USERSEARCH_BASEDN=${DEXSERVER_LDAP_USERSEARCH_BASEDN:-"dc=example,dc=com"}
 export LDAP_FILENAME=/tmp/"demo-ldap-authrealm.yaml"
+export LDAP_SERVER_CERT=${LDAP_SERVER_CERT:-""}
+
 
 export AUTHREALM_OPENID_NAME=${AUTHREALM_OPENID_NAME:-"authrealm-sample-openid"}
 export AUTHREALM_OPENID_NS=${AUTHREALM_OPENID_NS:-"authrealm-sample-openid-ns"}
@@ -208,6 +210,15 @@ type: Opaque
 stringData:
   bindPW: ${LDAP_BINDPASSWORD}
 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${AUTHREALM_LDAP_NAME}-ldap-ca
+  namespace: ${AUTHREALM_LDAP_NS}
+data:
+  ca.crt: ${LDAP_SERVER_CERT}
+---
+type: Opaque
 apiVersion: identityconfig.identitatem.io/v1alpha1
 kind: AuthRealm
 metadata:
@@ -228,6 +239,9 @@ spec:
         bindDN: ${LDAP_BIND_DN}
         bindPassword:
           name: ${AUTHREALM_LDAP_NAME}-ldap-secret
+          namespace: ${AUTHREALM_LDAP_NS}
+        ca:
+          name: ${AUTHREALM_LDAP_NAME}-ldap-ca
           namespace: ${AUTHREALM_LDAP_NS}
         attributes:
           id:
@@ -401,6 +415,14 @@ type: Opaque
 stringData:
   bindPW: ${LDAP_BINDPASSWORD}
 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${AUTHREALM_LDAP_NAME}-ldap-ca
+  namespace: ${AUTHREALM_LDAP_NS}
+data:
+  ca.crt: ${LDAP_SERVER_CERT}
+---
 apiVersion: identityconfig.identitatem.io/v1alpha1
 kind: AuthRealm
 metadata:
@@ -431,6 +453,9 @@ spec:
         bindPassword:
           name: ${AUTHREALM_NAME}-ldap-secret
           namespace: ${AUTHREALM_NS}
+        ca:
+          name: ${AUTHREALM_LDAP_NAME}-ldap-ca
+          namespace: ${AUTHREALM_LDAP_NS}
         attributes:
           id:
             - DN
