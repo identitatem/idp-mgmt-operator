@@ -218,17 +218,13 @@ spec:
   routeSubDomain: ${ROUTE_SUBDOMAIN}
   placementRef:
     name: ${AUTHREALM_LDAP_NAME}-placement
-  ldapExtraConfigs:
-    openldap:
-      baseDN: ${LDAP_USERSEARCH_BASEDN}
-      filter: "(objectClass=person)"
   identityProviders:
     - name: openldap
       type: LDAP
       mappingMethod: add
       ldap:
-        url: ${LDAP_HOST}
-        insecure: true
+        url: ldaps://${LDAP_HOST}/${LDAP_USERSEARCH_BASEDN}?userPrincipalName?one?(objectClass=person)
+        insecure: false
         bindDN: ${LDAP_BIND_DN}
         bindPassword:
           name: ${AUTHREALM_LDAP_NAME}-ldap-secret
@@ -415,10 +411,6 @@ spec:
   routeSubDomain: ${ROUTE_SUBDOMAIN}
   placementRef:
     name: ${AUTHREALM_NAME}-placement
-  ldapExtraConfigs:
-    openldap:
-      baseDN: ${LDAP_USERSEARCH_BASEDN}
-      filter: "(objectClass=person)"
   identityProviders:
     - name: "${IDP_NAME}"
       mappingMethod: add
@@ -433,8 +425,8 @@ spec:
       type: LDAP
       mappingMethod: add
       ldap:
-        url: ${LDAP_HOST}
-        insecure: true
+        url: ldaps://${LDAP_HOST}/${LDAP_USERSEARCH_BASEDN}?userPrincipalName?one?(objectClass=person)
+        insecure: false
         bindDN: ${LDAP_BIND_DN}
         bindPassword:
           name: ${AUTHREALM_NAME}-ldap-secret
