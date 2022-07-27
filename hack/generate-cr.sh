@@ -39,11 +39,14 @@ export GITHUB_FILENAME=/tmp/${AUTHREALM_GITHUB_NAME}".yaml"
 
 export AUTHREALM_LDAP_NAME=${AUTHREALM_LDAP_NAME:-"authrealm-sample-ldap"}
 export AUTHREALM_LDAP_NS=${AUTHREALM_LDAP_NS:-"authrealm-sample-ldap-ns"}
-export LDAP_BINDPASSWORD=${LDAP_BINDPASSWORD:="ladp bind password"}
+export LDAP_BINDPASSWORD=${LDAP_BINDPASSWORD:="ldap bind password"}
 export LDAP_HOST=${LDAP_HOST:-"ldap host"}
-export LDAP_BIND_DN=${DEXSERVER_LDAP_BIND_DN:-"cn=Manager,dc=example,dc=com"}
-export LDAP_USERSEARCH_BASEDN=${DEXSERVER_LDAP_USERSEARCH_BASEDN:-"dc=example,dc=com"}
+export LDAP_BIND_DN=${LDAP_BIND_DN:-"cn=Manager,dc=example,dc=com"}
+export LDAP_USERSEARCH_BASEDN=${LDAP_USERSEARCH_BASEDN:-"dc=example,dc=com"}
 export LDAP_FILENAME=/tmp/"demo-ldap-authrealm.yaml"
+# Certificate for LDAP must be base64 encoded and is required when using LDAP
+export LDAP_SERVER_CERT=${LDAP_SERVER_CERT:-""}
+
 
 export AUTHREALM_OPENID_NAME=${AUTHREALM_OPENID_NAME:-"authrealm-sample-openid"}
 export AUTHREALM_OPENID_NS=${AUTHREALM_OPENID_NS:-"authrealm-sample-openid-ns"}
@@ -163,6 +166,11 @@ printf "${BLUE}YAML file ${GREEN}${GITHUB_FILENAME}${BLUE} is generated.  Apply 
             ;;
         "LDAP")
             printf "\n${BLUE}Generating YAML for LDAP...${CLEAR}\n"
+            if [[ -z ${LDAP_SERVER_CERT} ]]; then
+              echo "LDAP certificate and use of secure LDAP is required!"
+              echo "Environment variable LDAP_SERVER_CERT must contain a base64 encoded ca.crt value"
+              exit 1
+            fi
 
 cat > ${LDAP_FILENAME} <<EOF
 ---
@@ -208,6 +216,15 @@ type: Opaque
 stringData:
   bindPW: ${LDAP_BINDPASSWORD}
 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${AUTHREALM_LDAP_NAME}-ldap-ca
+  namespace: ${AUTHREALM_LDAP_NS}
+data:
+  ca.crt: ${LDAP_SERVER_CERT}
+---
+type: Opaque
 apiVersion: identityconfig.identitatem.io/v1alpha1
 kind: AuthRealm
 metadata:
@@ -218,20 +235,19 @@ spec:
   routeSubDomain: ${ROUTE_SUBDOMAIN}
   placementRef:
     name: ${AUTHREALM_LDAP_NAME}-placement
-  ldapExtraConfigs:
-    openldap:
-      baseDN: ${LDAP_USERSEARCH_BASEDN}
-      filter: "(objectClass=person)"
   identityProviders:
     - name: openldap
       type: LDAP
       mappingMethod: add
       ldap:
-        url: ${LDAP_HOST}
-        insecure: true
+        url: ldaps://${LDAP_HOST}/${LDAP_USERSEARCH_BASEDN}?userPrincipalName?one?(objectClass=person)
+        insecure: false
         bindDN: ${LDAP_BIND_DN}
         bindPassword:
           name: ${AUTHREALM_LDAP_NAME}-ldap-secret
+          namespace: ${AUTHREALM_LDAP_NS}
+        ca:
+          name: ${AUTHREALM_LDAP_NAME}-ldap-ca
           namespace: ${AUTHREALM_LDAP_NS}
         attributes:
           id:
@@ -351,6 +367,12 @@ printf "${BLUE}YAML file ${GREEN}${OPENID_FILENAME}${BLUE} is generated.  Apply 
             ;;
         "Github+LDAP")
             printf "\n${BLUE}Generating YAML for Github and LDAP...${CLEAR}\n"
+            if [[ -z ${LDAP_SERVER_CERT} ]]; then
+              echo "LDAP certificate and use of secure LDAP is required!"
+              echo "Environment variable LDAP_SERVER_CERT must contain a base64 encoded ca.crt value"
+              exit 1
+            fi
+
 
 cat > ${FILENAME_BOTH} <<EOF
 ---
@@ -405,6 +427,14 @@ type: Opaque
 stringData:
   bindPW: ${LDAP_BINDPASSWORD}
 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${AUTHREALM_LDAP_NAME}-ldap-ca
+  namespace: ${AUTHREALM_LDAP_NS}
+data:
+  ca.crt: ${LDAP_SERVER_CERT}
+---
 apiVersion: identityconfig.identitatem.io/v1alpha1
 kind: AuthRealm
 metadata:
@@ -415,10 +445,6 @@ spec:
   routeSubDomain: ${ROUTE_SUBDOMAIN}
   placementRef:
     name: ${AUTHREALM_NAME}-placement
-  ldapExtraConfigs:
-    openldap:
-      baseDN: ${LDAP_USERSEARCH_BASEDN}
-      filter: "(objectClass=person)"
   identityProviders:
     - name: "${IDP_NAME}"
       mappingMethod: add
@@ -433,12 +459,15 @@ spec:
       type: LDAP
       mappingMethod: add
       ldap:
-        url: ${LDAP_HOST}
-        insecure: true
+        url: ldaps://${LDAP_HOST}/${LDAP_USERSEARCH_BASEDN}?userPrincipalName?one?(objectClass=person)
+        insecure: false
         bindDN: ${LDAP_BIND_DN}
         bindPassword:
           name: ${AUTHREALM_NAME}-ldap-secret
           namespace: ${AUTHREALM_NS}
+        ca:
+          name: ${AUTHREALM_LDAP_NAME}-ldap-ca
+          namespace: ${AUTHREALM_LDAP_NS}
         attributes:
           id:
             - DN
