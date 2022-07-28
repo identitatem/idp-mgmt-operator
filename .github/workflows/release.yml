@@ -30,6 +30,6 @@ jobs:
       run: |
         export VERSION=${GITHUB_REF##*/}
         export IMG=quay.io/identitatem/idp-mgmt-operator:${GITHUB_REF##*/}
-        export PREV_BUNDLE_INDEX_IMG=quay.io/identitatem/idp-mgmt-operator-catalog:v0.3.3
+        export PREV_BUNDLE_INDEX_IMG=quay.io/identitatem/idp-mgmt-operator-catalog:v0.4.0
         export KUBEBUILDER_ASSETS=$HOME/kubebuilder/bin;
         make publish
