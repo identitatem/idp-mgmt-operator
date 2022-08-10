@@ -159,11 +159,11 @@ Cypress.Commands.add(
 // Cypress command to sign into GitHub OAuth Applications page
 Cypress.Commands.add('loginToGitHubOAuthAppsPage', (OPTIONS_GH_OAUTH_APPS_URL, OPTIONS_GH_USER, OPTIONS_GH_PASSWORD) => {
   Cypress.Cookies.debug(true)
-  
+
   var oauthAppsURL = OPTIONS_GH_OAUTH_APPS_URL || Cypress.env('OPTIONS_GH_OAUTH_APPS_URL');
   var username = OPTIONS_GH_USER || Cypress.env('OPTIONS_GH_USER');
   var password = OPTIONS_GH_PASSWORD || Cypress.env('OPTIONS_GH_PASSWORD');
-  
+
   cy.visit(oauthAppsURL, { failOnStatusCode: false });
 
   cy.get('body').then(body => {
@@ -177,7 +177,9 @@ Cypress.Commands.add('loginToGitHubOAuthAppsPage', (OPTIONS_GH_OAUTH_APPS_URL, O
       // TOTP for 2FA
       var secretKeyToGenerateToken = Cypress.env('OPTIONS_GH_SECRET_KEY_FOR_TOTP');
       var totp = generateToken(secretKeyToGenerateToken);
-      cy.get('input[id=otp]').type(totp, { log:false });
+      // Older way of setting time-based one-time password, but Google changed recently
+      //  cy.get('input[id=otp]').type(totp, { log:false });
+      cy.get('input[id=totp]').type(totp, { log:false });
 
       // Should be signed in
       cy.get('header > div > details > summary[aria-label="View profile and more"]', { timeout: 10000 }).should('exist');
@@ -247,11 +249,11 @@ Cypress.Commands.add('createGitHubOAuthApp', () => {
 
     // Enter OAuth Homepage URL
     var oauthHomepageURL = Cypress.env('OPTIONS_GH_OAUTH_HOMEPAGE_URL');
-    cy.get('input[name="oauth_application[url]"]').type(oauthHomepageURL);     
+    cy.get('input[name="oauth_application[url]"]').type(oauthHomepageURL);
 
     // Submit
     cy.get('form.new_oauth_application > p > button[type=submit]').click();
-    
+
     cy.contains('h2', oAuthAppName).should('exist');
 
     // Create a Client Secret
@@ -268,7 +270,7 @@ Cypress.Commands.add('createGitHubOAuthApp', () => {
       .then((clientID) => {
         Cypress.env('OPTIONS_GH_OAUTH_CLIENT_ID', clientID);
       });
-    
+
     // Logout of GitHub
     cy.logoutOfGitHub();
 })
@@ -295,7 +297,7 @@ Cypress.Commands.add('deleteGitHubOAuthApp', () => {
 
     // The OAuth apps page is open
     cy.contains('h2', 'OAuth Apps').should('exist');
-    
+
     // Logout of GitHub
     cy.logoutOfGitHub();
 })
